@@ -8,7 +8,7 @@ q=importlib.util.module_from_spec(spec);spec.loader.exec_module(q)
 PUBLIC_RECIPIENT='age160m7enkqn7g3gy9sm66keanjfsnkjfs2u6ce57w3jzz8egvm7erq39zaqx'
 def binding_manifest():
     import hashlib
-    return {'schemaVersion':1,'bindings':{v:{'productCommit':str(i)*40,'auditorCommit':str(i)*40,'baseCommit':str(i+6)*40,'sourceId':str(i)*64} for i,v in enumerate(['v6.0.0'],1)},'retention':{'publicRecipient':PUBLIC_RECIPIENT,'fingerprint':hashlib.sha256(PUBLIC_RECIPIENT.encode()).hexdigest()}}
+    return {'schemaVersion':2,'bindings':{v:{'state':'FROZEN','counts':{'frontend':2,'source_offer':26,'pending':0,'required_names':['initial regression','scroll regression'],'skipped_names':[]},'productCommit':str(i)*40,'auditorCommit':str(i)*40,'baseCommit':str(i+6)*40,'sourceId':str(i)*64} for i,v in enumerate(['v4.0.0','v5.0.0','v6.0.0'],1)},'retention':{'publicRecipient':PUBLIC_RECIPIENT,'fingerprint':hashlib.sha256(PUBLIC_RECIPIENT.encode()).hexdigest()}}
 def binding_fixture(release):
     with tempfile.TemporaryDirectory() as d:
         path=Path(d)/'binding.json';path.write_text(json.dumps(binding_manifest()))
@@ -16,9 +16,9 @@ def binding_fixture(release):
 class ReleaseBindingTests(unittest.TestCase):
     def require_loader(self):
         self.assertTrue(callable(getattr(q,'load_release_binding',None)),'Reviewed helpers must share a strict release binding before any native work')
-    def test_only_v6_and_derived_org_offer(self):
+    def test_three_versions_and_derived_org_offer(self):
         self.require_loader()
-        for release in ['v6.0.0']:
+        for release in ['v4.0.0','v5.0.0','v6.0.0']:
             b=binding_fixture(release);self.assertEqual(b['release'],release);self.assertEqual(b['wasm'],release!='v3.0.0')
             self.assertTrue(b['archive_url'].startswith('https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-'+release+'-'))
     def reject(self,change,release='v6.0.0'):
@@ -31,8 +31,8 @@ class ReleaseBindingTests(unittest.TestCase):
     def test_unknown_url_or_repository_override_refused(self):self.reject(lambda v:v['bindings']['v6.0.0'].update(repository='artcashin/bdobb'))
     def test_wrong_recipient_fingerprint_refused(self):self.reject(lambda v:v['retention'].update(fingerprint='0'*64))
     def test_unsupported_release_refused(self):self.reject(lambda v:None,'v7.0.0')
-    def test_prior_releases_refused(self):
-        for release in ['v3.0.0','v4.0.0','v5.0.0']:
+    def test_other_releases_refused(self):
+        for release in ['v2.0.0','v3.0.0','v8.0.0']:
             self.reject(lambda v:None,release)
 
     def test_duplicate_json_field_refused(self):
@@ -76,7 +76,7 @@ class ReleaseBindingTests(unittest.TestCase):
                 env={**os.environ,**{key:'' for key in blank},'BDOBB_RELEASE_VERSION':'v6.0.0','SOURCE_COMMIT':b['product_commit'],'AUDITOR_COMMIT':b['auditor_commit'],'BDOBB_RUST_TARGET':'x86_64-apple-darwin'}
                 if changed=='missing-eighth':env.pop(blank[-1])
                 if changed=='seeded-seventh':env[blank[-2]]='synthetic-operator-seed'
-                prefix="import subprocess\nfrom unittest.mock import patch\ndef output(args,**kwargs):\n return ('rustc 1.99.1 (fixture)' if args[0]=='rustc' else 'v22.0.0' if args[0]=='node' else '1'*40)+chr(10)\n"
+                prefix="import subprocess\nfrom unittest.mock import patch\ndef output(args,**kwargs):\n return ('rustc 1.99.1 (fixture)' if args[0]=='rustc' else 'v22.0.0' if args[0]=='node' else '3'*40)+chr(10)\n"
                 process=subprocess.run([__import__('sys').executable,'-c',prefix+"with patch.object(subprocess,'check_output',side_effect=output):\n exec("+repr(script)+")"],cwd=app,env=env,capture_output=True,text=True)
                 self.assertEqual(process.returncode==0,changed=='none',process.stderr)
 
@@ -174,7 +174,7 @@ class QualificationTest(unittest.TestCase):
                     for n in q.expected_names(t):
                         p = out / n
                         p.write_bytes(n.encode())
-                        manifest[n] = {'sha256': q.sha256(p), 'runtime': {'status': 'PASS','displayed_version_observed':True,'displayed_about':{'status':'OBSERVED_VERSION_MATCH'}}, 'installation':{'bundle_version':q.VERSION}, 'cleanup':{'installed_bundle_absent':True}, 'source_commit': q.SOURCE_COMMIT, 'source_id': q.SOURCE_ID, 'auditor_commit':q.AUDITOR_COMMIT,'release':q.RELEASE_VERSION,'embedded_offer':dict(q.EXPECTED_OFFER)}
+                        manifest[n] = {'sha256': q.sha256(p), 'runtime': {'owned_process_cleanup':True,'expected_arch':q.TARGETS[t][0],'status': 'PASS','displayed_version_observed':True,'displayed_about':{'status':'OBSERVED_VERSION_MATCH','native_architecture':q.TARGETS[t][0]}}, 'installation':{'bundle_version':q.VERSION}, 'cleanup':{'installed_bundle_absent':True}, 'source_commit': q.SOURCE_COMMIT, 'source_id': q.SOURCE_ID, 'auditor_commit':q.AUDITOR_COMMIT,'release':q.RELEASE_VERSION,'embedded_offer':dict(q.EXPECTED_OFFER),'architecture':q.TARGETS[t][0],'test_counts':q.source_test_receipt(q.BINDING['counts'])}
                     (out / 'qualification.json').write_text(json.dumps(manifest))
                 result = q.aggregate(root)
                 self.assertEqual(len(result), 4)
@@ -190,7 +190,7 @@ class QualificationTest(unittest.TestCase):
                 for target in q.TARGETS:
                     out=root/target;out.mkdir();records={}
                     for n in q.expected_names(target):
-                        p=out/n;p.write_bytes(n.encode());records[n]={'sha256':q.sha256(p),'release':q.RELEASE_VERSION,'source_commit':q.SOURCE_COMMIT,'source_id':q.SOURCE_ID,'auditor_commit':q.AUDITOR_COMMIT,'embedded_offer':dict(q.EXPECTED_OFFER),'runtime':{'status':'PASS','displayed_version_observed':True,'displayed_about':{'status':'OBSERVED_VERSION_MATCH'}},'installation':{'bundle_version':q.VERSION},'cleanup':{'installed_bundle_absent':True}}
+                        p=out/n;p.write_bytes(n.encode());records[n]={'sha256':q.sha256(p),'release':q.RELEASE_VERSION,'source_commit':q.SOURCE_COMMIT,'source_id':q.SOURCE_ID,'auditor_commit':q.AUDITOR_COMMIT,'embedded_offer':dict(q.EXPECTED_OFFER),'architecture':q.TARGETS[target][0],'test_counts':q.source_test_receipt(q.BINDING['counts']),'runtime':{'owned_process_cleanup':True,'expected_arch':q.TARGETS[target][0],'status':'PASS','displayed_version_observed':True,'displayed_about':{'status':'OBSERVED_VERSION_MATCH','native_architecture':q.TARGETS[target][0]}},'installation':{'bundle_version':q.VERSION},'cleanup':{'installed_bundle_absent':True}}
                     (out/'qualification.json').write_text(json.dumps(records))
                 self.assertEqual(len(q.aggregate(root)),4)
                 path=root/'mac-intel/qualification.json';records=json.loads(path.read_text());records[next(iter(records))][key]=bad;path.write_text(json.dumps(records))
@@ -228,8 +228,8 @@ class QualificationTest(unittest.TestCase):
                     return subprocess.CompletedProcess(args,0,'','')
                 def runtime(executable,package,work,evidence,expected_arch):
                     self.assertTrue(executable.is_relative_to(temp));self.assertEqual(expected_arch,'x86_64');self.assertTrue(executable.exists());launched.append(executable)
-                    return {'status':'PASS','displayed_about':{'status':'GAP_AX_NOT_TRUSTED'},'displayed_version_observed':False}
-                with patch.dict(os.environ,{'GITHUB_ACTIONS':'true','RUNNER_ENVIRONMENT':'github-hosted','RUNNER_TEMP':str(temp)}), patch.object(q.platform,'system',return_value='Darwin'), patch.object(q.platform,'machine',return_value='x86_64'), patch.object(q,'run',side_effect=command), patch.object(q,'load_release_gate',return_value=Gate), patch.object(q,'native_runtime',side_effect=runtime):
+                    return {'status':'PASS','owned_process_cleanup':True,'expected_arch':expected_arch,'displayed_about':{'status':'OBSERVED_VERSION_MATCH','native_architecture':expected_arch},'displayed_version_observed':True}
+                with patch.dict(os.environ,{'GITHUB_ACTIONS':'true','RUNNER_ENVIRONMENT':'github-hosted','RUNNER_TEMP':str(temp)}), patch.object(q.platform,'system',return_value='Darwin'), patch.object(q.platform,'machine',return_value='x86_64'), patch.object(q,'run',side_effect=command), patch.object(q,'load_release_gate',return_value=Gate), patch.object(q,'native_runtime',side_effect=runtime),patch.object(q,'verify_source_evidence',return_value=q.source_test_receipt(q.BINDING['counts'])):
                     if changed_copy:
                         with self.assertRaisesRegex(ValueError,'Installed app copy differs'):q.qualify(app,'mac-intel')
                         self.assertEqual(launched,[]);self.assertFalse((stage/'qualification.json').exists())
@@ -237,7 +237,7 @@ class QualificationTest(unittest.TestCase):
                         q.qualify(app,'mac-intel');qualified=json.loads((stage/'qualification.json').read_text());self.assertEqual(set(qualified),set(records))
                         self.assertEqual(len(launched),2)
                         for item in qualified.values():
-                            self.assertTrue(item['cleanup']['installed_bundle_absent']);self.assertFalse(item['runtime']['displayed_version_observed'])
+                            self.assertTrue(item['cleanup']['installed_bundle_absent']);self.assertTrue(item['runtime']['displayed_version_observed'])
                 self.assertEqual(list(temp.iterdir()),[])
 
 def load_tests(loader,tests,pattern):

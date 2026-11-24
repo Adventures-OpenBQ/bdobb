@@ -77,6 +77,6 @@ class AboutTests(unittest.TestCase):
 
 
 def load_tests(loader,tests,pattern):
-    return unittest.TestSuite(loader.loadTestsFromTestCase(type('About_'+v,(AboutTests,),{'RELEASE':v})) for v in ['v6.0.0'])
+    return unittest.TestSuite(loader.loadTestsFromTestCase(type('About_'+v,(AboutTests,),{'RELEASE':v})) for v in ['v4.0.0','v5.0.0','v6.0.0'])
 
 if __name__ == '__main__': unittest.main()

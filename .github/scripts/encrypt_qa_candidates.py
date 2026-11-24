@@ -1,13 +1,13 @@
-"""Failure-only V4 encrypted QA; reviewed V3 streaming encryption boundary reused."""
+"""Failure-only V4–V6 Mac encrypted QA; reviewed streaming encryption boundary reused."""
 import argparse, hashlib, io, json, os, platform, re, shutil, stat, subprocess, sys, tarfile, tempfile, urllib.request
 from pathlib import Path
 AGE_VERSION='1.3.2'
 RECIPIENT=None
 RELEASE_VERSION=None
 RECIPIENT_FINGERPRINT=None
-TARGETS={'mac-arm': {'system': 'Darwin', 'runner_os': 'macOS', 'machine': 'arm64', 'triple': 'aarch64-apple-darwin', 'age_arch': 'darwin-arm64', 'source': None, 'auditor': None, 'offer': None, 'files': {}}, 'mac-intel': {'system': 'Darwin', 'runner_os': 'macOS', 'machine': 'x86_64', 'triple': 'x86_64-apple-darwin', 'age_arch': 'darwin-amd64', 'source': None, 'auditor': None, 'offer': None, 'files': {}}, 'table-amd64': {'system': 'Linux', 'runner_os': 'Linux', 'machine': 'x86_64', 'age_arch': 'linux-amd64', 'source': 'b963af1f9be37a1754b7f568403b8c461c5dbc72', 'auditor': 'b963af1f9be37a1754b7f568403b8c461c5dbc72', 'offer': None, 'files': {'': 'candidate-table-image-amd64.tar.gz'}}}
-AGE={'darwin-arm64': {'url': 'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-darwin-arm64.tar.gz', 'archive_sha256': 'e2020b073c44f692685a24d6abc378817eb81ffaaf49fd0531ef8565f767f2f5', 'archive_size': 18106798, 'binary_sha256': '4012dfc2725883beafb710894af4f599b7a94f8c8e0f51f02cc96ab8df33915e', 'binary_size': 6502258}, 'darwin-amd64': {'url': 'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-darwin-amd64.tar.gz', 'archive_sha256': '1d1e4bc66e1427edad7739ae7616157de0e79db8b6d2a1497d7d9925fb06a539', 'archive_size': 19376787, 'binary_sha256': '0c2fbcffab91d0af398162a8ed792e096916c8c47c3c400e303904431103f492', 'binary_size': 6978992}, 'linux-amd64': {'url': 'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz', 'archive_sha256': 'cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10', 'archive_size': 19405817, 'binary_sha256': 'eb7dd1b518f0a307c99cd97782623c5321da049154b04acd2d98d21aa7bc9b2c', 'binary_size': 6977014}}
-FAILURE_STAGES=('package-scan','native-qualification','evidence-scan','image-privacy')
+TARGETS={'mac-arm': {'system': 'Darwin', 'runner_os': 'macOS', 'machine': 'arm64', 'triple': 'aarch64-apple-darwin', 'age_arch': 'darwin-arm64', 'source': None, 'auditor': None, 'offer': None, 'files': {}}, 'mac-intel': {'system': 'Darwin', 'runner_os': 'macOS', 'machine': 'x86_64', 'triple': 'x86_64-apple-darwin', 'age_arch': 'darwin-amd64', 'source': None, 'auditor': None, 'offer': None, 'files': {}}}
+AGE={'darwin-arm64': {'url': 'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-darwin-arm64.tar.gz', 'archive_sha256': 'e2020b073c44f692685a24d6abc378817eb81ffaaf49fd0531ef8565f767f2f5', 'archive_size': 18106798, 'binary_sha256': '4012dfc2725883beafb710894af4f599b7a94f8c8e0f51f02cc96ab8df33915e', 'binary_size': 6502258}, 'darwin-amd64': {'url': 'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-darwin-amd64.tar.gz', 'archive_sha256': '1d1e4bc66e1427edad7739ae7616157de0e79db8b6d2a1497d7d9925fb06a539', 'archive_size': 19376787, 'binary_sha256': '0c2fbcffab91d0af398162a8ed792e096916c8c47c3c400e303904431103f492', 'binary_size': 6978992}}
+FAILURE_STAGES=('package-scan','native-qualification','evidence-scan')
 
 
 def configure_release(binding=None):
@@ -197,34 +197,20 @@ def require_hosted_native(target):
 def select_candidates(bundle,target):
     physical_directory(bundle)
     wanted=TARGETS[target]['files']
-    if target=='table-amd64':
-        result=[bundle/wanted['']]
-        if len([p for p in bundle.iterdir() if p.name.startswith('candidate-table-image-') and p.name.endswith('.tar.gz')])!=1:
-            raise RetentionError('MISSING_OR_AMBIGUOUS_CANDIDATE')
-    else:
-        selected={name:[] for name in wanted.values()}
-        def unreadable(_error):raise RetentionError('UNREADABLE_BUNDLE')
-        for directory,subdirs,names in os.walk(bundle,followlinks=False,onerror=unreadable):
-            for name in subdirs+names:
-                if name.lower().endswith(('.dmg','.app.tar.gz')):
-                    if name not in selected:raise RetentionError('EXTRA_INSTALLER')
-                    path=Path(directory)/name;regular_file(path);selected[name].append(path)
-        result=[]
-        for directory,name in wanted.items():
-            expected=bundle/directory/name
-            if selected[name]!=[expected]:raise RetentionError('MISSING_OR_AMBIGUOUS_INSTALLER')
-            result.append(expected)
+    selected={name:[] for name in wanted.values()}
+    def unreadable(_error):raise RetentionError('UNREADABLE_BUNDLE')
+    for directory,subdirs,names in os.walk(bundle,followlinks=False,onerror=unreadable):
+        for name in subdirs+names:
+            if name.lower().endswith(('.dmg','.app.tar.gz')):
+                if name not in selected:raise RetentionError('EXTRA_INSTALLER')
+                path=Path(directory)/name;regular_file(path);selected[name].append(path)
+    result=[]
+    for directory,name in wanted.items():
+        expected=bundle/directory/name
+        if selected[name]!=[expected]:raise RetentionError('MISSING_OR_AMBIGUOUS_INSTALLER')
+        result.append(expected)
     for path in result:physical_directory(path.parent);regular_file(path)
     return sorted(result,key=lambda path:path.name)
-
-
-def image_identity(runner_temp,record):
-    path=runner_temp/'candidate-table-image-amd64.identity.json'
-    if regular_file(path).st_size>8192:raise RetentionError('INVALID_IMAGE_IDENTITY')
-    value=json.loads(path.read_text(encoding='utf-8'))
-    if value.get('source_revision')!=TARGETS['table-amd64']['source'] or value.get('source_tree')!='e8b331b5f813defc34cbbbb7aa6b5b5e0f3a3cb2' or value.get('architecture')!='amd64' or value.get('candidate_sha256')!=record['sha256'] or not re.fullmatch('sha256:[0-9a-f]{64}',value.get('image_id','')) or value.get('service_tests')!=79 or value.get('core_tests')!=213 or value.get('runtime_passed') is not True:
-        raise RetentionError('INVALID_IMAGE_IDENTITY')
-    return {key:value[key] for key in ['source_revision','source_tree','architecture','candidate_sha256','image_id','service_tests','core_tests','runtime_passed']}
 
 
 def make_receipt(target,records,ciphertext,controller,failure_stage,image=None):
@@ -240,7 +226,7 @@ def make_receipt(target,records,ciphertext,controller,failure_stage,image=None):
 
 def retain(args):
     require_hosted_native(args.target);require_recipient(args.recipient)
-    if args.qualification_outcome!='failure' or args.failure_stage not in FAILURE_STAGES or (args.target=='table-amd64')!=(args.failure_stage=='image-privacy'):
+    if args.qualification_outcome!='failure' or args.failure_stage not in FAILURE_STAGES:
         raise RetentionError('ORIGINAL_FAILURE_REQUIRED')
     controller=os.environ.get('GITHUB_SHA','')
     if not re.fullmatch('[0-9a-f]{40}',controller):raise RetentionError('CONTROLLER_PIN_MISSING')
@@ -249,19 +235,17 @@ def retain(args):
     if config['offer'] is not None and json.loads((app/'source-offer.json').read_text(encoding='utf-8'))['sourceId']!=config['offer']:
         raise RetentionError('SOURCE_OFFER_MISMATCH')
     runner_temp=Path(os.environ['RUNNER_TEMP']).absolute()
-    bundle=runner_temp if args.target=='table-amd64' else app/'src-tauri/target'/config['triple']/'release/bundle'
+    bundle=app/'src-tauri/target'/config['triple']/'release/bundle'
     selected=select_candidates(bundle,args.target);outdir=Path(args.outdir).absolute();prepare_output(outdir,runner_temp,args.target)
     cipher_name='qa-blocked-'+RELEASE_VERSION+'-'+args.target+'.tar.age';partial=outdir/(cipher_name+'.partial');ciphertext=outdir/cipher_name;succeeded=False
     try:
         with tempfile.TemporaryDirectory(prefix='v4-qa-private-',dir=runner_temp) as private:
             work=Path(private);records=snapshot_candidates(selected,work/'candidates')
-            image=image_identity(runner_temp,records[0]) if args.target=='table-amd64' else None
             executable=install_age(work,args.target);encrypt_stream(executable,args.recipient,work/'candidates',records,partial)
             verify_candidates(selected,records);verify_candidates(list((work/'candidates').iterdir()),records)
             if select_candidates(bundle,args.target)!=selected:raise RetentionError('CANDIDATE_SET_CHANGED')
-            if args.target=='table-amd64' and image_identity(runner_temp,records[0])!=image:raise RetentionError('IMAGE_IDENTITY_CHANGED')
             partial.replace(ciphertext);ciphertext.chmod(0o600)
-            receipt=make_receipt(args.target,records,ciphertext,controller,args.failure_stage,image)
+            receipt=make_receipt(args.target,records,ciphertext,controller,args.failure_stage)
             manifest=outdir/'retention.json';manifest.write_text(json.dumps(receipt,indent=2)+'\n',encoding='utf-8',newline='\n');manifest.chmod(0o600)
             if {p.name for p in outdir.iterdir()}!={cipher_name,'retention.json'} or any(not stat.S_ISREG(p.lstat().st_mode) for p in outdir.iterdir()):raise RetentionError('OUTPUT_SET_MISMATCH')
         succeeded=True;return [cipher_name,'retention.json']

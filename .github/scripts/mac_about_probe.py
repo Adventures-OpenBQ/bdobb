@@ -118,7 +118,7 @@ def observe(args, binding=None):
         if result is None:
             validate_owned_process(args.pid, executable)
             try:
-                observed = subprocess.run([str(probe), '--pid', str(args.pid), '--executable', str(executable), '--sha256', args.sha256],
+                observed = subprocess.run([str(probe), '--pid', str(args.pid), '--executable', str(executable), '--sha256', args.sha256, '--version', binding['version']],
                                           capture_output=True, timeout=15)
                 result = classify_observation(json.loads(observed.stdout), binding['version']) if observed.stdout else {'status': 'GAP_PROBE_OUTPUT_INVALID'}
                 if observed.returncode not in {0, 2}: result = {'status': 'GAP_PROBE_FAILED'}

@@ -1,15 +1,123 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "bindings": {
+    "v4.0.0": {
+      "state": "FROZEN",
+      "productCommit": "2aa75bfcfdd28486e6fdc95d2163b6556073cd50",
+      "auditorCommit": "2aa75bfcfdd28486e6fdc95d2163b6556073cd50",
+      "baseCommit": "d26527db2b47eed3b1beab0f927555420635f8f0",
+      "sourceId": "d79a0477b667cfe7bf74949bfeefebb3c1821621cfcacf5a618d30bee32a65e1",
+      "counts": {
+        "frontend": 6978,
+        "source_offer": 26,
+        "pending": 7,
+        "required_names": [
+          "source refresh supersedes an admitted initial read without displaying a delivery error",
+          "source refresh supersedes an admitted scroll read without displaying a delivery error"
+        ],
+        "skipped_names": [
+          "reference backend conformance serves a corpus big enough for the rest of this suite to mean anything",
+          "reference backend conformance loses nothing in normalizeWidgets",
+          "reference backend conformance gives every widget the fields the renderers require",
+          "reference backend conformance keeps every generated URL on the backend's own origin",
+          "reference backend conformance actually fetches every table, metric and chart widget",
+          "reference backend conformance either renders every type or names it as known-unrendered",
+          "Workspace sign-in against a self-hosted server (bdobb#9) signs in from POST /pro/login alone, stages the account's settings, and stores no secret"
+        ]
+      }
+    },
+    "v5.0.0": {
+      "state": "FROZEN",
+      "productCommit": "25a5a71cac68e8570db32b58623db68f2aff63fb",
+      "auditorCommit": "25a5a71cac68e8570db32b58623db68f2aff63fb",
+      "baseCommit": "bc765b628ad708d2fe22c9b15e92e5a850183eec",
+      "sourceId": "98c00b9dbd1c6e6422d7ab111db80318863d9ac7e220e893fc834ba21bc14afc",
+      "counts": {
+        "frontend": 7555,
+        "source_offer": 26,
+        "pending": 7,
+        "required_names": [
+          "source refresh supersedes an admitted initial read without displaying a delivery error",
+          "source refresh supersedes an admitted scroll read without displaying a delivery error"
+        ],
+        "skipped_names": [
+          "reference backend conformance serves a corpus big enough for the rest of this suite to mean anything",
+          "reference backend conformance loses nothing in normalizeWidgets",
+          "reference backend conformance gives every widget the fields the renderers require",
+          "reference backend conformance keeps every generated URL on the backend's own origin",
+          "reference backend conformance actually fetches every table, metric and chart widget",
+          "reference backend conformance either renders every type or names it as known-unrendered",
+          "Workspace sign-in against a self-hosted server (bdobb#9) signs in from POST /pro/login alone, stages the account's settings, and stores no secret"
+        ]
+      }
+    },
     "v6.0.0": {
-      "productCommit": "5b70e0b9e4c87e992bc649e87e29f0445b7f048b",
-      "auditorCommit": "5b70e0b9e4c87e992bc649e87e29f0445b7f048b",
-      "baseCommit": "e7b9e6426c87f4fb4dd147e86523dfc7a44cbf0c",
-      "sourceId": "e77f44c11bac32b1a5b227e51b57abcd4195bbfc4245b841e523eeb62251ff4a"
+      "state": "FROZEN",
+      "productCommit": "f59549594b60883cf0d4c9711f2629b88f126420",
+      "auditorCommit": "f59549594b60883cf0d4c9711f2629b88f126420",
+      "baseCommit": "e132d4cbbcb01c403e2180215c17237cc2461854",
+      "sourceId": "921a838d3da9a4d61c0532039e7e5adfb89796a5e03d6c030e8860cdb503e375",
+      "counts": {
+        "frontend": 8613,
+        "source_offer": 26,
+        "pending": 46,
+        "required_names": [
+          "source refresh supersedes an admitted initial read without displaying a delivery error",
+          "source refresh supersedes an admitted scroll read without displaying a delivery error"
+        ],
+        "skipped_names": [
+          "OpenBB example agents (agents-for-openbb aa1073d) 30 raw widget data: get_widget_data round-trips and the reply streams",
+          "OpenBB example agents (agents-for-openbb aa1073d) 31 reasoning steps: a status arrives before the reply",
+          "OpenBB example agents (agents-for-openbb aa1073d) 32 citations: the collection names the primary card's widget",
+          "OpenBB example agents (agents-for-openbb aa1073d) 33 charts: five chart artifacts pass BDOBB's artifact guard",
+          "OpenBB example agents (agents-for-openbb aa1073d) 34 tables: a table artifact passes the guard",
+          "OpenBB example agents (agents-for-openbb aa1073d) 35 PDF: BDOBB sends the PDF card as data_type pdf and the example reads it",
+          "OpenBB example agents (agents-for-openbb aa1073d) 36 PDF citations: quote_bounding_boxes arrive and parse into boxes",
+          "OpenBB example agents (agents-for-openbb aa1073d) 37 custom features: all four shapes normalize and the set values reach the request",
+          "OpenBB example agents (agents-for-openbb aa1073d) 38 MCP tools: the tool list is sent and an execute_agent_tool call round-trips",
+          "OpenBB example agents (agents-for-openbb aa1073d) 39 HTML artifacts: three html artifacts pass the guard",
+          "OpenBB example agents (agents-for-openbb aa1073d) 40 dashboard widgets: primary and secondary refs both validate and reach the example",
+          "OpenBB example agents (agents-for-openbb aa1073d) 41 dynamic skill: get_skill_content round-trips and the skill reaches the prompt",
+          "OpenBB example agents (agents-for-openbb aa1073d) 42 feedback: advertised, accepted with 2xx, and recorded",
+          "live endpoints has endpoints configured at all",
+          "live endpoints the NAS serves a well-formed widgets.json",
+          "live endpoints Rita serves a non-empty agents.json",
+          "live endpoints each MCP server yields well-formed tools",
+          "live endpoints assembleTools returns tools from every configured server, none unreachable",
+          "reference backend conformance serves a corpus big enough for the rest of this suite to mean anything",
+          "reference backend conformance loses nothing in normalizeWidgets",
+          "reference backend conformance gives every widget the fields the renderers require",
+          "reference backend conformance keeps every generated URL on the backend's own origin",
+          "reference backend conformance actually fetches every table, metric and chart widget",
+          "reference backend conformance either renders every type or names it as known-unrendered",
+          "Rita authors a dashboard adds a note when asked to write findings onto the board",
+          "Rita authors a dashboard renames the dashboard when asked",
+          "Rita authors a dashboard removes a widget by name",
+          "Rita authors a dashboard stops a URL edit after the user declines consent",
+          "Rita authors a dashboard discovers, adds and configures a widget in one turn",
+          "Rita authors a dashboard authors from an empty board under /skill:build-dashboard, persists, and undoes (#322)",
+          "Rita authors a dashboard writes an answer into the note on each of twelve tabs: every card saved exactly once (#326)",
+          "Rita authors a dashboard recovers from a save refused for flat params: retries, and the note is saved",
+          "Rita authors a dashboard reconfigures an existing chart",
+          "Rita authors a dashboard duplicates a card from a 'make a copy' phrasing",
+          "Rita authors a dashboard adds a tab",
+          "Rita authors a dashboard navigates to another dashboard by name",
+          "Rita authors a dashboard moves/resizes a card on an explicit instruction",
+          "Rita live discovers at least one agent",
+          "Rita live answers a plain turn",
+          "Rita live round-trips get_widget_data against the reference backend",
+          "Rita live answers from a PDF card's content",
+          "Rita live cites a PDF quote with at least one highlight box",
+          "Rita live accepts a feedback vote",
+          "Rita arranges a CSV table through table-model/1 totals Amount by Region in one applied arrange_table, quoting only engine numbers",
+          "Rita arranges a CSV table through table-model/1 never sums the Region text column: the engine refuses it or Rita declines, and the model is unchanged",
+          "Workspace sign-in against a self-hosted server (bdobb#9) signs in from POST /pro/login alone, stages the account's settings, and stores no secret"
+        ]
+      }
     }
   },
   "retention": {
-    "publicRecipient": "age1h5s06mahk7rs99e0ycnfhd4rl39z20vjxlzrxnktfylqst4qhvrqp82pst",
-    "fingerprint": "b4145fc905dfcc364cc93152253e57936df64ac4f03cf3303b7a32189f52f0ec"
+    "publicRecipient": "age1ys7v0hp3w27xtakx7mqhygge8en9nrud5je6k9m8wrnvnwn8rptq7dnz88",
+    "fingerprint": "cfd9b132eaac0d05b5da2eade15690449cbeb2370fc7b59be10a8c716e6e0202"
   }
 }

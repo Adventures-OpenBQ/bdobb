@@ -3,6 +3,21 @@ import ApplicationServices
 import CryptoKit
 import Darwin
 
+// BEGIN PURE ABOUT ACCEPTANCE
+private func aboutTextIsVisible(inWindow: Bool, ownedHit: Bool) -> Bool { return inWindow && ownedHit }
+private func aboutWindowIdentity(title: String?, role: String, subrole: String, newWindow: Bool) -> Bool {
+    guard let title else { return false }
+    return role == "AXWindow" && (title == "About BDOBB" || title == "About" || (title.isEmpty && subrole == "AXDialog" && newWindow))
+}
+private func properAboutWindow(title: String?, role: String, subrole: String, newWindow: Bool, owned: Bool, focused: Bool, frontmost: Bool, hidden: Bool, minimized: Bool) -> Bool {
+    return aboutWindowIdentity(title: title, role: role, subrole: subrole, newWindow: newWindow) && owned && focused && frontmost && !hidden && !minimized
+}
+private func aboutObservationAccepted(title: String?, role: String, subrole: String, newWindow: Bool, owned: Bool, focused: Bool, frontmost: Bool, hidden: Bool, minimized: Bool, invoked: Bool, names: Set<String>, versions: Set<String>, expectedVersion: String) -> Bool {
+    return properAboutWindow(title: title, role: role, subrole: subrole, newWindow: newWindow, owned: owned, focused: focused, frontmost: frontmost, hidden: hidden, minimized: minimized)
+        && Set(["4.0.0","5.0.0","6.0.0"]).contains(expectedVersion) && invoked && names == Set(["BDOBB"]) && versions == Set(["Version \(expectedVersion) (\(expectedVersion))"])
+}
+// END PURE ABOUT ACCEPTANCE
+
 @_silgen_name("proc_pidpath")
 private func nativeProcPidPath(_ pid: Int32, _ buffer: UnsafeMutableRawPointer, _ size: UInt32) -> Int32
 
@@ -69,11 +84,14 @@ private func elementAttribute(_ element: AXUIElement, _ name: String) throws -> 
     return unsafeBitCast(value, to: AXUIElement.self)
 }
 
-private func children(_ element: AXUIElement, _ name: String = kAXChildrenAttribute, limit: Int = 32) throws -> [AXUIElement] {
+private func children(_ element: AXUIElement, _ name: String = kAXChildrenAttribute, limit: Int = 32, required: Bool = false) throws -> [AXUIElement] {
     try prepare(element)
     var values: CFArray?
     guard AXUIElementCopyAttributeValues(element, name as CFString, 0, limit + 1, &values) == .success,
-          let values else { return [] }
+          let values else {
+        if required { throw ProbeFailure.unavailable }
+        return []
+    }
     if CFArrayGetCount(values) > limit { throw ProbeFailure.budget }
     var result: [AXUIElement] = []
     for index in 0..<CFArrayGetCount(values) {
@@ -105,11 +123,33 @@ private func walk(_ root: AXUIElement, visitor: (AXUIElement) throws -> Bool) th
     return nil
 }
 
-private func aboutTexts(_ window: AXUIElement) throws -> (Set<String>, Set<String>) {
+private func bounds(_ element: AXUIElement) throws -> CGRect? {
+    guard let p = try attribute(element, kAXPositionAttribute), CFGetTypeID(p) == AXValueGetTypeID(),
+          let s = try attribute(element, kAXSizeAttribute), CFGetTypeID(s) == AXValueGetTypeID() else { return nil }
+    var point = CGPoint.zero
+    var size = CGSize.zero
+    guard AXValueGetValue(unsafeBitCast(p, to: AXValue.self), .cgPoint, &point),
+          AXValueGetValue(unsafeBitCast(s, to: AXValue.self), .cgSize, &size),
+          point.x.isFinite, point.y.isFinite, size.width.isFinite, size.height.isFinite,
+          size.width > 0, size.height > 0 else { return nil }
+    return CGRect(origin: point, size: size)
+}
+
+private func visibleOwnedText(_ node: AXUIElement, window: AXUIElement, app: AXUIElement) throws -> Bool {
+    guard let text = try bounds(node), let panel = try bounds(window),
+          try boolean(node, "AXHidden") != true else { return false }
+    var hit: AXUIElement?
+    guard AXUIElementCopyElementAtPosition(app, Float(text.midX), Float(text.midY), &hit) == .success,
+          let hit else { return false }
+    try prepare(hit)
+    return aboutTextIsVisible(inWindow: panel.contains(text), ownedHit: CFEqual(hit, node))
+}
+
+private func aboutTexts(_ window: AXUIElement, app: AXUIElement) throws -> (Set<String>, Set<String>) {
     var names = Set<String>()
     var versions = Set<String>()
     _ = try walk(window) { node in
-        if try string(node, kAXRoleAttribute) == kAXStaticTextRole {
+        if try string(node, kAXRoleAttribute) == kAXStaticTextRole && visibleOwnedText(node, window: window, app: app) {
             let candidates = [try string(node, kAXValueAttribute), try string(node, kAXTitleAttribute)]
             for candidate in candidates.compactMap({ $0 }) where candidate.utf8.count <= 128 {
                 let text = candidate.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
@@ -141,7 +181,7 @@ private func main() {
     guard environment["GITHUB_ACTIONS"] == "true", environment["RUNNER_ENVIRONMENT"] == "github-hosted",
           environment["RUNNER_OS"] == "macOS" else { emit("ERROR_HOST_GUARD") }
     let arguments = Array(CommandLine.arguments.dropFirst())
-    guard arguments.count == 6, arguments[0] == "--pid", arguments[2] == "--executable", arguments[4] == "--sha256",
+    guard arguments.count == 8, arguments[6] == "--version", Set(["4.0.0","5.0.0","6.0.0"]).contains(arguments[7]), arguments[0] == "--pid", arguments[2] == "--executable", arguments[4] == "--sha256",
           let pid = Int32(arguments[1]), pid > 0,
           arguments[5].range(of: #"^[0-9a-f]{64}$"#, options: .regularExpression) != nil else { emit("ERROR_ARGUMENTS") }
     targetPID = pid
@@ -156,7 +196,6 @@ private func main() {
     do {
         let app = AXUIElementCreateApplication(pid)
         try prepare(app)
-        let before = try children(app, kAXWindowsAttribute, limit: 16)
         guard let menuBar = try elementAttribute(app, kAXMenuBarAttribute) else { emit("GAP_APP_AX_UNAVAILABLE") }
         let menus = try children(menuBar, limit: 16)
         var appMenu: AXUIElement?
@@ -179,6 +218,8 @@ private func main() {
         }), let about = populatedAbout else { emit("GAP_ABOUT_MENU_NOT_FOUND") }
         guard processPath(pid) == executable else { emit("ERROR_PID_PATH_MISMATCH") }
         try prepare(about)
+        // Snapshot at the action boundary; a failed read is never evidence of zero prior dialogs.
+        let before = try children(app, kAXWindowsAttribute, limit: 16, required: true)
         guard AXUIElementPerformAction(about, kAXPressAction as CFString) == .success else { emit("GAP_ABOUT_MENU_ACTION_UNAVAILABLE") }
         menuInvoked = true
         var sawCandidate = false
@@ -188,17 +229,23 @@ private func main() {
             let windows = try children(app, kAXWindowsAttribute, limit: 16)
             let focused = try elementAttribute(app, kAXFocusedWindowAttribute)
             for window in windows {
-                let title = try string(window, kAXTitleAttribute) ?? ""
+                let title = try string(window, kAXTitleAttribute)
+                let role = try string(window, kAXRoleAttribute) ?? ""
+                let subrole = try string(window, kAXSubroleAttribute) ?? ""
                 let newWindow = !before.contains(where: { CFEqual($0, window) })
-                guard newWindow || title == "About BDOBB" || title == "About" else { continue }
-                guard try string(window, kAXRoleAttribute) == kAXWindowRole else { continue }
+                guard aboutWindowIdentity(title: title, role: role, subrole: subrole, newWindow: newWindow) else { continue }
                 sawCandidate = true
                 guard let focused, CFEqual(focused, window), try boolean(app, kAXFrontmostAttribute) == true,
                       try boolean(window, kAXMinimizedAttribute) != true,
                       try boolean(window, "AXHidden") != true else { continue }
                 sawFocused = true
-                let (names, versions) = try aboutTexts(window)
-                if names.count == 1 && versions.count == 1 {
+                let (names, versions) = try aboutTexts(window, app: app)
+                try prepare(window)
+                let focusedNow = try elementAttribute(app, kAXFocusedWindowAttribute)
+                if try aboutObservationAccepted(title: string(window, kAXTitleAttribute), role: string(window, kAXRoleAttribute) ?? "",
+                    subrole: string(window, kAXSubroleAttribute) ?? "", newWindow: newWindow, owned: true, focused: focusedNow.map({ CFEqual($0, window) }) ?? false,
+                    frontmost: boolean(app, kAXFrontmostAttribute) == true, hidden: boolean(window, "AXHidden") == true,
+                    minimized: boolean(window, kAXMinimizedAttribute) == true, invoked: menuInvoked, names: names, versions: versions, expectedVersion: arguments[7]) {
                     emit("AX_TEXT_OBSERVED", name: names.first, version: versions.first, focused: true)
                 }
                 if names.count > 1 || versions.count > 1 { emit("GAP_ABOUT_TEXT_AMBIGUOUS") }

@@ -8,7 +8,7 @@ on:
         required: true
         type: choice
         default: v6.0.0
-        options: [v6.0.0]
+        options: [v4.0.0, v5.0.0, v6.0.0]
       target:
         description: Native Mac architecture; retry only the failed target
         required: true
@@ -49,6 +49,9 @@ jobs:
         with:
           path: controller
           persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
       - id: pick
         env:
           SELECTED_TARGET: ${{ inputs.target }}
@@ -110,7 +113,12 @@ jobs:
           node-version: '22'
       - name: Activate exact pnpm before dependency cache restore
         run: |
-          corepack enable
+          mkdir -p "$RUNNER_TEMP/mac-pnpm-bin" "$RUNNER_TEMP/mac-corepack"
+          export COREPACK_HOME="$RUNNER_TEMP/mac-corepack"
+          corepack enable --install-directory "$RUNNER_TEMP/mac-pnpm-bin"
+          export PATH="$RUNNER_TEMP/mac-pnpm-bin:$PATH"
+          echo "$RUNNER_TEMP/mac-pnpm-bin" >> "$GITHUB_PATH"
+          echo "COREPACK_HOME=$COREPACK_HOME" >> "$GITHUB_ENV"
           corepack prepare pnpm@10.34.4 --activate
           test "$(pnpm --version)" = '10.34.4'
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7; public pnpm store only
@@ -130,12 +138,15 @@ jobs:
           rustup target add wasm32-unknown-unknown --toolchain 1.98.1
           cargo +1.98.1 install wasm-bindgen-cli --version 0.2.128 --locked --root "$RUNNER_TEMP/mac-wasm-tools"
           echo "PIVOT_WASM_BINDGEN=$RUNNER_TEMP/mac-wasm-tools/bin/wasm-bindgen" >> "$GITHUB_ENV"
-          corepack enable
           corepack prepare pnpm@10.34.4 --activate
           test "$(pnpm --version)" = '10.34.4'
           cargo +1.99.1 install tauri-dumper --version 0.2.2 --locked --root "$RUNNER_TEMP/mac-tools"
-          python ../auditor/security/install.py --dir "$RUNNER_TEMP/mac-tools/bin"
-          python -m pip install --require-hashes -r ../auditor/security/requirements.txt
+          python -m venv "$RUNNER_TEMP/mac-scanner"
+          py="$RUNNER_TEMP/mac-scanner/bin/python"
+          "$py" -m pip install --index-url https://pypi.org/simple --require-hashes -r ../auditor/security/requirements.txt
+          "$py" ../auditor/security/install.py --dir "$RUNNER_TEMP/mac-tools/bin"
+          "$py" -I -c 'import PIL,sys;assert sys.version_info[:2]==(3,12) and PIL.__version__=="13.0.0"'
+          echo "SCANNER_PY=$py" >> "$GITHUB_ENV"
           echo "$RUNNER_TEMP/mac-tools/bin" >> "$GITHUB_PATH"
           brew install tesseract poppler sevenzip
       - name: Verify pinned product, offer and all eight blank defaults
@@ -180,22 +191,51 @@ jobs:
       - name: Run canonical controls and source/history/controller gates
         run: |
           set -euo pipefail
-          python ../auditor/security/sync.py --check
-          python -m unittest discover -s ../auditor/security -p test_gate.py -v
-          python -m unittest discover -s scripts -p test_public_release.py -v
-          python -m unittest discover -s ../controller/.github/scripts -p test_v4_mac_qualification.py -v
-          python -m unittest discover -s ../controller/.github/scripts -p test_mac_about_probe.py -v
-          python -m unittest discover -s ../controller/.github/scripts -p test_encrypt_qa_candidates.py -v
-          python ../auditor/security/gate.py --repo . tree
-          python ../auditor/security/gate.py --repo . --exceptions security/privacy-history-exceptions.json history --revision HEAD
-          python ../auditor/security/gate.py --repo . artifacts ../controller/.github/workflows/v4-table-amd64-qualification.yml ../controller/.github/scripts/mac-release-binding.json ../controller/.github/scripts/v4_mac_qualification.py ../controller/.github/scripts/test_v4_mac_qualification.py ../controller/.github/scripts/mac_about_probe.py ../controller/.github/scripts/mac_about_probe.swift ../controller/.github/scripts/test_mac_about_probe.py ../controller/.github/scripts/encrypt_qa_candidates.py ../controller/.github/scripts/test_encrypt_qa_candidates.py
+          "$SCANNER_PY" ../auditor/security/sync.py --check
+          "$SCANNER_PY" -B -m unittest discover -s ../auditor/security -p test_gate.py -v
+          "$SCANNER_PY" -B -m unittest discover -s scripts -p test_public_release.py -v
+          "$SCANNER_PY" -B -m unittest discover -s ../controller/.github/scripts -p 'test_*.py' -v
+          "$SCANNER_PY" ../auditor/security/gate.py --repo . tree
+          # BEGIN EXACT VERSION HISTORY POLICY
+          case "$BDOBB_RELEASE_VERSION" in
+            v4.0.0|v5.0.0) history_exceptions=security/privacy-exceptions.json ;;
+            v6.0.0) history_exceptions=security/privacy-history-exceptions.json ;;
+            *) exit 2 ;;
+          esac
+          test -f "$history_exceptions" && test ! -L "$history_exceptions"
+          git cat-file -e "HEAD:$history_exceptions"
+          # END EXACT VERSION HISTORY POLICY
+          "$SCANNER_PY" ../auditor/security/gate.py --repo . --exceptions "$history_exceptions" history --revision HEAD
+          "$SCANNER_PY" ../auditor/security/gate.py --repo . artifacts ../controller/.github/workflows/v4-table-amd64-qualification.yml ../controller/.github/scripts/mac-release-binding.json ../controller/.github/scripts/v4_mac_qualification.py ../controller/.github/scripts/test_v4_mac_qualification.py ../controller/.github/scripts/mac_about_probe.py ../controller/.github/scripts/mac_about_probe.swift ../controller/.github/scripts/test_mac_about_probe.py ../controller/.github/scripts/encrypt_qa_candidates.py ../controller/.github/scripts/test_encrypt_qa_candidates.py ../controller/.github/scripts/owned_process.py ../controller/.github/scripts/test_prior_mac_controls.py
       - name: Install locked dependencies and build current pinned WASM
         run: |
           pnpm install --frozen-lockfile
-          node --test scripts/source-offer.check.mjs
           pnpm pivot:build
           pnpm pivot:verify
-          pnpm test:run --exclude "**/private/**" --exclude "**/test-results/**" --exclude "**/playwright-report/**"
+      - name: Exact source test counts, named regressions and named opt-in skips
+        id: source_tests
+        run: '"$SCANNER_PY" -B ../controller/.github/scripts/v4_mac_qualification.py tests --target "$BDOBB_TARGET"'
+      - name: Gate bounded source-test refusal diagnostics
+        id: test_refusal_gate
+        if: failure() && steps.source_tests.outcome == 'failure'
+        run: |
+          "$SCANNER_PY" -B - <<'PYDIAG'
+          import json,pathlib,sys
+          sys.path.insert(0,'../controller/.github/scripts')
+          from v4_mac_qualification import validate_test_refusal,TEST_REFUSAL_LIMIT
+          path=pathlib.Path('qualification-evidence/test-refusal.json')
+          if not path.is_file() or path.is_symlink() or not 0<path.stat().st_size<=TEST_REFUSAL_LIMIT:raise RuntimeError('Bounded diagnostics refused')
+          validate_test_refusal(json.loads(path.read_text()))
+          PYDIAG
+          "$SCANNER_PY" ../auditor/security/gate.py --repo . artifacts qualification-evidence/test-refusal.json
+      - name: Retain only gated bounded source-test refusal diagnostics
+        if: failure() && steps.test_refusal_gate.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: test-refusal-${{ inputs.version }}-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: app/qualification-evidence/test-refusal.json
+          if-no-files-found: error
+          retention-days: 1
       - name: Build only pinned Mac installers
         id: native_build
         env:
@@ -209,14 +249,14 @@ jobs:
           pnpm tauri build --ci --target "$BDOBB_RUST_TARGET" -- --locked
       - name: Stage four original names and scan each exact package
         id: package_scan
-        run: python ../controller/.github/scripts/v4_mac_qualification.py collect --target "$BDOBB_TARGET" --auditor ../auditor
+        run: '"$SCANNER_PY" -B ../controller/.github/scripts/v4_mac_qualification.py collect --target "$BDOBB_TARGET" --auditor ../auditor'
       - name: Install private app copies and qualify native fresh profiles and About
         id: native_qualification
-        run: python ../controller/.github/scripts/v4_mac_qualification.py qualify --target "$BDOBB_TARGET" --auditor ../auditor
+        run: '"$SCANNER_PY" -B ../controller/.github/scripts/v4_mac_qualification.py qualify --target "$BDOBB_TARGET" --auditor ../auditor'
       - name: Gate checksums and truthful qualification evidence
         id: evidence_scan
         run: |
-          python ../auditor/security/gate.py --repo . artifacts release-stage/scan.json release-stage/qualification.json release-stage/SHA256SUMS qualification-evidence
+          "$SCANNER_PY" ../auditor/security/gate.py --repo . artifacts release-stage/scan.json release-stage/qualification.json release-stage/SHA256SUMS qualification-evidence
           git diff --exit-code
       - name: Upload scanned Mac installers and receipts only
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -237,13 +277,13 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$PACKAGE_OUTCOME" = failure ]; then stage=package-scan; elif [ "$NATIVE_OUTCOME" = failure ]; then stage=native-qualification; else stage=evidence-scan; fi
-          python controller/.github/scripts/encrypt_qa_candidates.py --target "$BDOBB_TARGET" --app app --auditor auditor --controller controller             --recipient "$BDOBB_QA_RECIPIENT"             --outdir "$RUNNER_TEMP/${{ inputs.version }}-encrypted-qa-$BDOBB_TARGET" --failure-stage "$stage" --qualification-outcome failure
+          "$SCANNER_PY" -B controller/.github/scripts/encrypt_qa_candidates.py --target "$BDOBB_TARGET" --app app --auditor auditor --controller controller             --recipient "$BDOBB_QA_RECIPIENT"             --outdir "$RUNNER_TEMP/${{ inputs.version }}-encrypted-qa-$BDOBB_TARGET" --failure-stage "$stage" --qualification-outcome failure
       - name: Gate ciphertext and safe retention metadata only
         id: encrypted_outbound
         if: failure() && steps.encrypted_qa.outcome == 'success'
         working-directory: ${{ github.workspace }}
         run: |
-          python auditor/security/gate.py --repo app artifacts "$RUNNER_TEMP/${{ inputs.version }}-encrypted-qa-$BDOBB_TARGET/retention.json" "$RUNNER_TEMP/${{ inputs.version }}-encrypted-qa-$BDOBB_TARGET/qa-blocked-${{ inputs.version }}-$BDOBB_TARGET.tar.age"
+          "$SCANNER_PY" auditor/security/gate.py --repo app artifacts "$RUNNER_TEMP/${{ inputs.version }}-encrypted-qa-$BDOBB_TARGET/retention.json" "$RUNNER_TEMP/${{ inputs.version }}-encrypted-qa-$BDOBB_TARGET/qa-blocked-${{ inputs.version }}-$BDOBB_TARGET.tar.age"
       - name: Retain encrypted failed QA for one day
         if: failure() && steps.encrypted_qa.outcome == 'success' && steps.encrypted_outbound.outcome == 'success'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
