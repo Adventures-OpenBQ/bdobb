@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v6.0.0",
-  "baseCommit": "e7b9e6426c87f4fb4dd147e86523dfc7a44cbf0c",
-  "sourceId": "e77f44c11bac32b1a5b227e51b57abcd4195bbfc4245b841e523eeb62251ff4a",
+  "baseCommit": "e132d4cbbcb01c403e2180215c17237cc2461854",
+  "sourceId": "921a838d3da9a4d61c0532039e7e5adfb89796a5e03d6c030e8860cdb503e375",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -20244,7 +20244,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "6ae28942fba93a3160a794103516cc5c8ffc61fb47f0b9d775db931f867c003c"
+      "sha256": "f22659671cc481a5cd0d3b86b79f0f193150fd5ebddffa642cfe3fbec2b07a20"
     },
     {
       "path": "source_bundle.py",
@@ -23726,6 +23726,13 @@
       "sha256": "058e19205fbba69a54d3f628a6648db65796f15aad2409db2c7603bd7ccc8190"
     },
     {
+      "path": "src/hooks/useTableResult.sourceRefresh.test.tsx",
+      "type": "file",
+      "mode": 420,
+      "size": 3325,
+      "sha256": "e551e01186185629456420b0caed9872412865aab5bf92cfb3cfe17cfff4c70d"
+    },
+    {
       "path": "src/hooks/useTableResult.test.tsx",
       "type": "file",
       "mode": 420,
@@ -26634,8 +26641,8 @@
       "path": "src/lib/tableExecution/workerClient.ts",
       "type": "file",
       "mode": 420,
-      "size": 15841,
-      "sha256": "dec984fe5e9022968d82e00585a75786e295ebbbee2da6143de9e7c5e64c9686"
+      "size": 15844,
+      "sha256": "514bc5a7ca333e2ba1450b9dcb228d1371b48e499f7932d812da83b60402e702"
     },
     {
       "path": "src/lib/tableExecution/workerGraph.test.ts",
