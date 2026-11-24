@@ -1,6 +1,7 @@
 # Corresponding Source for the v3.0.0 AGPL edition
 
 Base repository: Adventures-OpenBQ/bdobb
+Base commit: ec1a6c01e817245106f4b2bc6dfd0c7c419f744c
 Exact base revision and source identity: source-offer.json and SOURCE-MANIFEST.json.
 Application licensing: AGPL-3.0-only, with retained third-party and earlier Apache grants.
 
