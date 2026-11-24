@@ -52,6 +52,17 @@ package distributions and their notices; application/local path-package source
 remains in this application archive. This does not claim that every published
 JavaScript distribution contains upstream preferred source or bundle OS SDKs.
 
+The native TLS patch updates also require the supplemental archive
+`dependency-pack-native-tls-1121714ec7b0c0b0e2ce.tar.gz`.
+SHA-256: `877fb7e2f9b54c6c879f3a9c2e6c756ae07d5bac53c435a8b9d308a8a06f93c6`.
+Its prepared public URL is
+https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-native-tls-1121714ec7b0/dependency-pack-native-tls-1121714ec7b0c0b0e2ce.tar.gz
+The link is a prepared publication target until the archive is uploaded.
+NATIVE-TLS-DEPENDENCY-SOURCES.json identifies this separate archive;
+NATIVE-TLS-DEPENDENCY-COVERAGE.json binds its four complete upstream Cargo
+distributions and licence evidence to this edition's native lockfile.
+Use both dependency archives. The shared archive remains unchanged.
+
 ## Build the application
 
 Use the tool versions in package.json, the Cargo manifests and (where present)
