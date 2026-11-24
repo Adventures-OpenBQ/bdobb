@@ -150,7 +150,7 @@ export function createWorkerExecutor(widgetId: string, factory: () => Worker = (
     if (signal.aborted) throw aborted();
     if (disposed) throw new Error('Table executor disposed');
     const snapshot = structuredClone(next);
-    const token = ++operation; applying = false; reset(aborted());
+    const token = ++operation; applying = false; reset(superseded());
     acquiring = token;
     try {
       await ensure(signal, false, snapshot);
