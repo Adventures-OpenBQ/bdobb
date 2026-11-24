@@ -1,6 +1,7 @@
 # Source for the v5.0.0 AGPL edition
 
 Base repository: Adventures-OpenBQ/bdobb
+Base commit: a399d54353ab0c41eb5c270779a9e2035af37cd4
 Release assembly checkpoint: 8135864932aef969d6754be8ba8757711574d0d9
 Paired backend: c5ef27079b8b382346094886debaea4948fbab62
 Application licensing: AGPL-3.0-only, with retained third-party and earlier Apache grants.
