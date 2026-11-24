@@ -27,8 +27,10 @@ Also download the published supplement `dependency-supplement-8ee464578a28d424dd
 SHA-256: `f91d0b7e758f23883cf63777288ba488baca4558adf2d2ede23c2061465f3831`.
 URL: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-8ee464578a28/dependency-supplement-8ee464578a28d424dd26.tar.gz
 
-Both archives are required. DEPENDENCY-SOURCES.json identifies their immutable
-archive and manifest hashes. DEPENDENCY-COVERAGE.json records this V5 assembly's
+The original base archive and the current-lock supplement are required.
+DEPENDENCY-SOURCES.json, including additionalPacks, is their authoritative exact
+archive and manifest inventory. Also obtain the native TLS source supplement
+identified below by NATIVE-TLS-DEPENDENCY-SOURCES.json. DEPENDENCY-COVERAGE.json records this V5 assembly's
 exact tracked lockfiles and package identities, including development, optional
 and platform-specific entries. The release walk verifies selected original npm
 .tgz and Cargo .crate bytes against both archive hashes and lockfile integrities.
@@ -40,6 +42,18 @@ The base pack's source-member and license-evidence reports retain their scope;
 this is not a blanket preferred-source claim for every generated JS asset.
 Recovered evidence and standard terms are reproduced in
 SUPPLEMENTAL_THIRD_PARTY_NOTICES.md and LICENSES/dependency-evidence/.
+
+## Native TLS dependency source supplement (required)
+
+The native TLS patch updates also require the published supplemental archive
+`dependency-pack-native-tls-1121714ec7b0c0b0e2ce.tar.gz`.
+SHA-256: `877fb7e2f9b54c6c879f3a9c2e6c756ae07d5bac53c435a8b9d308a8a06f93c6`.
+Public archive: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-native-tls-1121714ec7b0/dependency-pack-native-tls-1121714ec7b0c0b0e2ce.tar.gz
+NATIVE-TLS-DEPENDENCY-SOURCES.json identifies this separate archive;
+NATIVE-TLS-DEPENDENCY-COVERAGE.json binds its four complete upstream Cargo
+source distributions and licence evidence to this edition's native lockfile.
+Obtain the original base archive and both supplements. Their source access does
+not establish an offline build on every OS or bundle executable platform SDKs.
 
 ## Build the application
 
