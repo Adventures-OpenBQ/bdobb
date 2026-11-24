@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v7.0.0",
-  "baseCommit": "d92285c66d4da9968342e14032af138ce86ddb69",
-  "sourceId": "37446e1f8467fcff049e4b9fed439aef53b84c03659302a619615cc152c2dbcc",
+  "baseCommit": "74fac28dfe7fa7977feb1f365f87767b5554449f",
+  "sourceId": "228d340331802a5532c2546d2a6d1c17d4b180d96fa294fd18892d5e4ea5d5a9",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -21097,8 +21097,8 @@
       "path": "security/privacy-exceptions.json",
       "type": "file",
       "mode": 420,
-      "size": 11560,
-      "sha256": "5e2db432972455f46f5cb424d5d1c133c716e8db671826c012bbe2aa79d579dc"
+      "size": 12782,
+      "sha256": "04c2503e38dfe0883e2fda7c865d062e69b604cdef118c7b697d6016d09674a4"
     },
     {
       "path": "security/privacy-history-exceptions.json",
@@ -21238,7 +21238,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "d6969899f701680bbc783eb07240fc01fccd5188543cfdb667448b99fb3c7c5e"
+      "sha256": "4468a68cc9a5e5bd9c937df453fccd19f140f593773945fcbba155c23df14bc4"
     },
     {
       "path": "source_bundle.py",
@@ -24790,6 +24790,13 @@
       "sha256": "058e19205fbba69a54d3f628a6648db65796f15aad2409db2c7603bd7ccc8190"
     },
     {
+      "path": "src/hooks/useTableResult.sourceRefresh.test.tsx",
+      "type": "file",
+      "mode": 420,
+      "size": 3325,
+      "sha256": "e551e01186185629456420b0caed9872412865aab5bf92cfb3cfe17cfff4c70d"
+    },
+    {
       "path": "src/hooks/useTableResult.test.tsx",
       "type": "file",
       "mode": 420,
@@ -27740,8 +27747,8 @@
       "path": "src/lib/tableExecution/workerClient.ts",
       "type": "file",
       "mode": 420,
-      "size": 15841,
-      "sha256": "dec984fe5e9022968d82e00585a75786e295ebbbee2da6143de9e7c5e64c9686"
+      "size": 15850,
+      "sha256": "aa60a784e30dc7646cd6a062744f8e5abd528d99f5cf21cedd5c855bc9066ccc"
     },
     {
       "path": "src/lib/tableExecution/workerGraph.test.ts",
