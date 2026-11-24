@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v8.0.0",
-  "baseCommit": "d31b78109a2e3d8729f91472f0df89d5c0641f46",
-  "sourceId": "473cf5829ae687c6b1804f772f5b6fdf5458c6764d1d4d1358507909c0d9556d",
+  "baseCommit": "3e157ae2aafcc74bcb1c0dfbc931daf70f1a648b",
+  "sourceId": "cfe57eaf2945488e08d2ac3164f2c81371ca6e1c8858925ffd0b7815bb7da722",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -3594,6 +3594,20 @@
       "sha256": "f7e0b1e2b9882fc1ffaa9a46a8b2c48694340780a2579a3a48b8e9f8277f9f1a"
     },
     {
+      "path": "NATIVE-TLS-DEPENDENCY-COVERAGE.json",
+      "type": "file",
+      "mode": 420,
+      "size": 2314,
+      "sha256": "8da4a2f6caab814ccaf54ca798db3a7bc6ae87ad71d4484cbd0b5cde0f2548d6"
+    },
+    {
+      "path": "NATIVE-TLS-DEPENDENCY-SOURCES.json",
+      "type": "file",
+      "mode": 420,
+      "size": 433,
+      "sha256": "b2575f8ed4d23a7102c7156ac25f63000581cba253f37b60f8343c8958eba707"
+    },
+    {
       "path": "NOTICE",
       "type": "file",
       "mode": 420,
@@ -3611,8 +3625,8 @@
       "path": "SOURCE_README.md",
       "type": "file",
       "mode": 420,
-      "size": 4261,
-      "sha256": "46c8d71597411c0a67d79908e4766e8bfea73476b9cff26db9da29a355da072c"
+      "size": 5004,
+      "sha256": "46efc5ec96e2f1d6047e38278848c8978e8c7c032d79135739720cc73febd526"
     },
     {
       "path": "SUPPLEMENTAL_THIRD_PARTY_NOTICES.md",
@@ -3625,8 +3639,15 @@
       "path": "THIRD_PARTY_NOTICES.md",
       "type": "file",
       "mode": 420,
-      "size": 440298,
-      "sha256": "1f9054fed6b307257c2b61adbd49082b325f539680d55c9186681cf355a62915"
+      "size": 440300,
+      "sha256": "0d520bc7768cc5936556c4fb18bf442ef1ddeccd6d0a8fb404911e1bff6162be"
+    },
+    {
+      "path": "__pycache__/source_bundle.cpython-315.pyc",
+      "type": "file",
+      "mode": 420,
+      "size": 11111,
+      "sha256": "86fe67a290ebdd13be9cbd4739434e4c80da4a4a5769b41950324c13ba33374b"
     },
     {
       "path": "crates/pivot-core/Cargo.lock",
@@ -22141,7 +22162,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "25034c88403a63e98f38a6f637b04213e4995a43caa98405e086dc6d16362529"
+      "sha256": "bee1b8e6306bf935afd5e73c94d15508f9c4aff2054ee42e765c9c049d02df4e"
     },
     {
       "path": "source_bundle.py",
@@ -30953,8 +30974,8 @@
       "path": "src-tauri/Cargo.lock",
       "type": "file",
       "mode": 420,
-      "size": 151718,
-      "sha256": "359d0065a74d1d3819152810981c042364502f82648c0e5bd3043c924be0335b"
+      "size": 151719,
+      "sha256": "cd5b55fb1145c8c31ed8377a5f5cb9b67b76e51fd554cfedb1c0b5460090b640"
     },
     {
       "path": "src-tauri/Cargo.toml",

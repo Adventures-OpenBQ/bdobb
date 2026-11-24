@@ -1,7 +1,7 @@
 # Corresponding source for v8.0.0
 
 Base repository: Adventures-OpenBQ/bdobb
-Base commit: d31b78109a2e3d8729f91472f0df89d5c0641f46
+Base commit: 3e157ae2aafcc74bcb1c0dfbc931daf70f1a648b
 Application licensing: AGPL-3.0-only, with retained third-party and earlier Apache grants.
 
 This source tree includes the AGPL edition, revision-specific Help
