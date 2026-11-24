@@ -3,7 +3,7 @@
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v8.0.0",
   "baseCommit": "3e157ae2aafcc74bcb1c0dfbc931daf70f1a648b",
-  "sourceId": "cfe57eaf2945488e08d2ac3164f2c81371ca6e1c8858925ffd0b7815bb7da722",
+  "sourceId": "61a10d64969f8baa23b19fb7e92f1b4390d75b8f609dd6aacf5d41876377eb86",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -3641,13 +3641,6 @@
       "mode": 420,
       "size": 440300,
       "sha256": "0d520bc7768cc5936556c4fb18bf442ef1ddeccd6d0a8fb404911e1bff6162be"
-    },
-    {
-      "path": "__pycache__/source_bundle.cpython-315.pyc",
-      "type": "file",
-      "mode": 420,
-      "size": 11111,
-      "sha256": "86fe67a290ebdd13be9cbd4739434e4c80da4a4a5769b41950324c13ba33374b"
     },
     {
       "path": "crates/pivot-core/Cargo.lock",
@@ -22162,7 +22155,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "bee1b8e6306bf935afd5e73c94d15508f9c4aff2054ee42e765c9c049d02df4e"
+      "sha256": "8eee05546c9c580ddc945fc79e8907ca6ac5e9be7ac9e4ce9f008551fa7be90b"
     },
     {
       "path": "source_bundle.py",
