@@ -109,11 +109,22 @@ def verify_empty_profile(data):
     if not settings.is_file():
         raise ValueError("Fresh runtime settings were not persisted")
     config = json.loads(settings.read_text())
-    if not isinstance(config, dict) or any(config.get(key) != empty for key, empty in [("ritaUrl", ""), ("mcpServers", []), ("shareTargets", [])]):
-        raise ValueError("Fresh runtime contains Rita, MCP or share configuration")
+    if not isinstance(config, dict) or RELEASE_VERSION not in SUPPORTED_RELEASES:
+        raise ValueError("Fresh runtime settings or version binding invalid")
+    service_fields = {}
+    for key, empty in [("ritaUrl", ""), ("mcpServers", []), ("shareTargets", [])]:
+        if key not in config:
+            if RELEASE_VERSION not in ["v4.0.0", "v5.0.0"]:
+                raise ValueError("Fresh runtime service setting missing")
+            service_fields[key] = "ABSENT_NOT_INTRODUCED"
+        elif config[key] != empty:
+            raise ValueError("Fresh runtime contains Rita, MCP or share configuration")
+        else:
+            service_fields[key] = "PRESENT_EMPTY"
     workspace = data / "workspace.json"
     if workspace.exists() and json.loads(workspace.read_text()).get("connections") != []:
         raise ValueError("Fresh runtime contains Workspace connections")
+    return service_fields
 
 
 def locate_executable(unpacked, package, work):
@@ -209,9 +220,12 @@ def native_runtime(executable, package, work, evidence, expected_arch):
             receipt["pid"] = process.pid
             verify_empty_profile(data)
             receipt["backends"] = []
-            receipt["ritaUrl"] = ""
-            receipt["mcpServers"] = []
-            receipt["shareTargets"] = []
+            receipt["service_configuration_fields"] = verify_empty_profile(data)
+            # Pre-V6 versions do not persist these future service settings.
+            # Only record a value when it was actually present and verified empty.
+            for key, empty in [("ritaUrl", ""), ("mcpServers", []), ("shareTargets", [])]:
+                if receipt["service_configuration_fields"][key] == "PRESENT_EMPTY":
+                    receipt[key] = empty
             if system == "Darwin":
                 run(["sample", process.pid, "1", "1", "-file", evidence / "native-process.txt"], capture_output=True)
                 sample = (evidence / "native-process.txt").read_text()

@@ -163,6 +163,35 @@ class QualificationTest(unittest.TestCase):
                 root=Path(d);(root/'backends.json').write_text('[]');settings={'ritaUrl':'','mcpServers':[],'shareTargets':[]};settings[key]=value;(root/'settings.json').write_text(json.dumps(settings))
                 with self.assertRaises(ValueError):q.verify_empty_profile(root)
 
+    def test_missing_service_fields_match_actual_pre_v6_settings_schema(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);(root/'backends.json').write_text('[]');(root/'settings.json').write_text(json.dumps({'theme':'system','fontSize':'medium','widgetGap':10}))
+            if self.RELEASE=='v6.0.0':
+                with self.assertRaises(ValueError):q.verify_empty_profile(root)
+            else:
+                try:proof=q.verify_empty_profile(root)
+                except ValueError:proof=None
+                self.assertIsNotNone(proof,'V4/V5 do not contain V6 service settings')
+                self.assertEqual(proof,{key:'ABSENT_NOT_INTRODUCED' for key in ['ritaUrl','mcpServers','shareTargets']})
+
+    def test_nonempty_future_field_refuses_even_with_other_service_fields_absent(self):
+        for key,value in [('ritaUrl','https://rita.example'),('mcpServers',[{'url':'https://mcp.example'}]),('shareTargets',[{'name':'seed'}])]:
+            with self.subTest(key=key),tempfile.TemporaryDirectory() as d:
+                root=Path(d);(root/'backends.json').write_text('[]');(root/'settings.json').write_text(json.dumps({'theme':'system',key:value}))
+                with self.assertRaises(ValueError):q.verify_empty_profile(root)
+
+    def test_empty_service_receipt_is_observed_not_invented(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);(root/'backends.json').write_text('[]');(root/'settings.json').write_text(json.dumps({'ritaUrl':'','mcpServers':[],'shareTargets':[]}))
+            self.assertEqual(q.verify_empty_profile(root),{key:'PRESENT_EMPTY' for key in ['ritaUrl','mcpServers','shareTargets']})
+
+    def test_v6_each_missing_service_field_refuses(self):
+        if self.RELEASE!='v6.0.0':return
+        for key in ['ritaUrl','mcpServers','shareTargets']:
+            with self.subTest(key=key),tempfile.TemporaryDirectory() as d:
+                root=Path(d);(root/'backends.json').write_text('[]');config={'ritaUrl':'','mcpServers':[],'shareTargets':[]};del config[key];(root/'settings.json').write_text(json.dumps(config))
+                with self.assertRaises(ValueError):q.verify_empty_profile(root)
+
     def test_changed_checksum_blocks_aggregation(self):
             with tempfile.TemporaryDirectory() as d:
                 root = Path(d)
