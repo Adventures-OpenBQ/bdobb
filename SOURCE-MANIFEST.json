@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v4.0.0",
-  "baseCommit": "d26527db2b47eed3b1beab0f927555420635f8f0",
-  "sourceId": "d79a0477b667cfe7bf74949bfeefebb3c1821621cfcacf5a618d30bee32a65e1",
+  "baseCommit": "c9e2badf65af2da3d96afd0b7badc7f8bf624383",
+  "sourceId": "6ef13d9fe2c5dfc0a25ee423b927eb749a4799487e08e1694c685a665a8b2633",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -3573,6 +3573,20 @@
       "sha256": "f7e0b1e2b9882fc1ffaa9a46a8b2c48694340780a2579a3a48b8e9f8277f9f1a"
     },
     {
+      "path": "NATIVE-TLS-DEPENDENCY-COVERAGE.json",
+      "type": "file",
+      "mode": 420,
+      "size": 2321,
+      "sha256": "ac8088434a3f2a7b0665c012f5dd7c0f2727bf927a6e2899dd911754ae66546c"
+    },
+    {
+      "path": "NATIVE-TLS-DEPENDENCY-SOURCES.json",
+      "type": "file",
+      "mode": 420,
+      "size": 433,
+      "sha256": "b2575f8ed4d23a7102c7156ac25f63000581cba253f37b60f8343c8958eba707"
+    },
+    {
       "path": "NOTICE",
       "type": "file",
       "mode": 420,
@@ -3590,8 +3604,8 @@
       "path": "SOURCE_README.md",
       "type": "file",
       "mode": 420,
-      "size": 4246,
-      "sha256": "679adf566f8e2ca8b5ab7c8bd611c817a32c8e0f1f2164f2e4de785823877b5d"
+      "size": 5590,
+      "sha256": "9ddb7bf4c32e47fa9210ee8fa8263abb3426e1dc6658e20fc403acfe424753bb"
     },
     {
       "path": "SUPPLEMENTAL_THIRD_PARTY_NOTICES.md",
@@ -3604,8 +3618,8 @@
       "path": "THIRD_PARTY_NOTICES.md",
       "type": "file",
       "mode": 420,
-      "size": 437336,
-      "sha256": "85eb5b547bc56c0199aa9ae63092f2ef05ab535a2db3b0c61485feb31e61cb06"
+      "size": 437338,
+      "sha256": "83154f252f9f18a7fb7cb4d3e7b91952e3139e02a59a470bb8e9301e222e850f"
     },
     {
       "path": "crates/pivot-core/Cargo.lock",
@@ -11599,7 +11613,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "09030d708559cdca462b9dfcfb4b30724ecedbe5de25bd00bce0b6eba8afc071"
+      "sha256": "d62ea221b7fc3b63a10667b2e28ab52db826ddc39a3f6932071cc0d53f33150f"
     },
     {
       "path": "source_bundle.py",
@@ -18255,8 +18269,8 @@
       "path": "src-tauri/Cargo.lock",
       "type": "file",
       "mode": 420,
-      "size": 151840,
-      "sha256": "72cc9978452b12b4a4a4ae9885213563dc2a4f6ca4937b1e0c05c3714e4301e7"
+      "size": 151841,
+      "sha256": "4d20658e98eb955be5ad297c9b100634d99305bf1336b692637d9e39e8d0472d"
     },
     {
       "path": "src-tauri/Cargo.toml",

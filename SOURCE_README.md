@@ -1,6 +1,7 @@
 # Source for the proposed v4.0.0 AGPL edition
 
 Base repository: Adventures-OpenBQ/bdobb
+Base commit: c9e2badf65af2da3d96afd0b7badc7f8bf624383
 Application licensing: AGPL-3.0-only, with retained third-party and earlier Apache grants.
 
 This source tree includes the proposed AGPL migration, revision-specific Help
