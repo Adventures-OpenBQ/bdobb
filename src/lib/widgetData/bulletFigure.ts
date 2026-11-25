@@ -28,7 +28,7 @@ function number(row: DatasetRow | undefined, id: string): number | null {
 export function buildBulletFigure(dataset: WidgetDataset, settings: LinkedChartSettings, theme: 'light' | 'dark', maxDecimals: number): LinkedFigureResult {
     const columns = new Map(dataset.columns.map(c => [c.id, c]));
     const category = settings.category;
-    if (!category || !columns.has(category))
+    if (category === undefined || !columns.has(category))
         return { ok: false, message: 'Choose an available category field.' };
     if (!settings.measures.length)
         return { ok: false, message: 'Choose chart fields: select one or more numeric measures.' };

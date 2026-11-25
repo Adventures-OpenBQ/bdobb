@@ -41,6 +41,16 @@ function refusal(s: Partial<LinkedChartSettings> = {}, d: Partial<WidgetDataset>
 const withRow = (id: string, patch: Record<string, unknown>) => ({ rows: rows.map(r => r.id === id ? { ...r, values: { ...r.values, ...patch } } : r) });
 
 describe('buildBulletFigure', () => {
+    it('uses an available empty raw category key to identify the selected quarter', () => {
+        const rawCategory = {
+            columns: [...dataset.columns, { id: '', label: 'Raw period' }],
+            rows: rows.map(row => ({ ...row, values: { ...row.values, '': row.values.fiscal_period } })),
+        };
+        expect(build({ category: '' }, rawCategory).traces.map(trace => trace.value))
+            .toEqual(build().traces.map(trace => trace.value));
+        expect(refusal({ category: undefined }, rawCategory).message).toBe('Choose an available category field.');
+    });
+
     it('one indicator per chosen metric, FQ3', () => {
         const { traces, annotations } = build();
         expect(traces).toHaveLength(2);
