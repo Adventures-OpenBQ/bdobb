@@ -463,3 +463,84 @@ it('draws closed-session history and redraws a newly selected symbol without pre
  expect(screen.getByRole('status')).toHaveTextContent('MSFT');
  expect(fetchWidgetData).not.toHaveBeenCalled();
 });
+
+it('reconnects under a changed header credential at the same URL', async()=>{
+ const first={...backend,authLocation:'header' as const,headerName:'Authorization',headerValue:'Bearer first'};
+ const {rerender}=render(<LiveChartRenderer widget={widget} backend={first} params={{symbol:'AAPL',interval:'1m'}}/>);
+ await waitFor(()=>expect(FakeSocket.all).toHaveLength(1));
+ await waitFor(()=>expect(handle.setBars).toHaveBeenCalled());
+ const old=socket();act(()=>old.open());
+ rerender(<LiveChartRenderer widget={widget} backend={{...first,headerValue:'Bearer second'}} params={{symbol:'AAPL',interval:'1m'}}/>);
+ await waitFor(()=>expect(fetchWidgetData).toHaveBeenCalledTimes(2));
+ expect(old.closed).toBe(true);
+ await waitFor(()=>expect(FakeSocket.all).toHaveLength(2));
+ expect(ticketedWsUrl).toHaveBeenCalledTimes(2);
+});
+it('a late refresh does not discard a newer accepted tick',async()=>{
+ const {rerender}=render(<LiveChartRenderer widget={widget} backend={backend} params={{symbol:'AAPL',interval:'1m'}}/>);
+ await waitFor(()=>expect(handle.setBars).toHaveBeenCalled());act(()=>socket().open());
+ let finish!:(x:unknown)=>void;vi.mocked(fetchWidgetData).mockImplementationOnce(()=>new Promise(r=>{finish=r;}));
+ rerender(<LiveChartRenderer widget={widget} backend={backend} params={{symbol:'AAPL',interval:'1m'}} refreshKey={1}/>);
+ await waitFor(()=>expect(fetchWidgetData).toHaveBeenCalledTimes(2));
+ act(()=>socket().emit({symbol:'AAPL',price:15,last_size:3,updated_ts:'2026-10-09T13:30:19+00:00'}));
+ expect(handle.updateBar).toHaveBeenLastCalledWith(expect.objectContaining({close:15}));
+ await act(async()=>finish(envelope));
+ expect(handle.setBars.mock.calls.at(-1)?.[0].at(-1)?.close).toBe(15);
+});
+it('normalizes a resolved datetime bound to protocol UTC',async()=>{
+ const streamed={...widget,chartStreamV1:true,wsEndpoint:'chart_stream_ws'};
+ render(<LiveChartRenderer widget={streamed} backend={backend} params={{symbol:'AAPL',interval:'1m',start:'2026-11-20T09:30:00-05:00'}}/>);
+ await waitFor(()=>expect(FakeSocket.all).toHaveLength(1));act(()=>socket().open());
+ expect(JSON.parse(socket().sent[0]).view.start).toBe('2026-11-20T14:30:00.000Z');
+});
+
+it.each(['refresh', 'reconnect'] as const)('keeps accepted candle and counter deltas through a delayed %s seed', async method => {
+  const {rerender} = render(<LiveChartRenderer widget={widget} backend={backend} params={{symbol: 'AAPL', interval: '1m'}} />);
+  await waitFor(() => expect(handle.setBars).toHaveBeenCalled());
+  act(() => socket().open());
+  let finish!: (value: unknown) => void;
+  vi.mocked(fetchWidgetData).mockImplementationOnce(() => new Promise(resolve => {finish = resolve;}));
+  if (method === 'refresh') rerender(<LiveChartRenderer widget={widget} backend={backend} params={{symbol: 'AAPL', interval: '1m'}} refreshKey={1} />);
+  else {
+    act(() => socket().close());
+    await waitFor(() => expect(FakeSocket.all).toHaveLength(2), {timeout: 2000});
+    act(() => socket().open());
+  }
+  await waitFor(() => expect(fetchWidgetData).toHaveBeenCalledTimes(2));
+  const tick = (price: number, volume: number) => act(() => socket().emit({symbol: 'AAPL', price, stream_volume: volume, updated_ts: '2026-10-09T13:30:19Z'}));
+  tick(14, 1000); tick(15, 1003);
+  await act(async () => finish(envelope));
+  expect(handle.setBars.mock.calls.at(-1)?.[0].at(-1)).toMatchObject({close: 15, volume: 103});
+  tick(16, 1005);
+  expect(handle.updateBar).toHaveBeenLastCalledWith(expect.objectContaining({close: 16, volume: 105}));
+});
+
+it('keeps a new candle drawn during a refresh even when the delayed seed is empty', async () => {
+  const {rerender} = render(<LiveChartRenderer widget={widget} backend={backend} params={{symbol: 'AAPL', interval: '1m'}} />);
+  await waitFor(() => expect(handle.setBars).toHaveBeenCalled()); act(() => socket().open());
+  let finish!: (value: unknown) => void;
+  vi.mocked(fetchWidgetData).mockImplementationOnce(() => new Promise(resolve => {finish = resolve;}));
+  rerender(<LiveChartRenderer widget={widget} backend={backend} params={{symbol: 'AAPL', interval: '1m'}} refreshKey={1} />);
+  await waitFor(() => expect(fetchWidgetData).toHaveBeenCalledTimes(2));
+  act(() => socket().emit({symbol: 'AAPL', price: 15, last_size: 3, updated_ts: '2026-10-09T13:31:02Z'}));
+  await act(async () => finish({...envelope, bars: []}));
+  expect(handle.setBars.mock.calls.at(-1)?.[0]).toEqual([{time: T0 + 60, open: 15, high: 15, low: 15, close: 15, volume: 3}]);
+});
+
+it.each([
+  [{start: '2026-11-20', end: '2026-11-21'}, '2026-11-20T00:00:00.000Z', '2026-11-21T00:00:00.000Z'],
+  [{start: '2026-11-20T09:30:00.123456789-05:00', end: '2026-11-20T15:00:00.000000001Z'}, '2026-11-20T14:30:00.123456789Z', '2026-11-20T15:00:00.000000001Z'],
+])('sends valid explicit UTC chart bounds for %j', async (bounds, start, end) => {
+  render(<LiveChartRenderer widget={{...widget, chartStreamV1: true, wsEndpoint: 'chart_stream_ws'}} backend={backend} params={{symbol: 'AAPL', interval: '1m', ...bounds} as Record<string, string>} />);
+  await waitFor(() => expect(FakeSocket.all).toHaveLength(1)); act(() => socket().open());
+  expect(JSON.parse(socket().sent[0]).view).toMatchObject({start, end});
+});
+
+it.each([
+  {start: '2026-02-30'}, {start: '2026-11-20T09:30:00'}, {start: 'invalid'},
+  {start: '2026-11-20T09:30:00Z', end: '2026-11-19'},
+])('refuses invalid chart bounds without reconnecting: %j', bounds => {
+  render(<LiveChartRenderer widget={{...widget, chartStreamV1: true, wsEndpoint: 'chart_stream_ws'}} backend={backend} params={{symbol: 'AAPL', interval: '1m', ...bounds} as Record<string, string>} />);
+  expect(screen.getByRole('alert')).toHaveTextContent(/Start|End/);
+  expect(FakeSocket.all).toHaveLength(0);
+});

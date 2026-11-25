@@ -411,3 +411,37 @@ describe("frameRows", () => {
     expect(frameRows(null)).toEqual([]);
   });
 });
+
+it('LiveGrid reconnects under changed header credentials',async()=>{
+ const first={...backend,authLocation:'header' as const,headerName:'Authorization',headerValue:'Bearer first'};
+ const {rerender}=render(<LiveGridRenderer widget={widget} backend={first} params={{symbol:'TSLA'}}/>);
+ await waitFor(()=>expect(FakeSocket.all).toHaveLength(1));await waitFor(()=>expect(screen.getByText('10')).toBeInTheDocument());
+ const old=socket();act(()=>old.open());
+ rerender(<LiveGridRenderer widget={widget} backend={{...first,headerValue:'Bearer second'}} params={{symbol:'TSLA'}}/>);
+ await waitFor(()=>expect(fetchWidgetData).toHaveBeenCalledTimes(2));
+ expect(old.closed).toBe(true);
+});
+
+it('fences old-scope rows while replacement credentials load, without reconnecting a same-scope refresh', async () => {
+  const first = {...backend, authLocation: 'header' as const, headerName: 'Authorization', headerValue: 'Bearer first'};
+  const second = {...first, headerValue: 'Bearer second'};
+  const {rerender} = render(<LiveGridRenderer widget={widget} backend={first} params={{symbol: 'TSLA'}} />);
+  await waitFor(() => expect(screen.getByText('10')).toBeInTheDocument());
+  const old = socket(); act(() => old.open());
+  act(() => old.emit({symbol: 'TSLA', price: 99}));
+  await waitFor(() => expect(screen.getByText('99')).toBeInTheDocument());
+  let finish!: (value: unknown) => void;
+  vi.mocked(fetchWidgetData).mockImplementationOnce(() => new Promise(resolve => {finish = resolve;}));
+  rerender(<LiveGridRenderer widget={widget} backend={second} params={{symbol: 'TSLA'}} />);
+  expect(old.closed).toBe(true);
+  expect(screen.queryByText('99')).toBeNull();
+  act(() => old.emit({symbol: 'TSLA', price: 98}));
+  expect(screen.queryByText('98')).toBeNull();
+  await act(async () => finish([{symbol: 'TSLA', price: 20}]));
+  await waitFor(() => expect(screen.getByText('20')).toBeInTheDocument());
+  await waitFor(() => expect(FakeSocket.all).toHaveLength(2));
+  const current = socket();
+  rerender(<LiveGridRenderer widget={widget} backend={{...second}} params={{symbol: 'TSLA'}} refreshKey={1} />);
+  expect(current.closed).toBe(false);
+  expect(FakeSocket.all).toHaveLength(2);
+});

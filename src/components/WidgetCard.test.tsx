@@ -188,7 +188,7 @@ vi.mock("./renderers/DayChartRenderer", () => ({
   DayChartRenderer: ({onSnapshot,onSelectSymbol,onReorder,selectionError,footerControls}: {onReorder?:(symbols:string)=>void;footerControls?:ReactNode;onSnapshot?: (at:number|null)=>void;onSelectSymbol?:(symbol:string)=>void;selectionError?:string}) => <>
     <div data-testid="day-footer-controls">{footerControls}</div>
     <button type="button" onClick={()=>onSelectSymbol?.("MSFT")}>select-day-symbol</button>
-    <button type="button" onClick={()=>onReorder?.("MSFT,AAPL")}>reorder-day-symbols</button>
+    <button type="button" disabled={!onReorder} onClick={()=>onReorder?.("MSFT,AAPL")}>reorder-day-symbols</button>
     {selectionError ? <span>{selectionError}</span>:null}
     <button type="button" onClick={()=>onSnapshot?.(Date.now())}>snapshot-complete</button>
     <button type="button" onClick={()=>onSnapshot?.(null)}>snapshot-clear</button>
@@ -6171,4 +6171,26 @@ it("shows Day Chart row1 controls only in the expanded parameters panel",async()
  expect(within(screen.getByTestId("day-footer-controls")).queryByRole("textbox",{name:"Symbols"})).not.toBeInTheDocument();
  expect(screen.getByRole("textbox",{name:"Symbols"}).closest("header")).not.toBeNull();
  useBackendsStore.setState({backends:[]});
+});
+
+it('a locked Day Chart cannot reorder its configured watchlist',async()=>{
+ register({type:'day_chart',endpoint:'day_charts',params:[{paramName:'symbol',type:'text',groupType:'symbol'},{paramName:'selected_symbol',type:'text',groupType:'symbol'}]});
+ useBackendsStore.setState({backends:[backend()]});
+ useWidgetData.mockReturnValue({status:'ready',data:null,retry:vi.fn(),attempt:0});
+ const source={...card,params:{symbol:'AAPL,MSFT'}};
+ const docks=makeDefaultDocks();useDashboardStore.setState({docks:{...docks,tabs:[docks.tabs[0],{...docks.tabs[1],cards:[source]}]}});
+ render(<WidgetCard card={source} dashboardId={DOCKS_ID} onRemove={vi.fn()} locked/>);
+ expect(screen.getByRole('button',{name:'reorder-day-symbols'})).toBeDisabled();
+ await userEvent.click(screen.getByRole('button',{name:'reorder-day-symbols'}));
+ expect(useDashboardStore.getState().docks.tabs[1].cards[0].params.symbol).toBe('AAPL,MSFT');
+ useBackendsStore.setState({backends:[]});
+});
+
+it('a viewer Day Chart cannot reorder its configured watchlist', async () => {
+  register({type:'day_chart', endpoint:'day_charts', params:[{paramName:'symbol',type:'text',groupType:'symbol'}]});
+  useBackendsStore.setState({backends:[backend()]});
+  useWidgetData.mockReturnValue({status:'ready',data:null,retry:vi.fn(),attempt:0});
+  render(<WidgetCard card={{...card,params:{symbol:'AAPL,MSFT'}}} onRemove={vi.fn()} viewer />);
+  expect(screen.getByRole('button',{name:'reorder-day-symbols'})).toBeDisabled();
+  useBackendsStore.setState({backends:[]});
 });

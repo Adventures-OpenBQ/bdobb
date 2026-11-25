@@ -1345,7 +1345,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       const conflict=!groupsDisabled && inputGroup && inputGroup.id===outputGroup?.id;
       return <DayChartRenderer backend={backend} params={query} refreshKey={attempt + refreshEpoch} onSnapshot={setSnapshotAt}
         selectionError={conflict?"Choose a different group for Selected symbol so chart selection does not replace the watchlist.":undefined}
-        onReorder={(symbols)=>{void handleParamsUpdate(widget,{symbol:symbols},[]);}}
+        onReorder={readOnly ? undefined : (symbols)=>{void handleParamsUpdate(widget,{symbol:symbols},[]);}}
         onSelectSymbol={conflict?undefined:(symbol)=>{void handleCellClick({paramName:"selected_symbol",value:symbol,forceUpdate:false});}} />;
     }
 

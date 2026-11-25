@@ -8,6 +8,7 @@
  * from window.__bdobbSeed -- which the driver must set before any app module
  * evaluates (Playwright: page.addInitScript).
  */
+import { STATE_WRITER, STATE_SEQUENCE, stateWriteVersion } from "../lib/stateWriteProtocol.mjs";
 import * as mem from "../test/memfs";
 import { __failRead, __list, __read, __seed } from "../test/memfs";
 import { fetch, sessionLapsed } from "./http";
@@ -28,18 +29,64 @@ export { BaseDirectory, exists, mkdir, readDir, readFile, readTextFile, stat, wr
  * a temp then a rename, so it is the rename that carries the real name. The first save
  * sends every such file, not just the changed one: the store then mirrors the page, and
  * the seeded dashboard does not vanish the first time saved state replaces the seed.
- * Saves are debounced and strictly one at a time, so an older body can never land last.
+ * Ordinary saves are queued. Hide-time saves bypass that queue, so every mutation
+ * carries a persisted writer/sequence fence that the account store enforces atomically.
  */
 const STATE_FILE_RE = /^(?:(?:settings|backends|folders|chat|chart-presets)\.json|(?:dashboards|workspaces|layouts)\/[A-Za-z0-9_-]{1,80}\.json)$/;
 const dirty = new Set<string>();
 let timer: ReturnType<typeof setTimeout> | null = null;
 let mirrored = false;
 let queue = Promise.resolve();
+const pending = new Set<string>();
+const acknowledged = new Map<string, number>();
+const keepalivePending = new Map<string, number>();
+const WRITE_STATE = 'bdobb-state-writes';
+const observed = new Set<string>();
+let writeState: {writer: string; sequences: Record<string, number>} | undefined;
+function state(): NonNullable<typeof writeState> {
+  if (!writeState) {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(WRITE_STATE) ?? 'null');
+      if (saved && typeof saved.sequences === 'object' && saved.sequences !== null && !Array.isArray(saved.sequences)
+          && Object.entries(saved.sequences).every(([name, value]) => STATE_FILE_RE.test(name) && Number.isSafeInteger(value) && (value as number) > 0)
+          && stateWriteVersion(saved.writer, '1')) writeState = saved;
+    } catch { /* No usable tab sequence: start a new writer. */ }
+    writeState ??= {writer: crypto.randomUUID(), sequences: {}};
+  }
+  return writeState;
+}
+function revision(name: string, changed = false): number {
+  const saved = state();
+  let n = saved.sequences[name] ?? 0;
+  // A fresh bootstrap may hold another writer's body. Never reuse this tab's
+  // prior-page version for that seed when the initial mirror includes it.
+  if (changed || !observed.has(name)) {
+    if (n >= Number.MAX_SAFE_INTEGER) throw new Error('State save sequence exhausted. Reopen the preview.');
+    saved.sequences[name] = ++n;
+    observed.add(name);
+    try { sessionStorage.setItem(WRITE_STATE, JSON.stringify(saved)); } catch { /* Current-page fences still apply. */ }
+  }
+  return n;
+}
+function forgetIfSaved(): void {
+  if (!pending.size && !dirty.size && !failed.size) forget();
+}
+function completed(name: string, result: {saved: boolean; version: number}, hide: boolean): void {
+  if (result.saved) landed = true; // Any accepted version makes the initial mirror partial.
+  if (revision(name) !== result.version || (acknowledged.get(name) ?? 0) >= result.version) return;
+  if (result.saved) {
+    acknowledged.set(name, result.version); pending.delete(name); failed.delete(name); dirty.delete(name); landed = true;
+  } else if (hide) dirty.add(name);
+  else failed.add(name);
+}
 
 function touched(path: string): void {
   const name = path.replace(/^\/+/, "");
   if (!window.__bdobbPersist || !STATE_FILE_RE.test(name)) return;
+  revision(name, true);
+  pending.add(name);
   dirty.add(name);
+  try { if (sessionStorage.getItem(UNSAVED)) keep([name]); } catch { /* Recovery storage is optional. */ }
   timer ??= setTimeout(() => {
     timer = null;
     queue = queue.then(flush);
@@ -65,14 +112,13 @@ async function flush(): Promise<void> {
   mirrored = true;
   for (let name = next(); name !== undefined; name = next()) {
     sending = name;
-    const saved = await send(name);
+    const result = await send(name);
     sending = null;
     // Kept for the next save rather than retried on a timer: a store that is down
     // stays down for a while, and the next change is never far away.
-    if (saved) { landed = true; failed.delete(name); }
-    else failed.add(name);
+    completed(name, result, false);
   }
-  if (!failed.size) forget(); // the store has everything the copy held, and newer
+  forgetIfSaved(); // Obsolete completions cannot discard a newer recovery body.
   for (const name of failed) dirty.add(name);
   failed.clear();
   notice();
@@ -86,19 +132,22 @@ async function flush(): Promise<void> {
 function notice(): void {
   const text = document.querySelector(".web-preview-notice")?.firstChild;
   if (text) {
-    text.textContent = `Private web preview · ${dirty.size ? "Some changes could NOT be saved" : "Changes are saved to your account"} · `;
+    text.textContent = `Private web preview · ${dirty.size ? "Some changes could NOT be saved" : pending.size ? "Saving changes to your account" : "Changes are saved to your account"} · `;
   }
 }
 
 /** One file to the store, as the page holds it now; resolves whether the store took it. */
-function send(name: string, keepalive = false): Promise<boolean> {
+function send(name: string, keepalive = false): Promise<{saved: boolean; version: number}> {
   const text = __read(name);
+  const version = revision(name);
+  const headers = {[STATE_WRITER]: state().writer, [STATE_SEQUENCE]: String(version)};
+  pending.add(name);
   const init: RequestInit = text === undefined
-    ? { method: "DELETE" }
-    : { method: "PUT", headers: { "Content-Type": "application/json" }, body: text };
+    ? { method: "DELETE", headers }
+    : { method: "PUT", headers: { ...headers, "Content-Type": "application/json" }, body: text };
   const go = (k: boolean) => fetch(`/state/${name}`, { ...init, keepalive: k });
   // A browser refuses keepalive past its body budget; the ordinary request may still make it.
-  return (keepalive ? go(true).catch(() => go(false)) : go(false)).then(response => response.ok, () => false);
+  return (keepalive ? go(true).catch(() => go(false)) : go(false)).then(response => ({saved: response.ok, version}), () => ({saved: false, version}));
 }
 
 /**
@@ -130,10 +179,10 @@ const encoder = new TextEncoder();
  * was lost (2026-10-19). Every request starts in this tick, not queued behind an
  * in-flight flush -- a continuation after an await never runs once the page unloads.
  * ponytail: keepalive bodies share a ~64 KiB budget per page, and a hide during an
- * in-flight flush can race it for one file; past the budget the fallback is an ordinary
- * request the unload may cancel. Beacon-sized chunking if large stores ever need it. The
- * in-flight file goes twice; if the ordinary copy then fails (an iPad suspended in the
- * background), the bar says "could NOT be saved" until the next edit although the store has it.
+ * in-flight flush can overlap it for one file; the persisted per-file sequence ensures
+ * the account store cannot commit an older body over a newer one. Past the budget the
+ * fallback is an ordinary request the unload may cancel; the recovery copy remains until
+ * the latest version is acknowledged.
  */
 function flushNow(): void {
   // A lapsed session is leaving for sign-in (CI 2026-10-19): the store refuses every save
@@ -145,6 +194,8 @@ function flushNow(): void {
   const batch = new Set([...dirty, ...failed]);
   if (sending !== null) batch.add(sending); // in flight as an ordinary request the unload cancels
   if (!mirrored) for (const name of __list()) if (STATE_FILE_RE.test(name)) batch.add(name);
+  for (const name of batch) if (keepalivePending.get(name) === revision(name)) batch.delete(name);
+  if (!batch.size) return;
   // While the store has taken nothing, part of this would replace the seed on the next
   // load, so past the keepalive budget send nothing and leave the timer and any running
   // flush be. Once it has taken a file it is partial already: send all the rest, as best
@@ -157,16 +208,20 @@ function flushNow(): void {
   failed.clear();
   // Only once it is really re-sent (re-review 2026-10-19): a hide that sent nothing must
   // still count the in-flight file, or the next hide could land part of an empty store.
-  sending = null;
   keep([...batch]);
   for (const name of [...batch].sort()) {
-    void send(name, true).then(saved => { if (saved) landed = true; else dirty.add(name); notice(); });
+    const version = revision(name);
+    keepalivePending.set(name, version);
+    void send(name, true).then(result => {
+      if (keepalivePending.get(name) === version) keepalivePending.delete(name);
+      completed(name, result, true); forgetIfSaved(); notice();
+    });
   }
 }
 window.addEventListener("pagehide", flushNow);
 document.addEventListener("visibilitychange", () => {
   // Back on screen, the page is the copy: later edits must not be undone by a stale one.
-  if (document.visibilityState === "hidden") flushNow(); else forget();
+  if (document.visibilityState === "hidden") flushNow(); else forgetIfSaved();
 });
 
 export const writeTextFile: typeof mem.writeTextFile = async (path, ...rest) => {

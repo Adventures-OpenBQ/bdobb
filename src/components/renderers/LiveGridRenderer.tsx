@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { buildWidgetWsUrl, fetchWidgetData, fetchWidgetPath, stripQuery, ticketedWsUrl, wantsSocketTicket } from "../../lib/dataClient";
+import { useBackendScope } from "../../hooks/useBackendScope";
 import { useReconnectingSocket, type SocketStatus } from "../../hooks/useReconnectingSocket";
 import { isRecord } from "../../lib/isRecord";
 import { logOnce } from "../../lib/logger";
@@ -97,7 +98,12 @@ function symbolSet(raw: string | undefined): Set<string> {
  * live_grid to it), so a failed snapshot is this renderer's to show, with a
  * Retry; the header's Refresh reaches it as `refreshKey`.
  */
-export function LiveGridRenderer({
+export function LiveGridRenderer(props: Parameters<typeof ScopedLiveGridRenderer>[0]) {
+  const scope = useBackendScope(props.backend);
+  return <ScopedLiveGridRenderer key={scope} {...props} />;
+}
+
+function ScopedLiveGridRenderer({
   widget,
   backend,
   params,

@@ -184,3 +184,16 @@ export function foldTick(last: UdfBar | undefined, tick: Pick<Tick, "time" | "pr
   const start = last === undefined ? Math.floor(time / intervalS) * intervalS : last.time + Math.floor((time - last.time) / intervalS) * intervalS;
   return { time: start, open: price, high: price, low: price, close: price, volume: size };
 }
+
+/** Keep candles updated after a seed request; never add a trade's volume twice. */
+export function mergeLegacySeed(seed: UdfBar[], accepted: UdfBar[]): UdfBar[] {
+  const merged = new Map(seed.map(bar => [bar.time, bar]));
+  for (const bar of accepted) {
+    const old = merged.get(bar.time);
+    merged.set(bar.time, old && hasOhlc(old) && hasOhlc(bar) ? {
+      ...bar, open: old.open, high: Math.max(old.high, bar.high), low: Math.min(old.low, bar.low),
+      volume: Math.max(old.volume, bar.volume),
+    } : bar);
+  }
+  return [...merged.values()].sort((a, b) => a.time - b.time);
+}

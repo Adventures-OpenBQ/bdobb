@@ -17,6 +17,7 @@ import { handleAuth, identity } from "./auth.mjs";
 // refused.
 import * as vendoredPolicy from "./policy.mjs";
 import { bootstrap } from "./bootstrap.mjs";
+import { STATE_WRITER, STATE_SEQUENCE, stateWriteVersion } from "../src/lib/stateWriteProtocol.mjs";
 
 // Full feed lists include inline icons; browser requests and articles stay 64 KiB.
 const MAX_NEWS_REPLY = 2 * 1024 * 1024;
@@ -145,6 +146,11 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
     if (req.method !== "PUT" && req.method !== "DELETE") return reply(res, 405);
     if (foreign(req, cfg)) return reply(res, 403);
     if (!cfg.backend || !/^\d{1,20}$/.test(who.id)) return reply(res, 503, "Backend ingress is not configured.");
+    const writer = req.headers[STATE_WRITER], sequence = req.headers[STATE_SEQUENCE];
+    const versioned = writer !== undefined || sequence !== undefined;
+    const version = stateWriteVersion(writer, sequence);
+    if (versioned && !version) return reply(res, 400);
+    const fence = version ? {[STATE_WRITER]: version.writer, [STATE_SEQUENCE]: String(version.sequence)} : {};
     let body;
     if (req.method === "PUT") {
       body = await jsonBody(req, 262144);
@@ -152,9 +158,15 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
     }
     const response = await fetchUpstream(`${cfg.backend}/state/${who.id}/${name}`, {
       method: req.method, body, redirect: "error", signal: AbortSignal.timeout(12000),
-      headers: { ...gatewayHeaders(cfg), ...(body ? { "Content-Type": "application/json" } : {}) },
+      headers: { ...gatewayHeaders(cfg), ...fence, ...(body ? { "Content-Type": "application/json" } : {}) },
     });
     await response.body?.cancel();
+    if (version && response.status === 204) {
+      const ack = stateWriteVersion(response.headers.get(STATE_WRITER), response.headers.get(STATE_SEQUENCE));
+      if (!ack || ack.writer !== version.writer || ack.sequence !== version.sequence) return reply(res, 502);
+      res.setHeader(STATE_WRITER, ack.writer); res.setHeader(STATE_SEQUENCE, String(ack.sequence));
+    }
+    if (version && response.status === 409) return reply(res, 409);
     // The user's own quota is theirs to hear about; nothing else the gateway says is.
     return reply(res, response.status === 204 ? 204 : response.status === 413 ? 413 : 502);
   }
