@@ -196,5 +196,29 @@
     "rule": "private-tailnet",
     "line_sha256": "8021308c2dbba3a31754598cc3659c2de2afbd2fd18167d16bbc6ed0c8afef7a",
     "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "frontend/assets/xlsx-DBvuKzsv.js.map",
+    "rule": "private-ip",
+    "line_sha256": "d1c549421cfef43fa82f2e4b6f5df3a83789d085c6f1c26568b9f6d96cc3b3e6",
+    "reason": "Exact V4 compiled source-map line contains byte-identical checksum-verified official SheetJS0.20.3 xlsx.mjs; sole private-IP shape is the public OpenDocument10.4.6.2 specification section in draw:object parser comment. Exact path and full normalized line only; all credential and other privacy rules remain scanned."
+  },
+  {
+    "path": "frontend/assets/xlsx-DT5WGBCc.js.map",
+    "rule": "private-ip",
+    "line_sha256": "c55e9c2d2167b80c4e38e8da6d38dc5688ea88bc0d95f124900993a44210302f",
+    "reason": "Exact V4 compiled source-map line contains byte-identical checksum-verified official SheetJS0.20.3 xlsx.mjs; sole private-IP shape is the public OpenDocument10.4.6.2 specification section in draw:object parser comment. Exact path and full normalized line only; all credential and other privacy rules remain scanned."
+  },
+  {
+    "path": "frontend/assets/xlsx-DBvuKzsv.js.map",
+    "rule": "private-ip",
+    "line_sha256": "8b3d4307eacb9d6c675d34124ace2c37d5bd5c0dce109c481d2a78e7933ad493",
+    "reason": "Exact complete normalized Windows source-map line contains byte-identical checksum-pinned official SheetJS 0.20.3 xlsx.mjs (SHA256 1a0fb062ee9781b13f6687371b202aaefc53b6ce55b530c027e01f9c087b77db). The sole private-IP-shaped text is the OpenDocument specification section number in its parser comment, not an operator endpoint. Exact path and whole-line hash only; every credential and other privacy rule remains active."
+  },
+  {
+    "path": "frontend/assets/xlsx-DT5WGBCc.js.map",
+    "rule": "private-ip",
+    "line_sha256": "7b6f8a4f9d6adfecd7583b1b6e0a6fb0566736a5b1a406b98c73c051a5e8defa",
+    "reason": "Exact complete normalized Windows source-map line contains byte-identical checksum-pinned official SheetJS 0.20.3 xlsx.mjs (SHA256 1a0fb062ee9781b13f6687371b202aaefc53b6ce55b530c027e01f9c087b77db). The sole private-IP-shaped text is the OpenDocument specification section number in its parser comment, not an operator endpoint. Exact path and whole-line hash only; every credential and other privacy rule remains active."
   }
 ]

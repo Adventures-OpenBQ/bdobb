@@ -915,13 +915,18 @@ describe("PdfView highlights", () => {
   it("opens the cited page and draws its boxes there", async () => {
     render(<PdfView bytes={bytes} filename="report.pdf" highlight={{ page: 2, boxes: [box] }} />);
     await screen.findByText("/ 3");
-    expect(vw.state.pageNumber).toBe(2);
-    expect(rect()).toEqual(["20px", "40px", "40px", "10px"]);
+    // The page-count render can precede React's passive highlight effect.
+    // Wait for the cited page and its boxes, rather than the count alone.
+    await waitFor(() => {
+      expect(vw.state.pageNumber).toBe(2);
+      expect(rect()).toEqual(["20px", "40px", "40px", "10px"]);
+    });
   });
 
   it("redraws after pdf.js re-renders the page at a new scale, and clears when the highlight goes", async () => {
     const { rerender } = render(<PdfView bytes={bytes} filename="report.pdf" highlight={{ page: 2, boxes: [box] }} />);
     await screen.findByText("/ 3");
+    await waitFor(() => expect(rect()).toEqual(["20px", "40px", "40px", "10px"]));
     // What pdf.js's PDFPageView.reset does to a page on zoom: it empties the div.
     document.querySelectorAll(".pdf-highlight").forEach((n) => n.remove());
     vw.state.pageScale = 3;
