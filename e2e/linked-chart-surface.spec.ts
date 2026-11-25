@@ -23,6 +23,9 @@ test('a linked Surface chart draws one 3-D surface per pair/date', async ({ page
   const saved = JSON.stringify({ id: 'd1', name: 'Main', tabs: [{ id: 't1', name: 'Main', cards: [table, chart] }] });
   await seedApp(page, { ...defaultSeed(), 'dashboards/d1.json': saved, [`files/${file}`]: csv });
   const card = page.locator('.widget-card').filter({ has: page.locator('header').getByText('Vol surface', { exact: true }) });
+  // Configuration is a parameter panel: hidden until explicitly opened.
+  await expect(card.getByLabel('Chart type')).toBeHidden();
+  await card.getByRole('button', { name: 'Show parameters', exact: true }).click();
   await expect(card.getByLabel('Chart type')).toHaveValue('surface');
   await expect(card.locator('.linked-chart-plot canvas')).toHaveCount(2);
   await expect(card.locator('.linked-chart-plot .annotation-text')).toHaveText(['EURUSD — 2026-11-17', 'USDJPY — 2026-11-17']);
@@ -66,6 +69,9 @@ test('filtering the source to one pair redraws a single surface, and one ticked 
   const source = { ...table, tableDefinition: { table: {}, search: '', analytical: model } };
   await seedApp(page, { ...defaultSeed(), 'dashboards/d1.json': JSON.stringify({ id: 'd1', name: 'Main', tabs: [{ id: 't1', name: 'Main', cards: [source, chart] }] }), [`files/${file}`]: csv });
   const card = page.locator('.widget-card').filter({ has: page.locator('header').getByText('Vol surface', { exact: true }) });
+  // Configuration is a parameter panel: hidden until explicitly opened.
+  await expect(card.getByLabel('Chart type')).toBeHidden();
+  await card.getByRole('button', { name: 'Show parameters', exact: true }).click();
   const titles = card.locator('.linked-chart-plot .annotation-text');
   await expect(titles).toHaveText(['EURUSD — 2026-11-17', 'USDJPY — 2026-11-17']);
   const root = page.locator('.widget-card').filter({ has: page.locator('header').getByText('FX vol', { exact: true }) });

@@ -52,13 +52,10 @@ export function transposeRows(
     Object.hasOwn(row, key) ? row[key] : undefined;
   const headers = uniqueHeaders(rows.map((row) => headerText(read(row, headerColumn))), [FIELD_COLUMN]);
 
-  const outRows = fieldColumns.map((field) => {
-    const out: Record<string, unknown> = { [FIELD_COLUMN]: field };
-    rows.forEach((row, i) => {
-      out[headers[i]] = read(row, field);
-    });
-    return out;
-  });
+  const outRows = fieldColumns.map((field) => Object.fromEntries([
+    [FIELD_COLUMN, field],
+    ...rows.map((row, i) => [headers[i], read(row, field)]),
+  ]));
 
   return { columns: [FIELD_COLUMN, ...headers], rows: outRows };
 }

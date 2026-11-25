@@ -100,7 +100,8 @@ pub(super) fn request(q: &CoreRequest, locale: &str) -> Result<(), Diagnostic> {
                 ));
             }
         }
-        Operation::ChartData { fields } => ids(fields)?,
+        // Chart selectors are raw column names, including the valid JSON key "".
+        Operation::ChartData { .. } => {}
         Operation::Facets { category_id } => ids(std::slice::from_ref(category_id))?,
         Operation::Presented { transfer_id, .. } | Operation::NextSubset { transfer_id, .. } => {
             ids(std::slice::from_ref(transfer_id))?
@@ -173,7 +174,6 @@ pub(super) fn dataset(input: &SourceDataset, revision: u64) -> Result<(), Diagno
         || input.result_revision > MAX_SAFE
         || input.output_revision > MAX_SAFE
         || input.provenance.source_widget_id.is_empty()
-        || input.columns.iter().any(|c| c.id.is_empty())
         || input.rows.iter().any(|r| r.id.is_empty())
     {
         return Err(problem(

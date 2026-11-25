@@ -56,6 +56,16 @@ afterEach(() => {
 });
 
 describe("TradingViewRenderer", () => {
+  it("cancels an in-flight chart history read on unmount", async () => {
+    fetchMock.mockReturnValueOnce(new Promise(() => {}));
+    const view = show();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const signal = fetchMock.mock.calls[0][4];
+
+    view.unmount();
+    expect(signal?.aborted).toBe(true);
+  });
+
   it("asks the history route through the data client for a year of daily bars", async () => {
     fetchMock.mockResolvedValue(ok);
     show();

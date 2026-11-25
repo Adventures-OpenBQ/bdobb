@@ -31,6 +31,12 @@ export const THEMED_TYPES = new Set(["chart", "html"]);
  */
 const CONNECT_TIMEOUT_MS = 10_000;
 
+// Leave room for the 165 s cold-provider lane and the 170 s API gateway
+// deadline. The client budget includes its own queue and the response body.
+const REQUEST_TIMEOUT_MS = 180_000;
+
+type RequestOptions = { signal?: AbortSignal };
+
 /**
  * apps.json's own END-TO-END deadline, which CONNECT_TIMEOUT_MS is not: that
  * one covers the connect phase only (and the browser shim cannot honour it at
@@ -223,7 +229,31 @@ export function describeHttpError(status: number, body: string): string {
   if (!text) return base;
 
   const full = `${base}: ${text}`;
-  return full.length > MAX_ERROR_CHARS ? `${full.slice(0, MAX_ERROR_CHARS - 1)}…` : full;
+  if (full.length <= MAX_ERROR_CHARS) return full;
+  // The retry sentence is the last thing in the text and the only part the
+  // app reads, so a long explanation is cut BEFORE it rather than through it.
+  const tail = RETRY_AFTER.exec(full)?.[0];
+  if (tail) return `${full.slice(0, MAX_ERROR_CHARS - tail.length - 2)}… ${tail}`;
+  return `${full.slice(0, MAX_ERROR_CHARS - 1)}…`;
+}
+
+/**
+ * A contract with the EODHD provider (openbq-eodhd 9.0.2, `raise_sdk_error`
+ * and `get_client`): an error that carries a wait ENDS with exactly
+ * "Retry after <N> s.", N whole seconds. openbb-api relays a provider error
+ * as `{"detail": text}` and nothing else -- no header survives -- so the text
+ * is the only place the wait can travel. A test in each repo pins the shape.
+ */
+const RETRY_AFTER = /Retry after (\d+) s\.$/;
+
+/**
+ * The wait a failed request asked for, in seconds, or nothing. Only 1-300 is
+ * believed: that is the provider's own clamp, and a backend that answered
+ * "Retry after 99999 s." would otherwise lock a card for a day.
+ */
+export function retryAfterSeconds(message: string): number | undefined {
+  const seconds = Number(RETRY_AFTER.exec(message)?.[1]);
+  return seconds >= 1 && seconds <= 300 ? seconds : undefined;
 }
 
 function stripQuery(url: string): string {
@@ -322,11 +352,9 @@ type ResponseHead = Pick<Response, "url" | "status" | "headers" | "type">;
  * backend is online. Matching on the status, not on describeHttpError's
  * message, so the distinction cannot be broken by a wording change.
  *
- * `signal` is the caller's own deadline, which is a DIFFERENT guarantee from
- * connectTimeout above: that one only bounds getting the connection open,
- * while this one bounds the whole exchange and aborts the request rather than
- * leaving it running unwatched. Opt-in per call -- a widget's own fetch is
- * allowed to take as long as the backend needs.
+ * The deadline starts before the slot is acquired and lasts through the body
+ * read. The optional caller signal can end the request sooner, for example
+ * when discovery times out or a card goes away.
  *
  * `onHeaders` sees the headers of the response whose body is about to be
  * parsed, and only that one: a caller may want something the payload does
@@ -344,7 +372,7 @@ async function request(
     onHeaders,
     onResponse,
     signal,
-  }: {
+  }: RequestOptions & {
     parse?: boolean;
     allow404?: boolean;
     onHeaders?: (headers: Headers) => void;
@@ -352,7 +380,16 @@ async function request(
     signal?: AbortSignal;
   } = {},
 ): Promise<unknown> {
-  return withRequestSlot(url, signal, async () => {
+  const controller = new AbortController();
+  const requestSignal = controller.signal;
+  const abort = () => controller.abort(signal?.reason);
+  if (signal?.aborted) abort();
+  else signal?.addEventListener("abort", abort, { once: true });
+  const timer = setTimeout(() => {
+    controller.abort(new DOMException(`Request timed out (${stripQuery(url)})`, "TimeoutError"));
+  }, REQUEST_TIMEOUT_MS);
+
+  const exchange = async () => {
     const hasBody = method !== "GET";
     let res: Response;
     try {
@@ -361,10 +398,17 @@ async function request(
         headers: hasBody ? { ...headers, "Content-Type": "application/json" } : headers,
         ...(hasBody ? { body: JSON.stringify(body) } : {}),
         connectTimeout: CONNECT_TIMEOUT_MS,
-        ...(signal ? { signal } : {}),
+        signal: requestSignal,
       });
     } catch (err) {
+      requestSignal.throwIfAborted();
       throw new Error(safeNetworkErrorMessage(url, err));
+    }
+    if (requestSignal.aborted) {
+      // Headers may race cancellation. Release a body created after the
+      // transport's abort listener already fired.
+      void res.body?.cancel().catch(() => {});
+      requestSignal.throwIfAborted();
     }
     if (res.status === 204) return null;
     if (res.status === 404 && allow404) {
@@ -399,7 +443,14 @@ async function request(
     // case-insensitive.
     const mediaType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
     return mediaType === "application/json" || mediaType.endsWith("+json") ? res.json() : res.text();
-  });
+  };
+
+  try {
+    return await withRequestSlot(url, requestSignal, exchange);
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", abort);
+  }
 }
 
 /** `${widget.endpoint}/{envVar}`, with an optional trailing path segment. */
@@ -768,8 +819,13 @@ export async function fetchParamOptions(
   backend: BackendConfig,
   endpoint: string,
   params: Record<string, string>,
+  options?: RequestOptions,
 ): Promise<ParamOption[]> {
-  const payload = await fetchEndpoint(backend, endpoint, params);
+  const url = new URL(joinUrl(backend.baseUrl, endpoint));
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== "") url.searchParams.set(key, value);
+  }
+  const payload = await request("GET", applyAuthQuery(url, backend).toString(), authHeaders(backend), undefined, options);
   if (!Array.isArray(payload)) throw new Error("options endpoint returned no list");
   return toOptions(payload) ?? [];
 }
@@ -863,8 +919,9 @@ export async function fetchWidgetDocuments(
   // unchanged; handed to buildWidgetUrl exactly as fetchWidgetData hands its
   // own ctx, so the documents query resolves under the dashboard's exchange.
   ctx?: WireContext,
+  options?: RequestOptions,
 ): Promise<unknown> {
-  return request("POST", buildWidgetUrl(backend, widget, params, ctx), authHeaders(backend), body);
+  return request("POST", buildWidgetUrl(backend, widget, params, ctx), authHeaders(backend), body, options);
 }
 
 /**

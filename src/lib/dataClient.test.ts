@@ -24,6 +24,7 @@ import { fetch as pluginFetch } from "@tauri-apps/plugin-http";
 import { startMockServer, type MockServer } from "../test/mockServer";
 import { useSettingsStore } from "../stores/settingsStore";
 import { DEFAULT_SETTINGS } from "./settingsFile";
+import { withRequestSlot } from "./requestQueue";
 import type { AuthLocation, BackendConfig, WidgetDef } from "./types";
 import { backend as makeBackend, card as makeCard, widget as makeWidget } from "../test/fixtures";
 import cmes from "./calendars/vendor/conformance/CMES-2026-01.json";
@@ -49,6 +50,7 @@ import {
   postForm,
   putProviderKey,
   putSettings,
+  retryAfterSeconds,
   testProviderKey,
 } from "./dataClient";
 
@@ -284,6 +286,27 @@ describe("describeHttpError", () => {
     expect(msg).toHaveLength(200);
     expect(msg.endsWith("…")).toBe(true);
     expect(msg.startsWith("HTTP 500: xxx")).toBe(true);
+  });
+
+  it("keeps a trailing 'Retry after N s.' when it truncates", () => {
+    const msg = describeHttpError(502, JSON.stringify({ detail: `EODHD bars: HTTP 429 — ${"x".repeat(300)}. Retry after 60 s.` }));
+    expect(msg.length).toBeLessThanOrEqual(200);
+    expect(msg).toContain("…");
+    expect(retryAfterSeconds(msg)).toBe(60);
+  });
+});
+
+describe("retryAfterSeconds", () => {
+  it("reads the wait from the end of the message", () => {
+    expect(retryAfterSeconds("HTTP 502: EODHD bars for 'AAPL.US': HTTP 429 — Too many. Retry after 42 s.")).toBe(42);
+  });
+  it("returns nothing without the sentence, or when it is not at the end", () => {
+    expect(retryAfterSeconds("HTTP 502: EODHD bars: upstream unavailable")).toBeUndefined();
+    expect(retryAfterSeconds("Retry after 42 s. Then something else")).toBeUndefined();
+  });
+  it("ignores a wait outside 1–300", () => {
+    expect(retryAfterSeconds("x. Retry after 0 s.")).toBeUndefined();
+    expect(retryAfterSeconds("x. Retry after 99999 s.")).toBeUndefined();
   });
 });
 
@@ -1447,4 +1470,87 @@ it('preserves another chart family receipt under the daily-price transport restr
     expect(acquired.mock.lastCall?.[0].chartSources).toEqual({ metric: sourceReceipt });
     expect(acquired.mock.lastCall?.[0]).not.toHaveProperty('dailyPriceRejected');
   } finally { await server.close(); }
+});
+
+describe("ordinary request lifetime", () => {
+  it.each(["queued", "running", "reading body"] as const)(
+    "releases a %s widget request when the caller aborts",
+    async (phase) => {
+      const source = makeBackend({ baseUrl: "https://cancel-widget.test" });
+      const controller = new AbortController();
+      const transport = vi.mocked(pluginFetch);
+      let finish!: () => void;
+      const stalled = new Promise<void>((resolve) => { finish = resolve; });
+      const bodyRead = vi.fn(async () => { await stalled; return []; });
+      const body = new Response("[]", { headers: { "content-type": "application/json" } });
+      vi.spyOn(body, "json").mockImplementation(bodyRead);
+      transport.mockClear().mockImplementation(async (input) => {
+        if (!new URL(String(input)).searchParams.has("stalled")) return new Response("fresh");
+        if (phase === "running") {
+          await stalled;
+          return new Response("old");
+        }
+        return body;
+      });
+      const held = phase === "queued"
+        ? Array.from({ length: 4 }, () => withRequestSlot(source.baseUrl, undefined, () => stalled))
+        : [];
+      const outcomes: unknown[] = [];
+      const request = fetchWidgetData(source, widget(), { stalled: "true" }, undefined, controller.signal).then((value) => outcomes.push(value), (err: unknown) => outcomes.push(err));
+
+      try {
+        if (phase === "running") await vi.waitFor(() => expect(transport).toHaveBeenCalledTimes(1));
+        if (phase === "reading body") await vi.waitFor(() => expect(bodyRead).toHaveBeenCalledTimes(1));
+        controller.abort();
+        await vi.waitFor(() => expect(outcomes).toEqual([expect.objectContaining({ name: "AbortError" })]));
+        if (phase === "queued") expect(transport).not.toHaveBeenCalled();
+        else expect(transport.mock.calls[0][1]?.signal?.aborted).toBe(true);
+      } finally {
+        finish();
+        await Promise.all([...held, request]);
+        transport.mockImplementation((...args) => globalThis.fetch(...args));
+      }
+      if (phase === "queued") expect(transport).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["queued", "running", "reading body"] as const)(
+    "enforces an end-to-end deadline on a %s option request",
+    async (phase) => {
+      vi.useFakeTimers();
+      const source = makeBackend({ baseUrl: "https://deadline-options.test" });
+      const transport = vi.mocked(pluginFetch);
+      let finish!: () => void;
+      const stalled = new Promise<void>((resolve) => { finish = resolve; });
+      const bodyRead = vi.fn(async () => { await stalled; return []; });
+      const body = new Response("[]", { headers: { "content-type": "application/json" } });
+      vi.spyOn(body, "json").mockImplementation(bodyRead);
+      transport.mockClear().mockImplementation(async () => {
+        if (phase === "running") await stalled;
+        return body;
+      });
+      const held = phase === "queued"
+        ? Array.from({ length: 4 }, () => withRequestSlot(source.baseUrl, undefined, () => stalled))
+        : [];
+      const outcomes: unknown[] = [];
+      const request = fetchParamOptions(source, "options", {}).then(
+        (value) => outcomes.push(value), (err: unknown) => outcomes.push(err),
+      );
+      try {
+        await vi.advanceTimersByTimeAsync(170_000);
+        expect(outcomes).toEqual([]);
+        if (phase === "reading body") expect(bodyRead).toHaveBeenCalledTimes(1);
+        await vi.advanceTimersByTimeAsync(10_000);
+        expect(outcomes).toEqual([expect.objectContaining({ name: "TimeoutError" })]);
+        if (phase === "queued") expect(transport).not.toHaveBeenCalled();
+        else expect(transport.mock.calls[0][1]?.signal?.aborted).toBe(true);
+      } finally {
+        finish();
+        await Promise.all([...held, request]);
+        transport.mockImplementation((...args) => globalThis.fetch(...args));
+        vi.useRealTimers();
+      }
+      if (phase === "queued") expect(transport).not.toHaveBeenCalled();
+    },
+  );
 });

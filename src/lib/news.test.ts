@@ -38,7 +38,7 @@ const article = (over: Partial<NewsArticle> = {}): NewsArticle => ({
 
 describe("URLs", () => {
   it("derives the websocket URL from an http or https base, with or without a trailing slash", () => {
-    expect(wireUrl("https://ticker.tail.ts.net")).toBe("wss://ticker.tail.ts.net/ws/news");
+    expect(wireUrl("https://news.example.invalid")).toBe("wss://news.example.invalid/ws/news");
     expect(wireUrl("http://127.0.0.1:8088/")).toBe("ws://127.0.0.1:8088/ws/news");
     expect(wireUrl("ftp://x")).toBeNull();
     expect(wireUrl("not a url")).toBeNull();

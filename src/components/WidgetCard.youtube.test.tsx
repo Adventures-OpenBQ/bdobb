@@ -14,6 +14,16 @@ import {useBackendsStore} from '../stores/backendsStore';
 import {backend,card,widget} from '../test/fixtures';
 import {__reset} from '../test/memfs';
 import {__resetJsonStoreForTests} from '../lib/jsonStore';
+
+// jsdom has no ResizeObserver. Playback/capture tests do not measure layout;
+// WidgetCard.test.tsx separately drives the real title-strip overflow lifecycle.
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+vi.stubGlobal("ResizeObserver", ResizeObserverStub);
+
 beforeEach(()=>{
  native.available=false;__reset();__resetJsonStoreForTests();
  useBackendsStore.setState({backends:[backend()],statuses:{b1:'online'}});

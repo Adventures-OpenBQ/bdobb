@@ -1146,3 +1146,45 @@ it('moves chart configuration into Parameters without resetting the delivered fi
         expect(store.readView('d', 's')).toBe(source);
     } finally {cleanup(); panel.remove(); store.disposeDashboard('d');}
 });
+
+async function setupEmptyCategory(includeEmpty = true) {
+    const columns = [...(includeEmpty ? [{ id: '', label: 'Empty-key numeric', dtype: 'number' as const }] : []), { id: 'revenue', label: 'Revenue', dtype: 'number' as const }, { id: '__bdobb_choose_category__', label: 'Sentinel-shaped key', dtype: 'number' as const }, { id: '__bdobb_choose_category__1', label: 'Second sentinel-shaped key', dtype: 'number' as const }];
+    const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: { ...input, columns, rows: [{ id: 'r1', values: { '': 101, revenue: 10, __bdobb_choose_category__: 5, __bdobb_choose_category__1: 6 } }, { id: 'r2', values: { '': 301, revenue: 30, __bdobb_choose_category__: 7, __bdobb_choose_category__1: 8 } }] } }) }) });
+    store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [{ ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined }, chart] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d'); return store;
+}
+it('selects, renders and clears an empty raw category without colliding with real sentinel-shaped fields', async () => {
+    const store = await setupEmptyCategory(); const commit = vi.fn(async (_: unknown) => true);
+    const props = (category: string | undefined) => ({ dashboardId: 'd', card: { ...chart, linkedChart: { ...settings, category } }, refreshKey: 0, store, onSettingsChange: commit });
+    const { rerender } = render(<LinkedChartRenderer {...props(undefined)}/>);
+    const select = screen.getByLabelText('Category');
+    const placeholder = screen.getByRole('option', { name: 'Choose category' }) as HTMLOptionElement;
+    expect(placeholder.value).not.toBe('');
+    expect(new Set([...select.querySelectorAll('option')].map(o => o.value)).size).toBe(select.querySelectorAll('option').length);
+    fireEvent.change(select, { target: { value: '' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...settings, category: '' }));
+    rerender(<LinkedChartRenderer {...props('')}/>);
+    const f = JSON.parse((await screen.findByTestId('figure')).textContent!);
+    expect(f.layout.xaxis.ticktext).toEqual(['101', '301']);
+    expect(f.data[0].y).toEqual([10, 30]);
+    expect((screen.getByLabelText('Category') as HTMLSelectElement).selectedOptions[0].text).toBe('Empty-key numeric');
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Category'), { target: { value: placeholder.value } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...settings, category: undefined }));
+    cleanup(); store.disposeDashboard('d');
+});
+it('requests the present empty raw key and refuses an unavailable empty key before chartData', async () => {
+    for (const includeEmpty of [true, false]) {
+        const store = await setupEmptyCategory(includeEmpty); const executor = store.readExecutor('d', 's')!;
+        const read = vi.spyOn(executor, 'chartData');
+        render(<LinkedChartRenderer dashboardId="d" card={{ ...chart, linkedChart: { ...settings, category: '' } }} refreshKey={0} store={store} onSettingsChange={async () => true}/>);
+        if (includeEmpty) {
+            await screen.findByTestId('figure');
+            expect(read).toHaveBeenCalledWith(expect.anything(), ['', 'revenue'], expect.any(AbortSignal));
+        } else {
+            expect(await screen.findByRole('alert')).toHaveTextContent(/unavailable/);
+            expect(read).not.toHaveBeenCalled();
+        }
+        cleanup(); store.disposeDashboard('d');
+    }
+});

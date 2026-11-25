@@ -48,9 +48,9 @@ Cards move between **Active** and **Inactive** live as discovery finishes. That 
 
 Discovery gives each backend's `widgets.json` **ten seconds**, end to end. That deadline exists because discovery asks every backend at once: a host that accepts the connection and then never answers would otherwise hold the whole run open, and every card on *every* backend would sit unresolved waiting for it. With the deadline, the silent backend simply goes **offline** on its own and the others are unaffected.
 
-## The seeded `Local` entry
+## Your first connection
 
-A fresh install seeds one backend named `Local` at `http://localhost:6900`. It is a starting point, not a working connection: the openbq-docker stack publishes no host port for its API (Tailscale Serve is the only way in — see [[tailscale-networking|Tailscale Networking]]), so on almost every machine that entry sits with a red dot until you edit its URL. The seed only happens when the connections file is absent, so deleting the entry does not bring it back.
+A fresh public install starts with no saved connections. Choose **Add** and enter the backend address you want to use. The dialog offers `Local` at `http://localhost:6900` as a starting point for a backend on your own machine. For openbq-docker, use its Tailscale Serve address instead: the stack publishes no host port for the API. See [[tailscale-networking|Tailscale Networking]]. Existing connection files, including an empty list, are preserved.
 
 ## More than one at once
 

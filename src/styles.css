@@ -1744,7 +1744,7 @@ body {
 }
 
 /* Give the parameter scroller spare width; cap long titles without reserving empty space. */
-.card-header:has(.card-chips:not(.card-chips-hidden)) .card-title { flex: 0 1 auto; max-width: min(30%, 18rem); }
+.card-header:has(.card-chips:not(.card-chips-hidden):not(:empty)) .card-title { flex: 0 1 auto; max-width: min(30%, 18rem); }
 
 /* A zero basis keeps parameters beside the title and actions instead of
    moving the whole strip to another line. Native overflow supports trackpads,
@@ -1762,10 +1762,12 @@ body {
 .card-chips:has(> .video-row-zero):not(.card-chips-hidden) { display: flex; align-items: center; gap: 4px; }
 .card-chips:has(> .video-row-zero) > .card-params { flex: 0 0 auto; min-width: 0; }
 .video-row-zero { display: inline-flex; align-items: center; flex: 0 0 auto; }
+.card-chips-overflowing { padding-bottom: 16px; }
 /* Collapsed controls (see .card-controls-collapsed below) hide the chips too
    -- a card collapsed to just its icon cluster showing its parameters anyway
    would defeat the whole point of collapsing. */
 .card-chips-hidden { display: none; }
+.card-chips:empty { display: none; }
 
 /* Belt and suspenders with the ellipsis above: if the card is narrow enough
    that even a fully-shrunk title can't leave room for Parameters/Raw/

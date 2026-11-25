@@ -4,7 +4,11 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@tauri-apps/plugin-http", () => ({ fetch: globalThis.fetch }));
+vi.mock("@tauri-apps/plugin-http", () => ({
+  fetch: vi.fn((...args: Parameters<typeof globalThis.fetch>) => globalThis.fetch(...args)),
+}));
+
+import { fetch } from "@tauri-apps/plugin-http";
 
 import { startMockServer, type MockServer } from "../test/mockServer";
 import { __resetLoggerForTests } from "../lib/logger";
@@ -77,6 +81,35 @@ async function serve(routes: Record<string, unknown>) {
 }
 
 describe("useWidgetData", () => {
+  it.each(["unmount", "parameter change"])("releases all stalled widget slots on %s", async (trigger) => {
+    const transport = vi.mocked(fetch);
+    transport.mockClear().mockImplementation(async (input) => {
+      const symbol = new URL(String(input)).searchParams.get("symbol");
+      if (symbol === "AAPL") return new Promise<Response>(() => {});
+      return new Response('{"results":[{"close":2}]}', { headers: { "content-type": "application/json" } });
+    });
+    const baseUrl = `https://widget-${trigger === "unmount" ? "unmount" : "supersession"}.test`;
+    useBackendsStore.setState({ backends: [backend({ baseUrl })] });
+    registerWidget();
+
+    const mount = () => renderHook(({ symbol }) => useWidgetData(card, { symbol }), {
+      initialProps: { symbol: "AAPL" },
+    });
+    const previous = Array.from({ length: 4 }, mount);
+    try {
+      await waitFor(() => expect(transport).toHaveBeenCalledTimes(4));
+      const staleSignals = transport.mock.calls.map(([, init]) => init?.signal);
+      if (trigger === "unmount") previous.forEach((view) => view.unmount());
+      else previous.forEach((view) => view.rerender({ symbol: "MSFT" }));
+      const next = renderHook(() => useWidgetData(card, { symbol: "NVDA" }));
+      await waitFor(() => expect(next.result.current.data).toEqual([{ close: 2 }]));
+      expect(staleSignals.every((signal) => signal?.aborted)).toBe(true);
+    } finally {
+      transport.mockImplementation((...args) => globalThis.fetch(...args));
+    }
+  });
+
+
   /** A bound card as WidgetCard wires it: useCardRequest hands useWidgetData the bundle hook's calendars. */
   function useBoundCard(c: DashboardCard, params: Record<string, string> = c.params, runButton = false) {
     const w = useWidgetRegistryStore((st) => st.find(c.backendId, c.widgetId));
@@ -1028,6 +1061,153 @@ describe("useWidgetData auto-refresh", () => {
       await vi.advanceTimersByTimeAsync(3_600_000);
     });
     expect(result.current.dataStale).toBe(false);
+  });
+
+  /**
+   * The provider's retry wait (openbq-eodhd 9.0.2): a refusal that ends with
+   * "Retry after N s." holds this card's AUTOMATIC triggers for N seconds. A
+   * press and a new question still send; nothing is sent when the wait ends.
+   */
+  describe("the provider's retry wait", () => {
+    const refused = { __status: 502, __body: { detail: "EODHD bars: HTTP 429 — Too many. Retry after 90 s." } };
+
+    async function refusedCard(runButton = false) {
+      const s = await serve({ "/equity/price": refused });
+      registerWidget();
+      useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, autoRefreshMinutes: 1 } });
+      // useFakeClock's body, not the call: its name makes the hooks lint rule
+      // read a call from a helper as a React Hook called outside a component.
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      const hook = renderHook(({ params }) => useWidgetData(card, params, runButton), {
+        initialProps: { params: card.params },
+      });
+      await waitFor(() => expect(hook.result.current.status).toBe("error"));
+      await waitFor(() => expect(hook.result.current.retryIn).toBeGreaterThan(85));
+      expect(priceRequests(s)).toBe(1);
+      return { s, ...hook };
+    }
+
+    const advance = (ms: number) =>
+      act(async () => {
+        await vi.advanceTimersByTimeAsync(ms);
+      });
+
+    it("a card holding a wait skips interval ticks until it passes, then the next tick sends", async () => {
+      const { s, result } = await refusedCard();
+
+      await advance(60_000);
+      expect(priceRequests(s)).toBe(1);
+      expect(result.current.status).toBe("error");
+
+      // The wait ended at 90 s; the skipped tick re-armed for 120 s.
+      await advance(60_000);
+      await waitFor(() => expect(priceRequests(s)).toBe(2));
+    });
+
+    it("a suppressed automatic refresh preserves the backend table request ticket", async () => {
+      const s = await serve({ "/equity/price": refused });
+      registerWidget();
+      useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, autoRefreshMinutes: 1 } });
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      const dashboard: Dashboard = { id: "retry-owned-ticket", name: "Retry ownership", tabs: [] };
+      const begin = vi.spyOn(tableExecutionStore, "beginBackendRequest");
+      try {
+        const { result, unmount } = renderHook(() => useWidgetData(card, card.params, false, undefined, undefined, undefined, dashboard));
+        await waitFor(() => expect(result.current.status).toBe("error"));
+        const completed = result.current.completedRequest;
+        expect(completed).toBeDefined();
+        expect(begin).toHaveBeenCalledTimes(1);
+        act(() => useDashboardStore.getState().refreshAll());
+        await advance(1_000);
+        expect(priceRequests(s)).toBe(1);
+        expect(begin).toHaveBeenCalledTimes(1);
+        expect(result.current.completedRequest).toBe(completed);
+        unmount();
+      } finally {
+        begin.mockRestore();
+        tableExecutionStore.disposeDashboard(dashboard.id);
+      }
+    });
+
+    it("refresh-all during the wait sends nothing", async () => {
+      const { s } = await refusedCard();
+      act(() => useDashboardStore.getState().refreshAll());
+      await advance(1_000);
+      expect(priceRequests(s)).toBe(1);
+    });
+
+    it("becoming visible after an interval elapsed during the wait sends nothing", async () => {
+      const { s } = await refusedCard();
+      setHidden(true);
+      act(() => {
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      await advance(70_000);
+      setHidden(false);
+      act(() => {
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      await advance(1_000);
+      expect(priceRequests(s)).toBe(1);
+    });
+
+    it("a changed backend request configuration is a new question during the wait", async () => {
+      await refusedCard();
+      let replacement!: MockServer;
+      await act(async () => { replacement = await serve({ "/equity/price": { results: [{ close: 2 }] } }); });
+      await waitFor(() => expect(priceRequests(replacement)).toBe(1));
+    });
+
+    it("a parameter edit during the wait still sends", async () => {
+      const { s, rerender } = await refusedCard();
+      rerender({ params: { symbol: "MSFT" } });
+      await waitFor(() => expect(priceRequests(s)).toBe(2));
+    });
+
+    it("Run during the wait still sends", async () => {
+      const { s, result } = await refusedCard(true);
+      act(() => result.current.run());
+      await waitFor(() => expect(priceRequests(s)).toBe(2));
+    });
+
+    it("retryIn counts down each second and clears when the wait ends, without sending", async () => {
+      const { s, result } = await refusedCard();
+      const start = result.current.retryIn!;
+      await advance(1_000);
+      expect(result.current.retryIn).toBe(start - 1);
+      // Short of the 60 s interval tick, so the only thing that could send is the wait ending.
+      useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, autoRefreshMinutes: undefined } });
+      await advance(90_000);
+      expect(result.current.retryIn).toBeUndefined();
+      expect(priceRequests(s)).toBe(1);
+    });
+
+    it("a card that stopped showing the refusal is not held by its wait", async () => {
+      // The backend drops out during the wait, so the card now says so; the
+      // wait belonged to the refusal it no longer shows. When the backend is
+      // back the card must ask again, not sit on "Backend is offline".
+      const { s, result } = await refusedCard();
+      const widgets = useWidgetRegistryStore.getState().widgets;
+      act(() => {
+        useWidgetRegistryStore.setState({ widgets: [] });
+        useBackendsStore.setState((st) => ({ statuses: { ...st.statuses, b1: "offline" } }));
+      });
+      await waitFor(() => expect(result.current.error).toBe("Backend is offline"));
+
+      act(() => {
+        useBackendsStore.setState((st) => ({ statuses: { ...st.statuses, b1: "online" } }));
+        useWidgetRegistryStore.setState({ widgets });
+      });
+      await waitFor(() => expect(priceRequests(s)).toBe(2));
+    });
+
+    it("an error without a wait sets no retryIn", async () => {
+      await serve({ "/equity/price": { __status: 500 } });
+      registerWidget();
+      const { result } = renderHook(() => useWidgetData(card, card.params));
+      await waitFor(() => expect(result.current.status).toBe("error"));
+      expect(result.current.retryIn).toBeUndefined();
+    });
   });
 });
 

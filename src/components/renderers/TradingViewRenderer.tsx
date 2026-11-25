@@ -76,20 +76,21 @@ export function TradingViewRenderer({ widget, backend, spec, refreshKey }: Props
   const themeRef = useRef(theme);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+    const { signal } = controller;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const history = { ...widget, endpoint: udfHistoryEndpoint(widget.endpoint) };
 
     void (async () => {
       try {
-        const payload = await fetchWidgetData(backend, history, udfHistoryParams(spec.defaultSymbol, Date.now()));
+        const payload = await fetchWidgetData(backend, history, udfHistoryParams(spec.defaultSymbol, Date.now()), undefined, signal);
         const next = parseUdfHistory(payload);
-        if (cancelled) return;
+        if (signal.aborted) return;
         hasBars.current = next.length > 0;
         setBars(next);
         setError(null);
       } catch (err) {
-        if (cancelled) return;
+        if (signal.aborted) return;
         const message = err instanceof Error ? err.message : String(err);
         if (hasBars.current) {
           void logOnce(
@@ -100,12 +101,12 @@ export function TradingViewRenderer({ widget, backend, spec, refreshKey }: Props
           setError(message);
         }
       } finally {
-        if (!cancelled) timer = setTimeout(() => setAttempt((n) => n + 1), spec.updateFrequency);
+        if (!signal.aborted) timer = setTimeout(() => setAttempt((n) => n + 1), spec.updateFrequency);
       }
     })();
 
     return () => {
-      cancelled = true;
+      controller.abort();
       if (timer !== null) clearTimeout(timer);
     };
   }, [widget, backend, spec, refreshKey, attempt]);

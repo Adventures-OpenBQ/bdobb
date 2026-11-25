@@ -1,0 +1,32 @@
+[
+  {
+    "path": "docs/releases/validation/v4-integration/frozen-source-hashes.json",
+    "rule": "generic-api-key",
+    "content_sha256": "61da4ab63600959afdbca99361d66b260c60726c09ad3e9dd9d04cb45f8adf47",
+    "reason": "Reviewed V4 source-validation manifest. All863 values independently parsed as64-hex SHA256 digests keyed by relative source paths; flagged API-key-looking entries are source integrity hashes. Exact full-file hash only; no credentials."
+  },
+  {
+    "path": "docs/releases/validation/v4-integration/validated-source-hashes.json",
+    "rule": "generic-api-key",
+    "content_sha256": "077eb18c6d042eb4aba46ca1548763b8e256d03c0e4fdd723a8dce69836427af",
+    "reason": "Reviewed V4 source-validation manifest. All946 values independently parsed as64-hex SHA256 digests keyed by relative source paths; flagged API-key-looking entries are source integrity hashes. Exact full-file hash only; no credentials."
+  },
+  {
+    "path": "deploy/reference-demo/.env.example",
+    "rule": "tailscale-credential",
+    "content_sha256": "cbc2c8d8d683f84be649b3f39ebff9830da5f6962eadc3aab98b873a13b5556d",
+    "reason": "Reviewed V4 committed example template. TS_AUTHKEY contains exactly twelve uppercase X characters with an explicit placeholder comment, not a usable Tailscale credential. Exact full-file hash only; any actual-value substitution changes the bound bytes."
+  },
+  {
+    "path": "docs/releases/validation/v5-reconciled/frozen-source-hashes.json",
+    "rule": "generic-api-key",
+    "content_sha256": "48cf18e1e1acc061bee1eca7e1424ad2e22a4ea3c3d0ef52caf24aa1784e6394",
+    "reason": "Historical source integrity manifest, not credential configuration: exactly1007 unique project-relative paths map only to64-lowercase-hex SHA256 digest strings. Checked unchanged at public clean V5 commit c9c0e57ae2f51c4d76178e0d12e2fb3d8e543917, Git blob 76bd39256dea6265593b58bac22cb9c336c5fa8e, independently retrieved anonymously from Adventures-OpenBQ/bdobb and byte-identical. The generic detector is triggered by path names containing auth/key terms next to source-content hashes; there are no credential-valued fields or other value types. Only this exact path + generic-api-key rule + complete canonical normalized file SHA is reviewed; changed bytes, other paths and other rules remain scanned. Historical qualification wording is not a claim of current release acceptance."
+  },
+  {
+    "path": "docs/releases/validation/v5-reconciled/qualified-source-hashes.json",
+    "rule": "generic-api-key",
+    "content_sha256": "33f4d380b7fd3069df644077920151ea4ca9003ebe6fccf4da96cce64e217f23",
+    "reason": "Historical source integrity manifest, not credential configuration: exactly1007 unique project-relative paths map only to64-lowercase-hex SHA256 digest strings. Checked unchanged at public clean V5 commit c9c0e57ae2f51c4d76178e0d12e2fb3d8e543917, Git blob 88cbab1b462a0c487154313c414dd0280085bfab, independently retrieved anonymously from Adventures-OpenBQ/bdobb and byte-identical. The generic detector is triggered by path names containing auth/key terms next to source-content hashes; there are no credential-valued fields or other value types. Only this exact path + generic-api-key rule + complete canonical normalized file SHA is reviewed; changed bytes, other paths and other rules remain scanned. Historical qualification wording is not a claim of current release acceptance."
+  }
+]

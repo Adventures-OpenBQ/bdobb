@@ -14,6 +14,16 @@ import {makeDefaultDocks} from '../lib/dashboardsFile';
 import {backend,card,widget} from '../test/fixtures';
 import {__reset} from '../test/memfs';
 import {__resetJsonStoreForTests} from '../lib/jsonStore';
+
+// jsdom has no ResizeObserver. Playback/capture tests do not measure layout;
+// WidgetCard.test.tsx separately drives the real title-strip overflow lifecycle.
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+vi.stubGlobal("ResizeObserver", ResizeObserverStub);
+
 beforeEach(()=>{
  __reset();__resetJsonStoreForTests();vi.stubEnv('TAURI_ENV_PLATFORM','darwin');
  native.mockReset().mockImplementation(async(command:string)=>command==='picture_in_picture_fit'?{state:'fitted'}:command==='youtube_pip_is_open'?false:undefined);

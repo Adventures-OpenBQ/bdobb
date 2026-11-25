@@ -1,0 +1,212 @@
+[
+  {
+    "path": "security/gate.py",
+    "rule": "private-ip",
+    "line_sha256": "839c0e52d4efea3fa60e4eaa23c8ec45d0b812e9cd17645668e194224c0755e9",
+    "reason": "Reserved network range definition in scanner"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "ad636af3eefd170d6499901c84b1d000b406655f78c54f754fad00d157a829fe",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-tailnet",
+    "line_sha256": "ad636af3eefd170d6499901c84b1d000b406655f78c54f754fad00d157a829fe",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "5b8b349eb916eddfa0ac39c55db1b4d902ed59767ed71d0e2f92e407995d13be",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "0ac804d9764ae0e107fef27e734366e89ae359e4344e4850a1610ba70ff793e9",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "4ef714dfd8245c004c324d446a22194a7c5123e6570d298f0fa857d2345c9e34",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "9118b97ca56d07957c45aaf639840d1511f1a7d64c3c404409ca27647ccc1736",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "src/components/WidgetLibrary.test.tsx",
+    "rule": "private-ip",
+    "line_sha256": "02ec48876b24072a8b551b65e211ed536d1620012f2bb5258257c1f15bb2b60a",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "deploy/review-backend/README.md",
+    "rule": "private-tailnet",
+    "line_sha256": "51af557800988ef838c7c413efba167d76d203abd34faec68da1ce45a421159f",
+    "reason": "Example public hostname with an X placeholder"
+  },
+  {
+    "path": "docs/releases/validation/v3-repair/dashboard-sync-2026-10-11/README.md",
+    "rule": "private-tailnet",
+    "line_sha256": "cdf7c8b1bfab79828de75320d952a067b17e244829d36a5fc8d33acd666c2a24",
+    "reason": "Schematic MagicDNS pattern description in scanner documentation or test commentary; not an assigned operator hostname."
+  },
+  {
+    "path": "scripts/scrub-check.sh",
+    "rule": "private-tailnet",
+    "line_sha256": "ae6455e9d7bc89609965666cd373a683c39afce388448612e2ec67255a2704b4",
+    "reason": "Schematic MagicDNS pattern description in scanner documentation or test commentary; not an assigned operator hostname."
+  },
+  {
+    "path": "scripts/scrub-check.test.mjs",
+    "rule": "private-tailnet",
+    "line_sha256": "7747394ff3880ec318ea811146964887cb72a95345dc34d134da7248b6676c7e",
+    "reason": "Schematic MagicDNS pattern description in scanner documentation or test commentary; not an assigned operator hostname."
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "178e50b537d69cf7811f4d458aba8108f929c79b53cf4ca8d3c35c6520817894",
+    "reason": "Synthetic privacy-gate refusal control deliberately injects a deterministic private IP into a test tar and requires it to be blocked; no operator endpoint."
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "d2be38a14771535c06435013999c62f5cb33915b6044a7b6fd1711c1c251609c",
+    "reason": "Synthetic privacy-gate refusal control deliberately injects a deterministic private IP into a test tar and requires it to be blocked; no operator endpoint."
+  },
+  {
+    "path": "src/components/ai/McpServersTab.test.tsx",
+    "rule": "private-ip",
+    "line_sha256": "5f9c842f1f1018f474158ee6cb50a21afcdccd27cfb5dbc113b2fa8f1b2aace6",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/agent/importedMcp.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "adb5c02b761e00ad49de19ba9a4106231851d85f53b74db04fc4f9f9955cbbe3",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/agent/importedMcp.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "62721b69d5d63d1e06ae8c212b1b2a11f9ba02d1d70b84c9426c64165bcf3943",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/agent/importedMcp.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "527068c0437d4a18db5f0650abfcc4424e8beaf02ddd16e266dc28d10b5eaaad",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/agent/importedMcp.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "10c8bddb899593f6ee6336a850eee080b10338ba46f639f38750214b550a7ebb",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/aiLibraryFile.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "3fcc788120bd573aa09cd67ef5201a98a49dd5c60dc61d22260cf309ee483136",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/aiLibraryFile.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "c8942c2d0f51e7fd37d5602632a5b5554d9d69b8de135754a71dda5df3614571",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/privateHost.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "3a952955f9b001cfe5b2df8f357f9790a05e41c65e21d5b0db4d85efb6c55b0e",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/privateHost.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "e70042490d47f4537b20fda7c0d086223dfc3bf2dd985be7dc8bf96efa978502",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/privateHost.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "74211d6ba49d9511ffa2a19687ac1fde58f81644c3f396f21b585d8e3eacb9f3",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/privateHost.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "17e59dbae2d86dac79fa3bd4325ff53fb79863d1e82ee3db82a6bbabd393f111",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/privateHost.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "e11ce106d0798d84e9886343cbf665360278d1e1c671da3b2fab788aa573c861",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/privateHost.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "d8b6c6a49d6c77245ef788f4272b3cc1c842e69a183190e7dc46cad3835bb92b",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/settingsBundle.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "cdf11380772c80ee6568d7d41db86a484b280ec68192937331246d213594231a",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/settingsBundle.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "2f8c4b5fcc0a8bd1109eb2badc33eac83988c71a056569c9a0f3e19bbaca6a39",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/settingsFile.test.ts",
+    "rule": "private-tailnet",
+    "line_sha256": "c6ea1af9e050048bf38d91f0f1a1ab1dc73e6a12bd6ac7965471fd5cd51d616b",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/settingsFile.test.ts",
+    "rule": "private-tailnet",
+    "line_sha256": "57d13493e0afb7c200e083abd77f2bb94866cfd7712db5473073ec012b5a68af",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/settingsFile.test.ts",
+    "rule": "private-tailnet",
+    "line_sha256": "c4acfc78d5e4972f6d811f974e66b4bb59c32a2425eca7bce8cf50002d600856",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "src/lib/settingsFile.test.ts",
+    "rule": "private-tailnet",
+    "line_sha256": "8021308c2dbba3a31754598cc3659c2de2afbd2fd18167d16bbc6ed0c8afef7a",
+    "reason": "Root-reviewed V6 synthetic private-network test input; exact path/rule/line SHA only. Tests private-host warning and import/default preservation; no operator endpoint."
+  },
+  {
+    "path": "docs/releases/validation/v6/regression/run3/transcripts-v6-005-006.jsonl",
+    "rule": "private-tailnet",
+    "line_sha256": "144a308af39ecb499443a6c5e50eb5c1759a118cb52dfce57c93818ed5146a56",
+    "reason": "Root-reviewed immutable already-public historical source blob 79ddd686318a8826a1ebd087e51771d787b8b613 from the existing Adventures-OpenBQ/bdobb V6 ancestry. The exact old transcript line is preserved only in Git history; current source and archive use backend.example.invalid. This entry is restricted to explicit history/pre-push invocation after a strict current-tree gate. It is never the default tree/staged/artifact/image exception policy; changed bytes or paths remain rejected."
+  },
+  {
+    "path": "src/lib/news.test.ts",
+    "rule": "private-tailnet",
+    "line_sha256": "e2a733bc8e23de59582818dc07c7a7cefb176ac51e2cca2bb74628ca8e984dcd",
+    "reason": "Historical unit-only wireUrl string-conversion assertion, confined to the test source in both verified Git blobs. No request, runtime configuration, authentication or known operator-identity binding. Namespace assignment is unknown; no reserved, fake, unassigned or synthetic DNS claim. Exact history path/rule/line only."
+  }
+]

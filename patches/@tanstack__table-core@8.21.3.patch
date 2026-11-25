@@ -1,0 +1,472 @@
+diff --git a/build/lib/core/column.js b/build/lib/core/column.js
+index 63f2399f9a28c1844c6a49062aa53eb4404898e8..bb1ff2987642270635b9f38b5baae200dcbdb0a9 100644
+--- a/build/lib/core/column.js
++++ b/build/lib/core/column.js
+@@ -42,7 +42,7 @@ function createColumn(table, columnDef, depth, parent) {
+       accessorFn = originalRow => originalRow[resolvedColumnDef.accessorKey];
+     }
+   }
+-  if (!id) {
++  if (!id && resolvedColumnDef.id !== '') {
+     if (process.env.NODE_ENV !== 'production') {
+       throw new Error(resolvedColumnDef.accessorFn ? `Columns require an id when using an accessorFn` : `Columns require an id when using a non-string header`);
+     }
+diff --git a/build/lib/core/row.js b/build/lib/core/row.js
+index 5ce8f55fad34a1f43e7475d1a5fc2de645c1ac80..54f5f3b183751bccedb3936ed2ed5c7747bb4985 100644
+--- a/build/lib/core/row.js
++++ b/build/lib/core/row.js
+@@ -20,10 +20,10 @@ const createRow = (table, id, original, rowIndex, depth, subRows, parentId) => {
+     original,
+     depth,
+     parentId,
+-    _valuesCache: {},
+-    _uniqueValuesCache: {},
++    _valuesCache: Object.create(null),
++    _uniqueValuesCache: Object.create(null),
+     getValue: columnId => {
+-      if (row._valuesCache.hasOwnProperty(columnId)) {
++      if (Object.prototype.hasOwnProperty.call(row._valuesCache, columnId)) {
+         return row._valuesCache[columnId];
+       }
+       const column = table.getColumn(columnId);
+@@ -34,7 +34,7 @@ const createRow = (table, id, original, rowIndex, depth, subRows, parentId) => {
+       return row._valuesCache[columnId];
+     },
+     getUniqueValues: columnId => {
+-      if (row._uniqueValuesCache.hasOwnProperty(columnId)) {
++      if (Object.prototype.hasOwnProperty.call(row._uniqueValuesCache, columnId)) {
+         return row._uniqueValuesCache[columnId];
+       }
+       const column = table.getColumn(columnId);
+diff --git a/build/lib/core/table.js b/build/lib/core/table.js
+index bf1fc366c5941841ab0737a79004d6a280f0a286..76bc87d1f70a04cb5b62e4d4b9ba2458ea8f0b86 100644
+--- a/build/lib/core/table.js
++++ b/build/lib/core/table.js
+@@ -186,7 +186,7 @@ function createTable(options) {
+       return flatColumns.reduce((acc, column) => {
+         acc[column.id] = column;
+         return acc;
+-      }, {});
++      }, Object.create(null));
+     }, utils.getMemoOptions(options, 'debugColumns', 'getAllFlatColumnsById')),
+     getAllLeafColumns: utils.memo(() => [table.getAllColumns(), table._getOrderColumnsFn()], (allColumns, orderColumns) => {
+       let leafColumns = allColumns.flatMap(column => column.getLeafColumns());
+diff --git a/build/lib/features/ColumnFiltering.js b/build/lib/features/ColumnFiltering.js
+index a6dbf65e3258178f3c5b582bf05d7e7dda300b8a..392aca477427b8bcfb2da7691746b07922874fb3 100644
+--- a/build/lib/features/ColumnFiltering.js
++++ b/build/lib/features/ColumnFiltering.js
+@@ -105,8 +105,8 @@ const ColumnFiltering = {
+     };
+   },
+   createRow: (row, _table) => {
+-    row.columnFilters = {};
+-    row.columnFiltersMeta = {};
++    row.columnFilters = Object.create(null);
++    row.columnFiltersMeta = Object.create(null);
+   },
+   createTable: table => {
+     table.setColumnFilters = updater => {
+diff --git a/build/lib/features/ColumnSizing.js b/build/lib/features/ColumnSizing.js
+index 41636b618484761bb8c47c508b549950de3e714b..a0b8e0b02c7e4c83e0aaab269d02d2262ec761a0 100644
+--- a/build/lib/features/ColumnSizing.js
++++ b/build/lib/features/ColumnSizing.js
+@@ -53,7 +53,10 @@ const ColumnSizing = {
+   createColumn: (column, table) => {
+     column.getSize = () => {
+       var _column$columnDef$min, _ref, _column$columnDef$max;
+-      const columnSize = table.getState().columnSizing[column.id];
++      const columnSizing = table.getState().columnSizing;
++      const columnSize = Object.prototype.hasOwnProperty.call(columnSizing, column.id)
++        ? columnSizing[column.id]
++        : undefined;
+       return Math.min(Math.max((_column$columnDef$min = column.columnDef.minSize) != null ? _column$columnDef$min : defaultColumnSizing.minSize, (_ref = columnSize != null ? columnSize : column.columnDef.size) != null ? _ref : defaultColumnSizing.size), (_column$columnDef$max = column.columnDef.maxSize) != null ? _column$columnDef$max : defaultColumnSizing.maxSize);
+     };
+     column.getStart = utils.memo(position => [position, ColumnVisibility._getVisibleLeafColumns(table, position), table.getState().columnSizing], (position, columns) => columns.slice(0, column.getIndex(position)).reduce((sum, column) => sum + column.getSize(), 0), utils.getMemoOptions(table.options, 'debugColumns', 'getStart'));
+@@ -113,7 +116,7 @@ const ColumnSizing = {
+         const startSize = header.getSize();
+         const columnSizingStart = header ? header.getLeafHeaders().map(d => [d.column.id, d.column.getSize()]) : [[column.id, column.getSize()]];
+         const clientX = isTouchStartEvent(e) ? Math.round(e.touches[0].clientX) : e.clientX;
+-        const newColumnSizing = {};
++        const newColumnSizing = Object.create(null);
+         const updateOffset = (eventType, clientXPos) => {
+           if (typeof clientXPos !== 'number') {
+             return;
+diff --git a/build/lib/index.esm.js b/build/lib/index.esm.js
+index 3093c8a503a657b9ba69cc6527add857ae37a05b..2fc1a402bc9835c2a9b1be9bd64fd0de404de525 100644
+--- a/build/lib/index.esm.js
++++ b/build/lib/index.esm.js
+@@ -211,7 +211,7 @@ function createColumn(table, columnDef, depth, parent) {
+       accessorFn = originalRow => originalRow[resolvedColumnDef.accessorKey];
+     }
+   }
+-  if (!id) {
++  if (!id && resolvedColumnDef.id !== '') {
+     if (process.env.NODE_ENV !== 'production') {
+       throw new Error(resolvedColumnDef.accessorFn ? `Columns require an id when using an accessorFn` : `Columns require an id when using a non-string header`);
+     }
+@@ -505,10 +505,10 @@ const createRow = (table, id, original, rowIndex, depth, subRows, parentId) => {
+     original,
+     depth,
+     parentId,
+-    _valuesCache: {},
+-    _uniqueValuesCache: {},
++    _valuesCache: Object.create(null),
++    _uniqueValuesCache: Object.create(null),
+     getValue: columnId => {
+-      if (row._valuesCache.hasOwnProperty(columnId)) {
++      if (Object.prototype.hasOwnProperty.call(row._valuesCache, columnId)) {
+         return row._valuesCache[columnId];
+       }
+       const column = table.getColumn(columnId);
+@@ -519,7 +519,7 @@ const createRow = (table, id, original, rowIndex, depth, subRows, parentId) => {
+       return row._valuesCache[columnId];
+     },
+     getUniqueValues: columnId => {
+-      if (row._uniqueValuesCache.hasOwnProperty(columnId)) {
++      if (Object.prototype.hasOwnProperty.call(row._uniqueValuesCache, columnId)) {
+         return row._uniqueValuesCache[columnId];
+       }
+       const column = table.getColumn(columnId);
+@@ -772,8 +772,8 @@ const ColumnFiltering = {
+     };
+   },
+   createRow: (row, _table) => {
+-    row.columnFilters = {};
+-    row.columnFiltersMeta = {};
++    row.columnFilters = Object.create(null);
++    row.columnFiltersMeta = Object.create(null);
+   },
+   createTable: table => {
+     table.setColumnFilters = updater => {
+@@ -1252,7 +1252,10 @@ const ColumnSizing = {
+   createColumn: (column, table) => {
+     column.getSize = () => {
+       var _column$columnDef$min, _ref, _column$columnDef$max;
+-      const columnSize = table.getState().columnSizing[column.id];
++      const columnSizing = table.getState().columnSizing;
++      const columnSize = Object.prototype.hasOwnProperty.call(columnSizing, column.id)
++        ? columnSizing[column.id]
++        : undefined;
+       return Math.min(Math.max((_column$columnDef$min = column.columnDef.minSize) != null ? _column$columnDef$min : defaultColumnSizing.minSize, (_ref = columnSize != null ? columnSize : column.columnDef.size) != null ? _ref : defaultColumnSizing.size), (_column$columnDef$max = column.columnDef.maxSize) != null ? _column$columnDef$max : defaultColumnSizing.maxSize);
+     };
+     column.getStart = memo(position => [position, _getVisibleLeafColumns(table, position), table.getState().columnSizing], (position, columns) => columns.slice(0, column.getIndex(position)).reduce((sum, column) => sum + column.getSize(), 0), getMemoOptions(table.options, 'debugColumns', 'getStart'));
+@@ -1312,7 +1315,7 @@ const ColumnSizing = {
+         const startSize = header.getSize();
+         const columnSizingStart = header ? header.getLeafHeaders().map(d => [d.column.id, d.column.getSize()]) : [[column.id, column.getSize()]];
+         const clientX = isTouchStartEvent(e) ? Math.round(e.touches[0].clientX) : e.clientX;
+-        const newColumnSizing = {};
++        const newColumnSizing = Object.create(null);
+         const updateOffset = (eventType, clientXPos) => {
+           if (typeof clientXPos !== 'number') {
+             return;
+@@ -2903,7 +2906,7 @@ function createTable(options) {
+       return flatColumns.reduce((acc, column) => {
+         acc[column.id] = column;
+         return acc;
+-      }, {});
++      }, Object.create(null));
+     }, getMemoOptions(options, 'debugColumns', 'getAllFlatColumnsById')),
+     getAllLeafColumns: memo(() => [table.getAllColumns(), table._getOrderColumnsFn()], (allColumns, orderColumns) => {
+       let leafColumns = allColumns.flatMap(column => column.getLeafColumns());
+@@ -3163,8 +3166,8 @@ function getFilteredRowModel() {
+   return table => memo(() => [table.getPreFilteredRowModel(), table.getState().columnFilters, table.getState().globalFilter], (rowModel, columnFilters, globalFilter) => {
+     if (!rowModel.rows.length || !(columnFilters != null && columnFilters.length) && !globalFilter) {
+       for (let i = 0; i < rowModel.flatRows.length; i++) {
+-        rowModel.flatRows[i].columnFilters = {};
+-        rowModel.flatRows[i].columnFiltersMeta = {};
++        rowModel.flatRows[i].columnFilters = Object.create(null);
++        rowModel.flatRows[i].columnFiltersMeta = Object.create(null);
+       }
+       return rowModel;
+     }
+@@ -3209,7 +3212,7 @@ function getFilteredRowModel() {
+     // Flag the prefiltered row model with each filter state
+     for (let j = 0; j < rowModel.flatRows.length; j++) {
+       const row = rowModel.flatRows[j];
+-      row.columnFilters = {};
++      row.columnFilters = Object.create(null);
+       if (resolvedColumnFilters.length) {
+         for (let i = 0; i < resolvedColumnFilters.length; i++) {
+           currentColumnFilter = resolvedColumnFilters[i];
+@@ -3318,7 +3321,7 @@ function getGroupedRowModel() {
+           getValue: columnId => {
+             // Don't aggregate columns that are in the grouping
+             if (existingGrouping.includes(columnId)) {
+-              if (row._valuesCache.hasOwnProperty(columnId)) {
++              if (Object.prototype.hasOwnProperty.call(row._valuesCache, columnId)) {
+                 return row._valuesCache[columnId];
+               }
+               if (groupedRows[0]) {
+diff --git a/build/lib/index.mjs b/build/lib/index.mjs
+index b00ad055d1f95ef714072fba3ea0a528ea545ded..22a38d389cb8a7afd322235a5a4c0335552d9bd7 100644
+--- a/build/lib/index.mjs
++++ b/build/lib/index.mjs
+@@ -211,7 +211,7 @@ function createColumn(table, columnDef, depth, parent) {
+       accessorFn = originalRow => originalRow[resolvedColumnDef.accessorKey];
+     }
+   }
+-  if (!id) {
++  if (!id && resolvedColumnDef.id !== '') {
+     if (process.env.NODE_ENV !== 'production') {
+       throw new Error(resolvedColumnDef.accessorFn ? `Columns require an id when using an accessorFn` : `Columns require an id when using a non-string header`);
+     }
+@@ -505,10 +505,10 @@ const createRow = (table, id, original, rowIndex, depth, subRows, parentId) => {
+     original,
+     depth,
+     parentId,
+-    _valuesCache: {},
+-    _uniqueValuesCache: {},
++    _valuesCache: Object.create(null),
++    _uniqueValuesCache: Object.create(null),
+     getValue: columnId => {
+-      if (row._valuesCache.hasOwnProperty(columnId)) {
++      if (Object.prototype.hasOwnProperty.call(row._valuesCache, columnId)) {
+         return row._valuesCache[columnId];
+       }
+       const column = table.getColumn(columnId);
+@@ -519,7 +519,7 @@ const createRow = (table, id, original, rowIndex, depth, subRows, parentId) => {
+       return row._valuesCache[columnId];
+     },
+     getUniqueValues: columnId => {
+-      if (row._uniqueValuesCache.hasOwnProperty(columnId)) {
++      if (Object.prototype.hasOwnProperty.call(row._uniqueValuesCache, columnId)) {
+         return row._uniqueValuesCache[columnId];
+       }
+       const column = table.getColumn(columnId);
+@@ -772,8 +772,8 @@ const ColumnFiltering = {
+     };
+   },
+   createRow: (row, _table) => {
+-    row.columnFilters = {};
+-    row.columnFiltersMeta = {};
++    row.columnFilters = Object.create(null);
++    row.columnFiltersMeta = Object.create(null);
+   },
+   createTable: table => {
+     table.setColumnFilters = updater => {
+@@ -1252,7 +1252,10 @@ const ColumnSizing = {
+   createColumn: (column, table) => {
+     column.getSize = () => {
+       var _column$columnDef$min, _ref, _column$columnDef$max;
+-      const columnSize = table.getState().columnSizing[column.id];
++      const columnSizing = table.getState().columnSizing;
++      const columnSize = Object.prototype.hasOwnProperty.call(columnSizing, column.id)
++        ? columnSizing[column.id]
++        : undefined;
+       return Math.min(Math.max((_column$columnDef$min = column.columnDef.minSize) != null ? _column$columnDef$min : defaultColumnSizing.minSize, (_ref = columnSize != null ? columnSize : column.columnDef.size) != null ? _ref : defaultColumnSizing.size), (_column$columnDef$max = column.columnDef.maxSize) != null ? _column$columnDef$max : defaultColumnSizing.maxSize);
+     };
+     column.getStart = memo(position => [position, _getVisibleLeafColumns(table, position), table.getState().columnSizing], (position, columns) => columns.slice(0, column.getIndex(position)).reduce((sum, column) => sum + column.getSize(), 0), getMemoOptions(table.options, 'debugColumns', 'getStart'));
+@@ -1312,7 +1315,7 @@ const ColumnSizing = {
+         const startSize = header.getSize();
+         const columnSizingStart = header ? header.getLeafHeaders().map(d => [d.column.id, d.column.getSize()]) : [[column.id, column.getSize()]];
+         const clientX = isTouchStartEvent(e) ? Math.round(e.touches[0].clientX) : e.clientX;
+-        const newColumnSizing = {};
++        const newColumnSizing = Object.create(null);
+         const updateOffset = (eventType, clientXPos) => {
+           if (typeof clientXPos !== 'number') {
+             return;
+@@ -2903,7 +2906,7 @@ function createTable(options) {
+       return flatColumns.reduce((acc, column) => {
+         acc[column.id] = column;
+         return acc;
+-      }, {});
++      }, Object.create(null));
+     }, getMemoOptions(options, 'debugColumns', 'getAllFlatColumnsById')),
+     getAllLeafColumns: memo(() => [table.getAllColumns(), table._getOrderColumnsFn()], (allColumns, orderColumns) => {
+       let leafColumns = allColumns.flatMap(column => column.getLeafColumns());
+@@ -3163,8 +3166,8 @@ function getFilteredRowModel() {
+   return table => memo(() => [table.getPreFilteredRowModel(), table.getState().columnFilters, table.getState().globalFilter], (rowModel, columnFilters, globalFilter) => {
+     if (!rowModel.rows.length || !(columnFilters != null && columnFilters.length) && !globalFilter) {
+       for (let i = 0; i < rowModel.flatRows.length; i++) {
+-        rowModel.flatRows[i].columnFilters = {};
+-        rowModel.flatRows[i].columnFiltersMeta = {};
++        rowModel.flatRows[i].columnFilters = Object.create(null);
++        rowModel.flatRows[i].columnFiltersMeta = Object.create(null);
+       }
+       return rowModel;
+     }
+@@ -3209,7 +3212,7 @@ function getFilteredRowModel() {
+     // Flag the prefiltered row model with each filter state
+     for (let j = 0; j < rowModel.flatRows.length; j++) {
+       const row = rowModel.flatRows[j];
+-      row.columnFilters = {};
++      row.columnFilters = Object.create(null);
+       if (resolvedColumnFilters.length) {
+         for (let i = 0; i < resolvedColumnFilters.length; i++) {
+           currentColumnFilter = resolvedColumnFilters[i];
+@@ -3318,7 +3321,7 @@ function getGroupedRowModel() {
+           getValue: columnId => {
+             // Don't aggregate columns that are in the grouping
+             if (existingGrouping.includes(columnId)) {
+-              if (row._valuesCache.hasOwnProperty(columnId)) {
++              if (Object.prototype.hasOwnProperty.call(row._valuesCache, columnId)) {
+                 return row._valuesCache[columnId];
+               }
+               if (groupedRows[0]) {
+diff --git a/build/lib/utils/getFilteredRowModel.js b/build/lib/utils/getFilteredRowModel.js
+index 3c2c3c48f7dbb2b9a71c5c0b53d6a0885b291dd1..b6bf82bb8d12e0687859bd9ffe0e3b1780a3bdb6 100644
+--- a/build/lib/utils/getFilteredRowModel.js
++++ b/build/lib/utils/getFilteredRowModel.js
+@@ -17,8 +17,8 @@ function getFilteredRowModel() {
+   return table => utils.memo(() => [table.getPreFilteredRowModel(), table.getState().columnFilters, table.getState().globalFilter], (rowModel, columnFilters, globalFilter) => {
+     if (!rowModel.rows.length || !(columnFilters != null && columnFilters.length) && !globalFilter) {
+       for (let i = 0; i < rowModel.flatRows.length; i++) {
+-        rowModel.flatRows[i].columnFilters = {};
+-        rowModel.flatRows[i].columnFiltersMeta = {};
++        rowModel.flatRows[i].columnFilters = Object.create(null);
++        rowModel.flatRows[i].columnFiltersMeta = Object.create(null);
+       }
+       return rowModel;
+     }
+@@ -63,7 +63,7 @@ function getFilteredRowModel() {
+     // Flag the prefiltered row model with each filter state
+     for (let j = 0; j < rowModel.flatRows.length; j++) {
+       const row = rowModel.flatRows[j];
+-      row.columnFilters = {};
++      row.columnFilters = Object.create(null);
+       if (resolvedColumnFilters.length) {
+         for (let i = 0; i < resolvedColumnFilters.length; i++) {
+           currentColumnFilter = resolvedColumnFilters[i];
+diff --git a/build/lib/utils/getGroupedRowModel.js b/build/lib/utils/getGroupedRowModel.js
+index 2b067397241b5493d1e83a39e7bda15ca92241ca..7a76fc9aa64c1b58e2a047f5ceed25b09b4dfb44 100644
+--- a/build/lib/utils/getGroupedRowModel.js
++++ b/build/lib/utils/getGroupedRowModel.js
+@@ -78,7 +78,7 @@ function getGroupedRowModel() {
+           getValue: columnId => {
+             // Don't aggregate columns that are in the grouping
+             if (existingGrouping.includes(columnId)) {
+-              if (row$1._valuesCache.hasOwnProperty(columnId)) {
++              if (Object.prototype.hasOwnProperty.call(row$1._valuesCache, columnId)) {
+                 return row$1._valuesCache[columnId];
+               }
+               if (groupedRows[0]) {
+diff --git a/src/core/column.ts b/src/core/column.ts
+index 97ee3e68d4e2ff9aeb18e827537c4f1e3629c345..d6292c56eb25554d05abcc8e28de8f878b1a0489 100644
+--- a/src/core/column.ts
++++ b/src/core/column.ts
+@@ -115,7 +115,7 @@ export function createColumn<TData extends RowData, TValue>(
+     }
+   }
+ 
+-  if (!id) {
++  if (!id && resolvedColumnDef.id !== '') {
+     if (process.env.NODE_ENV !== 'production') {
+       throw new Error(
+         resolvedColumnDef.accessorFn
+diff --git a/src/core/row.ts b/src/core/row.ts
+index 0af28aa94c7b70eb4ebf0a82121cb4eb8f5ad674..57fc342c78feacb320149ce76f4dcaf28a68f6c6 100644
+--- a/src/core/row.ts
++++ b/src/core/row.ts
+@@ -107,10 +107,10 @@ export const createRow = <TData extends RowData>(
+     original,
+     depth,
+     parentId,
+-    _valuesCache: {},
+-    _uniqueValuesCache: {},
++    _valuesCache: Object.create(null),
++    _uniqueValuesCache: Object.create(null),
+     getValue: columnId => {
+-      if (row._valuesCache.hasOwnProperty(columnId)) {
++      if (Object.prototype.hasOwnProperty.call(row._valuesCache, columnId)) {
+         return row._valuesCache[columnId]
+       }
+ 
+@@ -128,7 +128,7 @@ export const createRow = <TData extends RowData>(
+       return row._valuesCache[columnId] as any
+     },
+     getUniqueValues: columnId => {
+-      if (row._uniqueValuesCache.hasOwnProperty(columnId)) {
++      if (Object.prototype.hasOwnProperty.call(row._uniqueValuesCache, columnId)) {
+         return row._uniqueValuesCache[columnId]
+       }
+ 
+diff --git a/src/core/table.ts b/src/core/table.ts
+index 00d62da98f8a2a33e6e3592a95b828e65e7adde4..e704ecc9363f22ecb769c7b97db30f74eb937c3b 100644
+--- a/src/core/table.ts
++++ b/src/core/table.ts
+@@ -490,7 +490,7 @@ export function createTable<TData extends RowData>(
+             acc[column.id] = column
+             return acc
+           },
+-          {} as Record<string, Column<TData, unknown>>
++          Object.create(null) as Record<string, Column<TData, unknown>>
+         )
+       },
+       getMemoOptions(options, 'debugColumns', 'getAllFlatColumnsById')
+diff --git a/src/features/ColumnFiltering.ts b/src/features/ColumnFiltering.ts
+index 24ebaedaf6b89b06eacc2fa782012b950031ab5d..a1ff0705d7e76adb0477a52ced8d288a55828375 100644
+--- a/src/features/ColumnFiltering.ts
++++ b/src/features/ColumnFiltering.ts
+@@ -366,8 +366,8 @@ export const ColumnFiltering: TableFeature = {
+     row: Row<TData>,
+     _table: Table<TData>
+   ): void => {
+-    row.columnFilters = {}
+-    row.columnFiltersMeta = {}
++    row.columnFilters = Object.create(null)
++    row.columnFiltersMeta = Object.create(null)
+   },
+ 
+   createTable: <TData extends RowData>(table: Table<TData>): void => {
+diff --git a/src/features/ColumnSizing.ts b/src/features/ColumnSizing.ts
+index e6e662820d2c8f03b108594bc563d272157d7689..4ca3850c0deb29f71351c3f1a6e0207b83a24407 100644
+--- a/src/features/ColumnSizing.ts
++++ b/src/features/ColumnSizing.ts
+@@ -260,7 +260,10 @@ export const ColumnSizing: TableFeature = {
+     table: Table<TData>
+   ): void => {
+     column.getSize = () => {
+-      const columnSize = table.getState().columnSizing[column.id]
++      const columnSizing = table.getState().columnSizing
++      const columnSize = Object.prototype.hasOwnProperty.call(columnSizing, column.id)
++        ? columnSizing[column.id]
++        : undefined
+ 
+       return Math.min(
+         Math.max(
+@@ -368,7 +371,7 @@ export const ColumnSizing: TableFeature = {
+           ? Math.round(e.touches[0]!.clientX)
+           : (e as MouseEvent).clientX
+ 
+-        const newColumnSizing: ColumnSizingState = {}
++        const newColumnSizing: ColumnSizingState = Object.create(null)
+ 
+         const updateOffset = (
+           eventType: 'move' | 'end',
+diff --git a/src/utils/getFilteredRowModel.ts b/src/utils/getFilteredRowModel.ts
+index c04341ad2a4341d44c7fc6c3835d0026705bd341..dad92153ff21fd3afd0016ee5811579ca74e7a87 100644
+--- a/src/utils/getFilteredRowModel.ts
++++ b/src/utils/getFilteredRowModel.ts
+@@ -19,8 +19,8 @@ export function getFilteredRowModel<TData extends RowData>(): (
+           (!columnFilters?.length && !globalFilter)
+         ) {
+           for (let i = 0; i < rowModel.flatRows.length; i++) {
+-            rowModel.flatRows[i]!.columnFilters = {}
+-            rowModel.flatRows[i]!.columnFiltersMeta = {}
++            rowModel.flatRows[i]!.columnFilters = Object.create(null)
++            rowModel.flatRows[i]!.columnFiltersMeta = Object.create(null)
+           }
+           return rowModel
+         }
+@@ -86,7 +86,7 @@ export function getFilteredRowModel<TData extends RowData>(): (
+         for (let j = 0; j < rowModel.flatRows.length; j++) {
+           const row = rowModel.flatRows[j]!
+ 
+-          row.columnFilters = {}
++          row.columnFilters = Object.create(null)
+ 
+           if (resolvedColumnFilters.length) {
+             for (let i = 0; i < resolvedColumnFilters.length; i++) {
+diff --git a/src/utils/getGroupedRowModel.ts b/src/utils/getGroupedRowModel.ts
+index da976319138d6813bf7863eba12bd60a483c4527..898d7264ea2c21fc97249884df16f754e765a135 100644
+--- a/src/utils/getGroupedRowModel.ts
++++ b/src/utils/getGroupedRowModel.ts
+@@ -94,7 +94,7 @@ export function getGroupedRowModel<TData extends RowData>(): (
+                 getValue: (columnId: string) => {
+                   // Don't aggregate columns that are in the grouping
+                   if (existingGrouping.includes(columnId)) {
+-                    if (row._valuesCache.hasOwnProperty(columnId)) {
++                    if (Object.prototype.hasOwnProperty.call(row._valuesCache, columnId)) {
+                       return row._valuesCache[columnId]
+                     }
+ 

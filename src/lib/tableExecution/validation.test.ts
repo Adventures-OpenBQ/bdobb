@@ -135,12 +135,12 @@ it('validates persistent independent measures without dropping unavailable sourc
   const model = (measures: unknown) => ({ kind: 'applyModel', requestId: 'r', revision, definition: { table: { pivot: { enabled: true, grouping: [], split: [], measures } }, search: '' }, selection: { kind: 'none' } });
   const measures = [{ id: 'a', sourceFieldId: 'missing', aggregation: 'mean', customLabel: '' }, { id: 'b', sourceFieldId: 'missing' }];
   expect(validateExecutionRequest(model(measures))).toEqual(model(measures));
-  for (const invalid of [null, {}, [{ id: '', sourceFieldId: 'v' }], [{ id: 'a', sourceFieldId: '' }], [{ id: 'a', sourceFieldId: 'v', aggregation: 'average' }], [{ id: 'a', sourceFieldId: 'v', customLabel: 1 }], [{ id: 'a', sourceFieldId: 'v' }, { id: 'a', sourceFieldId: 'v' }]])
+  for (const invalid of [null, {}, [{ id: '', sourceFieldId: 'v' }], [{ id: 'a', sourceFieldId: 4 }], [{ id: 'a', sourceFieldId: 'v', aggregation: 'average' }], [{ id: 'a', sourceFieldId: 'v', customLabel: 1 }], [{ id: 'a', sourceFieldId: 'v' }, { id: 'a', sourceFieldId: 'v' }]])
     expect(() => validateExecutionRequest(model(invalid))).toThrow(ExecutionProtocolError);
 });
 
 it('rejects malformed measure output identity metadata', () => {
-  for (const column of [{ id: 'x', label: 'X', measureId: 5 }, { id: 'x', label: 'X', sourceBindingId: '' }]) {
+  for (const column of [{ id: 'x', label: 'X', measureId: 5 }, { id: 'x', label: 'X', measureId: '' }, { id: 'x', label: 'X', sourceBindingId: 4 }]) {
     expect(() => validateExecutionResponse({ ...context, kind: 'chartData', requestId: 'r', revision, columns: [column], rows: [], resultRevision: 2, outputRevision: 3, provenance: { sourceWidgetId: 'a' }, freshness: { availability: 'available', stale: false } }, revision, 'r')).toThrow(ExecutionProtocolError);
   }
 });

@@ -449,3 +449,14 @@ it('FX surfaces: a plot short of any complete block stays off the colour range, 
     expect(figure(surface, vol).layout.coloraxis).toEqual({ colorscale: 'Viridis', cmin: 8.8, cmax: 9.5 });
     expect(figure(surface, { ...vol, rows: vol.rows.slice(0, 2) }).layout.coloraxis).toEqual({ colorscale: 'Viridis' });
 });
+
+it('uses a present empty raw key as a category for ordinary and surface axes but never infers an absent key', () => {
+    const d: WidgetDataset = { ...dataset, columns: [{ id: '', label: 'Empty-key numeric', dtype: 'number' }, ...dataset.columns.filter(c => c.id !== 'label')], rows: [{ id: 'r1', values: { '': 101, a: 10, b: 20 } }, { id: 'r2', values: { '': 301, a: 30, b: 60 } }] };
+    const f = figure({ ...settings, category: '' }, d);
+    expect(f.layout.xaxis).toMatchObject({ ticktext: ['101', '301'] });
+    expect(f.data).toMatchObject([{ y: [10, 30] }, { y: [20, 60] }]);
+    const surface = figure({ ...settings, type: 'surface', category: '' }, d);
+    expect(surface.data[0]).toMatchObject({ type: 'surface', x: [101, 301], z: [[10, 30], [20, 60]] });
+    expect(buildLinkedFigure(d, { ...settings, category: undefined }, 'dark').ok).toBe(false);
+    expect(buildLinkedFigure({ ...d, columns: d.columns.filter(c => c.id !== '') }, { ...settings, category: '' }, 'dark').ok).toBe(false);
+});

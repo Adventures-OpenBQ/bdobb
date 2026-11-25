@@ -24,6 +24,27 @@ export function declaredKind(dtype: string | undefined): FilterKind {
   return dtype !== undefined && Object.hasOwn(DECLARED_KIND, dtype) ? DECLARED_KIND[dtype as keyof typeof DECLARED_KIND] : "none";
 }
 
+/** The same own-field value is used by rendering, filtering and linked rows. */
+export function tableCellValue(row: Row, column: TableColumn): unknown {
+ const value = Object.hasOwn(row, column.field) ? row[column.field] : undefined;
+ const field = column.hoverCard?.cellField;
+ if (field !== undefined && typeof value === "object" && value !== null) {
+  const record = value as Row;
+  return Object.hasOwn(record, field) ? record[field] : undefined;
+ }
+ return value;
+}
+
+export function tableDateDay(value: unknown): string | undefined {
+ if (typeof value !== "string") return undefined;
+ const day = value.slice(0, 10);
+ if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return undefined;
+ const [year, month, date] = day.split("-").map(Number);
+ const calendar = new Date(0);
+ calendar.setUTCFullYear(year, month - 1, date);
+ return calendar.getUTCFullYear() === year && calendar.getUTCMonth() === month - 1 && calendar.getUTCDate() === date ? day : undefined;
+}
+
 /**
  * `cellDataType` when the spec gives one; otherwise the type of the column's
  * first non-null value, as the design specifies. A column that is null all
@@ -33,7 +54,7 @@ export function filterKindFor(column: TableColumn, rows: Row[]): FilterKind {
   const declared = column.cellDataType;
   if (declared !== undefined && Object.hasOwn(DECLARED_KIND, declared)) return DECLARED_KIND[declared];
   for (const row of rows) {
-    const value = row[column.field];
+    const value = tableCellValue(row,column);
     if (value === null || value === undefined) continue;
     if (typeof value === "number") return "number";
     if (typeof value === "boolean") return "boolean";
@@ -58,9 +79,8 @@ const numberFilter: FilterFn<Row> = (row, columnId, value) => {
  * onto the next calendar day — the same contract formatCell keeps.
  */
 const dateFilter: FilterFn<Row> = (row, columnId, value) => {
-  const cell = row.getValue(columnId);
-  if (typeof cell !== "string") return false;
-  const day = cell.slice(0, 10);
+  const day = tableDateDay(row.getValue(columnId));
+  if (day === undefined) return false;
   const { from, to } = value as DateFilter;
   if (from && day < from) return false;
   if (to && day > to) return false;
@@ -96,11 +116,4 @@ export function filterFnFor(kind: FilterKind): BuiltInFilterFn | FilterFn<Row> |
 }
 
 
-export const accessorFor = (column: TableColumn) => (row: Row): unknown => {
- const value = Object.hasOwn(row, column.field) ? row[column.field] : undefined;
- const field = column.hoverCard?.cellField;
- if (field !== undefined && typeof value === "object" && value !== null) {
- const record = value as Record<string, unknown>; return Object.hasOwn(record, field) ? record[field] : undefined;
- }
- return value;
-};
+export const accessorFor = (column: TableColumn) => (row: Row): unknown => tableCellValue(row,column);

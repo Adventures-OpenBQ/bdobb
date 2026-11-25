@@ -35,10 +35,14 @@ PATTERNS=(
   '(^|[^A-Za-z0-9._-])/home/[a-z]'
 )
 
+CUSTOM_PATTERNS=()
 PRIVATE_FILE="scripts/scrub-private-patterns.txt"
 if [ -f "$PRIVATE_FILE" ]; then
   while IFS= read -r line; do
-    [[ "$line" =~ [^[:space:]] ]] && PATTERNS+=("$line")
+    if [[ "$line" =~ [^[:space:]] ]]; then
+      PATTERNS+=("$line")
+      CUSTOM_PATTERNS+=("$line")
+    fi
   done < "$PRIVATE_FILE"
 fi
 
@@ -48,21 +52,55 @@ fi
 # exit 2, and an exit-2 scan matches nothing — the gate would print "clean"
 # having checked nothing. Empty input can only exit 1 (no match) or 2 (bad
 # regex), so this tests the pattern and not the tree.
+pattern_index=0
 for pattern in "${PATTERNS[@]}"; do
-  printf '' | grep -qE -- "$pattern"
+  pattern_index=$((pattern_index + 1))
+  printf '' | grep -qE -- "$pattern" 2>/dev/null
   if [ $? -eq 2 ]; then
-    # The offending pattern is echoed by name: it comes from the gitignored
-    # private file, so the author cannot see it in the repo, and "one of your
-    # patterns is broken" would be unactionable.
-    echo "scrub-check: FAILED — malformed pattern: $pattern" >&2
+    # An operator pattern can itself contain a private literal; report only its ordinal.
+    echo "scrub-check: FAILED — malformed pattern at index $pattern_index" >&2
     exit 2
   fi
 done
 
+# These exact canonical sources deliberately exercise private-pattern detection.
+# Provenance: Adventures-OpenBQ/bdobb 87f5f9bf3c0ed1659ba11eb0650b3ca15ddeb81e.
+# V6 adds Rita/MCP build-default regressions to the reviewed public-release fixture.
+# Refuse changed bytes or links before filtering their built-in matches; no folder waiver.
+python3 - <<'PY_REVIEWED'
+import hashlib, os, stat, sys
+from pathlib import Path
+reviewed = {
+    "security/README.md": "84779d07cce204e9a1b78ae531466c7fcaf181fe51aca7d4660aada645fbba57",
+    "security/test_gate.py": "ec82c35890000f8d66eac4d7210501b73b30d655e946417f0e5bd151c8a0640a",
+    "security/gate.py": "8d12972ea3a32ce5acbd256b61ee20e432b8de8966e5bc09f9b31571563626d6",
+    "scripts/test_public_release.py": "ff4f5a74bce74aafe561685a53b35d8ce2ecc650fccc83abba309ab71a38d483",
+}
+for name, expected in reviewed.items():
+    if not os.path.lexists(name):
+        continue
+    try:
+        path = Path(name)
+        if any(parent.is_symlink() for parent in path.parents) or not stat.S_ISREG(path.lstat().st_mode):
+            raise OSError("not physical regular")
+        with os.fdopen(os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK), "rb") as source:
+            if not stat.S_ISREG(os.fstat(source.fileno()).st_mode):
+                raise OSError("not regular")
+            actual = hashlib.file_digest(source, "sha256").hexdigest()
+    except OSError:
+        print(f"scrub-check: FAILED — reviewed fixture is not a regular file: {name}", file=sys.stderr)
+        sys.exit(2)
+    if actual != expected:
+        print(f"scrub-check: FAILED — reviewed fixture changed: {name}", file=sys.stderr)
+        sys.exit(2)
+PY_REVIEWED
+review_status=$?
+if [ "$review_status" -ne 0 ]; then exit 2; fi
+
 # One pass, not one per pattern: the patterns are joined into a single ERE
 # alternation so the tree is walked once instead of seven-plus times. The
-# failure output is the matching LINES, which is the actionable part; the
-# name of the individual pattern that matched is not reported any more.
+# matching lines stay in memory for line-scoped checks; output contains only
+# paths and line numbers, never their private values.
 joined="$(IFS='|'; printf '%s' "${PATTERNS[*]}")"
 
 # grep exits 0 (match), 1 (no match) or 2 (error). A malformed pattern can no
@@ -100,9 +138,8 @@ fi
 # A line carrying the marker below is exempt. This exists for source whose JOB
 # is these ranges -- a module that has to name the private blocks it refuses,
 # and tests that have to use real addresses. Line-scoped rather than
-# file-scoped on purpose: every file stays scanned, and each exemption is a
-# visible, deliberate act rather than a blanket hole a real secret could later
-# hide in.
+# file-scoped for ordinary sources. The four canonical sources above additionally
+# require exact reviewed bytes; an edited fixture never inherits its exemption.
 #
 # src-tauri/gen/ is dropped too: the gitignored, generated iOS project and
 # its build output, where Xcode records absolute build paths.
@@ -117,11 +154,28 @@ fi
 # quote a pattern carries the marker.
 matches=""
 if [ -n "$scan" ]; then
-  matches="$(printf '%s\n' "$scan" | grep -v 'scrub-allow' | grep -v '^\./docs/specs/' | grep -v '^\./src-tauri/gen/' || true)"
+  matches="$(printf '%s\n' "$scan" | grep -v 'scrub-allow' | grep -v '^\./src-tauri/gen/' | grep -v '^\./docs/specs/' | grep -vE '^\./(security/(README\.md|test_gate\.py|gate\.py)|scripts/test_public_release\.py):' || true)"
+fi
+
+# The canonical-source pin exempts built-in fixture matches only. Operator
+# patterns still inspect all four reviewed files, including marker-bearing lines.
+reviewed_existing=()
+for file in security/README.md security/test_gate.py security/gate.py scripts/test_public_release.py; do
+  if [ -f "$file" ]; then reviewed_existing+=("$file"); fi
+done
+if [ "${#CUSTOM_PATTERNS[@]}" -gt 0 ] && [ "${#reviewed_existing[@]}" -gt 0 ]; then
+  custom_joined="$(IFS='|'; printf '%s' "${CUSTOM_PATTERNS[*]}")"
+  custom_scan="$(grep -HnE -- "$custom_joined" "${reviewed_existing[@]}")"
+  custom_status=$?
+  if [ "$custom_status" -gt 1 ]; then
+    echo "scrub-check: FAILED — the operator-pattern scan errored." >&2
+    exit 2
+  fi
+  if [ -n "$custom_scan" ]; then matches="${matches}${matches:+$'\n'}${custom_scan}"; fi
 fi
 
 if [ -n "$matches" ]; then
-  echo "$matches" >&2
+  printf '%s\n' "$matches" | sed -E 's/:([0-9]+):.*/:\1: [redacted]/' >&2
   echo "scrub-check: FAILED — private infrastructure details found above." >&2
   exit 1
 fi

@@ -71,7 +71,7 @@ function withType(settings: LinkedChartSettings, type: LinkedChartSettings['type
         delete next.spaceRowsBy;
         delete next.spaceColumnsBy;
     }
-    if (type === 'surface' && !next.category && !next.measures.length) {
+    if (type === 'surface' && next.category === undefined && !next.measures.length) {
         const typed = hints.filter(c => offered.has(c.field));
         const axis = typed.find(c => c.chartDataType === 'time') ?? typed.find(c => c.chartDataType === 'category');
         const series = typed.filter(c => c.chartDataType === 'series').map(c => c.field);
@@ -388,13 +388,13 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, hints 
             }
             request = [LABEL_FIELD, ...requested.map(c => c.id)];
         } else {
-            const missing = [settings.category, ...settings.measures].filter((id): id is string => Boolean(id)).find(id => !available.has(id));
-            if (missing) {
+            const missing = [settings.category, ...settings.measures].filter((id): id is string => id !== undefined).find(id => !available.has(id));
+            if (missing !== undefined) {
                 setRefused(undefined);
                 setError(`Field ${missing} is unavailable. Repair chart fields.`);
                 return;
             }
-            if (!settings.category || !settings.measures.length) {
+            if (settings.category === undefined || !settings.measures.length) {
                 setRefused(undefined);
                 setError('Choose chart fields: select a category and numeric measures.');
                 return;
@@ -472,6 +472,12 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, hints 
     const order = offered.map(c => c.id);
     columns.forEach((c, i) => { if (!order.includes(c.id)) order.splice(order.indexOf(columns[i - 1]?.id) + 1, 0, c.id); });
     const fields = order.map(id => byId.get(id)!);
+    // DOM-only placeholder: every raw source key, including '', remains selectable.
+    // Include an unavailable saved key too, so it cannot collide with the placeholder.
+    const categoryValues = new Set(fields.map(c => c.id));
+    if (settings.category !== undefined) categoryValues.add(settings.category);
+    let noCategory = '__bdobb_choose_category__', categorySuffix = 0;
+    while (categoryValues.has(noCategory)) noCategory = `__bdobb_choose_category__${++categorySuffix}`;
     const pivoted = settings.type === 'surface' && isPivoted(offered);
     const values = reportValues(fields);
     // A report value: empty deletes the key. A new Height clears the ticked expiries, which belong to the old one (none ticked = all).
@@ -553,7 +559,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, hints 
         disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
         onApply={(options, matchesDrawing) => options.kind === 'news-sentiment-calendar' || options.kind === 'return-summary'
           ? applyAcquired(options, matchesDrawing) : void commit({ ...withRecipeType(settings, options.kind), recipe: options })}/> : <>
-      {pivoted ? <>{valueSelect('height', 'Height', 'Choose height')}{valueSelect('spaceRowsBy', 'Space rows by', 'Default')}{valueSelect('spaceColumnsBy', 'Space columns by', 'Default')}</> : <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>}
+      {pivoted ? <>{valueSelect('height', 'Height', 'Choose height')}{valueSelect('spaceRowsBy', 'Space rows by', 'Default')}{valueSelect('spaceColumnsBy', 'Space columns by', 'Default')}</> : <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? noCategory} onChange={e => void commit({ ...settings, category: e.target.value === noCategory ? undefined : e.target.value })}><option value={noCategory}>Choose category</option>{settings.category !== undefined && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>}
       <MeasuresPicker disabled={saving} emptyMeansAll={pivoted} selected={settings.measures} onChange={measures => void commit({ ...settings, measures })} options={[...new Set([...(pivoted ? expiryColumns(fields, settings.height ?? '') : fields.filter(c => (!c.dtype || c.dtype === 'number') && (settings.type !== 'bullet' || c.id.endsWith('_actual')))).map(c => c.id), ...settings.measures])].map(id => { const field = fields.find(c => c.id === id); return field ? { id, label: pivoted && field.splitPath?.length ? field.splitPath.map(m => m.label ?? String(m.value)).join(' — ') : measureName(field) } : { id, label: `${id} (unavailable)`, unavailable: true }; })}/>
       {settings.type === 'bullet' ? <label>Quarter<select aria-label="Quarter" disabled={saving} value={settings.period ?? ''} onChange={e => { const { period: _drop, ...rest } = settings; void commit(e.target.value ? { ...rest, period: e.target.value } : rest); }}><option value="">Latest</option>{settings.period && !quarters.includes(settings.period) ? <option value={settings.period}>{settings.period} (unavailable)</option> : null}{quarters.map(q => <option key={q} value={q}>{q}</option>)}</select></label> : null}
       {settings.type === 'column' || settings.type === 'bar' ? <label>Display<select aria-label="Display" disabled={saving} value={settings.display} onChange={e => void commit({ ...settings, display: e.target.value as LinkedChartSettings['display'] })}><option value="grouped">Grouped</option><option value="stacked">Stacked</option><option value="percent">100% stacked</option></select></label> : null}

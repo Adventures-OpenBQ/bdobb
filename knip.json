@@ -17,7 +17,9 @@
     "docs/releases/validation/v9/next-charts/reproduce/revision-2-renderer.mjs",
     "playwright.*.config.ts",
     "scripts/pivot-qualification/**/*.{ts,mjs}",
-    "scripts/sort-reuse-benchmark/*.mjs"
+    "scripts/sort-reuse-benchmark/*.mjs",
+    "scripts/applymodel-profile/**/*.{ts,mjs}",
+    "src-tauri/src/video_player.js"
   ],
   "paths": {
     "/src/*": ["./src/*"]
@@ -31,7 +33,12 @@
     "openssl"
   ],
   "ignoreDependencies": [
-    "@blocknote/core"
+    "@blocknote/core",
+    "audit-store-owned",
+    "audit-reconcile",
+    "profile-artifact",
+    "stock-artifact",
+    "before-artifact"
   ],
   "ignoreExportsUsedInFile": true,
   "rules": {
