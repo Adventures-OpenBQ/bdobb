@@ -35,6 +35,8 @@ export async function fetch(
  * origin's 401 is a backend refusing a credential and is the caller's to report.
  */
 let leaving = false;
+/** The session has lapsed and the page is on its way to sign-in (fs.ts saves nothing then). */
+export const sessionLapsed = (): boolean => leaving;
 function signedOut(): void {
   // Once: discovery and every card fail together, and one navigation is enough.
   if (leaving) return;

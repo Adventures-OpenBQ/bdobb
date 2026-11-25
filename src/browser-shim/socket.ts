@@ -7,7 +7,7 @@ import "./registry";
 /**
  * Web preview only. A socket relayed through a Vercel Function bills function
  * time for as long as it stays open, and the socket the app opens on its own
- * origin (/ref/live_grid_ws and /news/ws/news at this line) is always open. It opens
+ * origin (/ref/live_grid_ws, /news/ws/news, and the live grid's /grid/live_grid_ws) is always open. It opens
  * on the gateway instead, which costs Vercel nothing: this asks the preview,
  * which holds the GitHub session, for a ticketed gateway URL (web/server.mjs
  * /socket-ticket) and constructs the real socket on that.
@@ -19,10 +19,11 @@ import "./registry";
  * onclose, send, close and readyState (its default mode gates an in-place
  * re-subscribe on readyState === OPEN), plus the static WebSocket.OPEN it
  * compares readyState against. Each (re)connect is a new socket and so a new
- * ticket -- a ticket is single use at the gateway. Only two targets are ones
- * the gateway serves here: socketTarget names /ref/live_grid_ws and
- * /news/ws/news and nothing else, so any other same-origin socket's ticket is
- * refused.
+ * ticket -- a ticket is single use at the gateway. The targets are the vendored
+ * policy's socketTarget (openbq-docker v10.0.0): the reference's /ref/live_grid_ws
+ * (v3), /news/ws/news and the live grid's /grid/live_grid_ws (Ep. 10). Under a
+ * policy without the grid rules the grid's ticket is refused, and the hook
+ * retries it as a drop. Any other same-origin socket's ticket is refused.
  *
  * Inert unless the preview's bootstrap set window.__bdobbSocketTickets, so
  * `vite --mode browser` against a local backend, the e2e suite and help:shots
@@ -34,6 +35,8 @@ import "./registry";
 const Native = globalThis.WebSocket;
 
 type Handler<E> = ((event: E) => void) | null;
+
+const TICKET_TIMEOUT_MS = 10_000;
 
 class TicketSocket {
   static readonly CONNECTING = 0;
@@ -51,7 +54,12 @@ class TicketSocket {
     const target = new URL(url, window.location.href);
     // Anything that is not this origin's own socket is none of the preview's business.
     if (target.host !== window.location.host) return new Native(url, protocols) as unknown as TicketSocket;
-    fetch("/socket-ticket?for=" + encodeURIComponent(target.pathname + target.search), { cache: "no-store" })
+    // A deadline of its own: a preview that accepts the request and never answers
+    // would otherwise leave the caller CONNECTING for good, with no close to retry on.
+    fetch("/socket-ticket?for=" + encodeURIComponent(target.pathname + target.search), {
+      cache: "no-store",
+      signal: AbortSignal.timeout(TICKET_TIMEOUT_MS),
+    })
       .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
       .then((ticket: { url: string }) => {
         if (this.done) return;
@@ -67,7 +75,8 @@ class TicketSocket {
       })
       .catch(() => {
         // A drop, as far as the caller can tell: useReconnectingSocket retries it
-        // (the News wire after its fixed RECONNECT_MS), with a fresh ticket.
+        // (the News wire after its fixed RECONNECT_MS, the live grid up its backoff
+        // ladder), with a fresh ticket.
         if (this.done) return;
         this.done = true;
         this.onclose?.(new Event("close") as CloseEvent);

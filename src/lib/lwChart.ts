@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ChartOptions, DeepPartial, UTCTimestamp } from "lightweight-charts";
+import { CandleWicks } from "./candleWicks";
 import { CARD_BG, GRID, TEXT } from "./chartShapes";
 import type { CandleColors } from "./types";
 import { hasOhlc, type UdfBar } from "./udf";
@@ -32,6 +33,12 @@ const DOWN = "#ef5350";
 export type CandleChartHandle = {
   /** Replaces the series. The view is fitted to the data on the first non-empty call only, so a refetch keeps zoom and pan. */
   setBars(bars: UdfBar[]): void;
+  /**
+   * The series' incremental `update`: replaces the newest bar when `bar.time`
+   * equals it, appends when later. Never earlier -- the library throws on a bar
+   * behind the last one, so the caller (the Live Chart's fold) drops those.
+   */
+  updateBar(bar: UdfBar): void;
   applyTheme(theme: "dark" | "light"): void;
   dispose(): void;
 };
@@ -46,9 +53,40 @@ export type CandleChartHandle = {
  */
 export async function mountCandleChart(
   el: HTMLElement,
-  { theme, colors, showVolume, closeOnly = false }: { theme: "dark" | "light"; colors: CandleColors; showVolume: boolean; closeOnly?: boolean },
+  {
+    theme,
+    colors,
+    showVolume,
+    barSeconds,
+    closeOnly = false,
+    wickWidth = 1,
+  }: {
+    theme: "dark" | "light";
+    colors: CandleColors;
+    showVolume: boolean;
+    /** The bar width. Under a day, the axis shows times; left out (or a day or more), dates only. */
+    barSeconds?: number | null;
+    closeOnly?: boolean;
+    /** CSS pixels; native one-pixel wicks remain the default. */
+    wickWidth?: number;
+  },
 ): Promise<CandleChartHandle> {
   const lw = await import("lightweight-charts");
+  // Intraday bars are labelled in the reader's own clock, as the live grid
+  // resolves a typed time: the bars are UTC (live-grid runs on UTC), and the
+  // library's default would print a 09:30 New York open as 13:30. Seconds show
+  // only for bars that are not whole minutes. Year, month and day marks keep
+  // the library's own labels.
+  const intraday = barSeconds != null && barSeconds < 86400;
+  const seconds = intraday && barSeconds % 60 !== 0;
+  const clock = new Intl.DateTimeFormat(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    ...(seconds ? { second: "2-digit" } : {}),
+    hourCycle: "h23",
+  });
+  const stamp = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
+  const ms = (t: unknown) => (t as number) * 1000;
   const themed = (t: "dark" | "light"): DeepPartial<ChartOptions> => ({
     layout: { background: { type: lw.ColorType.Solid, color: CARD_BG[t] }, textColor: TEXT[t] },
     grid: { vertLines: { color: GRID[t] }, horzLines: { color: GRID[t] } },
@@ -66,12 +104,26 @@ export async function mountCandleChart(
     handleScale: { mouseWheel: false },
     ...base,
     layout: { attributionLogo: false, ...base.layout },
+    ...(intraday
+      ? {
+          timeScale: {
+            ...base.timeScale,
+            timeVisible: true,
+            secondsVisible: seconds,
+            tickMarkFormatter: (time: unknown, type: number) =>
+              type === lw.TickMarkType.Time || type === lw.TickMarkType.TimeWithSeconds ? clock.format(ms(time)) : null,
+          },
+          localization: { timeFormatter: (time: unknown) => `${stamp.format(ms(time))} ${clock.format(ms(time))}` },
+        }
+      : {}),
   });
   // The volume colours are not candlestick options; everything else in
   // CandleColors is, under the same names the widget's chartConfig uses.
   const { volumeUpColor = UP, volumeDownColor = DOWN, ...candleColors } = colors;
   const candles = closeOnly ? null : chart.addSeries(lw.CandlestickSeries, candleColors);
   const line = closeOnly ? chart.addSeries(lw.LineSeries, { color: "#4d9de0" }) : null;
+  const wicks = candles && wickWidth > 1 ? new CandleWicks(wickWidth) : null;
+  if (wicks) candles!.attachPrimitive(wicks);
   const volume = showVolume
     ? chart.addSeries(lw.HistogramSeries, { priceFormat: { type: "volume" }, priceScaleId: "" })
     : null;
@@ -94,15 +146,27 @@ export async function mountCandleChart(
           color: b.close >= (b.open ?? bars[Math.max(0, index - 1)].close) ? volumeUpColor : volumeDownColor,
         })),
       );
+      wicks?.setBars(bars);
       if (!fitted && bars.length > 0) {
         chart.timeScale().fitContent();
         fitted = true;
       }
     },
+    updateBar(b) {
+      if (hasOhlc(b)) wicks?.updateBar(b);
+      line?.update({time: b.time as UTCTimestamp, value: b.close});
+      if (hasOhlc(b)) candles?.update({ time: b.time as UTCTimestamp, open: b.open, high: b.high, low: b.low, close: b.close });
+      volume?.update({
+        time: b.time as UTCTimestamp,
+        value: b.volume,
+        color: b.close >= (b.open ?? b.close) ? volumeUpColor : volumeDownColor,
+      });
+    },
     applyTheme(t) {
       chart.applyOptions(themed(t));
     },
     dispose() {
+      if (wicks) candles?.detachPrimitive(wicks);
       chart.remove();
     },
   };

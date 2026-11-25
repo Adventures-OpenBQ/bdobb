@@ -18,6 +18,11 @@ export type AgentTool = {
   input_schema: Record<string, unknown>;
 };
 
+/** Private local presentation data; removed before history is persisted or sent. */
+export type ClientTableResult =
+  | { kind: "inspection"; cardId: string; sourceRows?: number }
+  | { kind: "result"; cardId: string; text: string; ending: string };
+
 /** One line of the skills menu Rita reads before answering (agent-rita `SkillCatalogEntry`). */
 export type SkillCatalogEntry = { slug: string; description: string; updatedAt: string };
 
@@ -114,6 +119,7 @@ export type AgentStatus = {
 
 export type AgentEvent =
   | { type: "chunk"; delta: string }
+  | { type: "tableSummary"; text: string }
   | { type: "status"; status: AgentStatus }
   | { type: "functionCall"; payload: Record<string, unknown> }
   | { type: "artifact"; payload: Record<string, unknown> }
@@ -132,7 +138,7 @@ export type AgentEvent =
  */
 export type AgentMessage =
   | { role: "human" | "ai"; content: unknown }
-  | { role: "tool"; function: unknown; input_arguments: unknown; data: unknown; extra_state?: unknown };
+  | { role: "tool"; function: unknown; input_arguments: unknown; data: unknown; extra_state?: unknown; clientTableResult?: ClientTableResult };
 
 /**
  * `sharedCardIds` is typed unknown for the same reason `calls` is loose: it is

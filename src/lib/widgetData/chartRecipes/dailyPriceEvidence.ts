@@ -253,7 +253,7 @@ export const dailyPriceSourceAdapter: ChartSourceAdapter<DailyPriceReceipt> = {
 };
 
 export function readLiveDailyPriceSource(dataset: WidgetDataset): {
-  receipt: DailyPriceReceipt; scope: PriceScope; symbols: string[]; rawOmissions: PriceCoordinate[];
+  receipt: DailyPriceReceipt; scope: PriceScope; symbols: string[]; rawOmissions: PriceCoordinate[]; tableOmissions: PriceCoordinate[];
 } | undefined {
   const { provenance, completeness } = dataset;
   if (provenance.sourceKind !== 'backend' || provenance.metadata?.dailyPriceRejected === true
@@ -265,6 +265,7 @@ export function readLiveDailyPriceSource(dataset: WidgetDataset): {
   return {
     receipt, scope: { start: receipt.start_date, end: receipt.end_date, interval: receipt.interval },
     symbols: [...receipt.symbols],
+    tableOmissions: projection.omitted.map((id): PriceCoordinate => JSON.parse(id)),
     rawOmissions: receipt.listings.flatMap(listing => listing.omissions.map(([symbol, date]): PriceCoordinate => [symbol, date])),
   };
 }

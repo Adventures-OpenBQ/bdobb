@@ -2261,6 +2261,19 @@ describe("showCellChange flash", () => {
     expect(priceCell("B")).not.toHaveAttribute("data-flash");
   });
 
+  // Review R3: rows that lack the identity column (a live grid's id-less seed
+  // rows) must not share one flash key, or an unchanged row flashes.
+  it("tracks rows without the identity column by their index", () => {
+    const idless = [{ name: "A", price: 10, change: 1 }, { name: "B", price: 20, change: 1 }, { name: "C", price: 30, change: 1 }];
+    const { rerender } = render(<TableRenderer data={idless} spec={spec} rowIdColumn="symbol" />);
+    rerender(<TableRenderer data={idless.map((r) => (r.name === "B" ? { ...r, price: 21 } : r))} spec={spec} rowIdColumn="symbol" />);
+    const priceCell = (name: string) =>
+      within(screen.getByText(name).closest("tr")!).getByText((_, el) => el?.getAttribute("data-field") === "price");
+    expect(priceCell("B")).toHaveAttribute("data-flash", "up");
+    expect(priceCell("A")).not.toHaveAttribute("data-flash");
+    expect(priceCell("C")).not.toHaveAttribute("data-flash");
+  });
+
   // Every snapshot is freshly parsed, so an object cell is a new reference
   // each time: only a change of its CONTENT is a change.
   it("does not flash an object cell whose content is unchanged", () => {
@@ -2632,6 +2645,54 @@ describe("integrated date bucket strip", () => {
     rerender(<TableRenderer data={data} state={state} onStateChange={() => {}} pivotOpen={false} />);
     expect(container.querySelector(".pivot-panel")).toBeNull();
     expect(container.querySelector(".pivot-strip")).toHaveTextContent(`date · ${bucket === "month" ? "Month" : "Year"}`);
+  });
+});
+
+// v10: the live grid's cells, on any table that declares them.
+describe("logo, rangeBar, percentKey and align cells", () => {
+  const spec: TableSpec = {
+    columns: [
+      { field: "logo_url", renderFn: ["logo"] },
+      { field: "symbol" },
+      { field: "change", renderFnParams: { percentKey: "change_pct" }, decimalPlaces: 2 },
+      { field: "day_low", align: "right" },
+      { field: "day_range", renderFn: ["rangeBar"], renderFnParams: { lowKey: "day_low", highKey: "day_high", palette: "day" } },
+      { field: "day_high", align: "left" },
+    ],
+  };
+  const rows = [
+    { logo_url: "https://cdn.example/AAPL.png", symbol: "AAPL", change: 1.24, change_pct: 0.034, day_low: 35, day_high: 40, price: 37.5 },
+    { logo_url: "NA", symbol: "EURUSD", change: -0.01, change_pct: null, day_low: 1, day_high: 1, price: 1 },
+  ];
+  const cell = (row: number, field: string) =>
+    document.querySelectorAll(`td[data-field="${field}"]`)[row] as HTMLElement;
+
+  it("draws a logo from the cell's own URL, and nothing for NA", () => {
+    render(<TableRenderer data={rows} spec={spec} />);
+    expect(cell(0, "logo_url").querySelector("img.cell-logo")?.getAttribute("src")).toBe("https://cdn.example/AAPL.png");
+    expect(cell(1, "logo_url").querySelector("img")).toBeNull();
+    expect(cell(1, "logo_url")).toHaveTextContent(/^$/);
+  });
+
+  it("draws a range bar from the row's keys, marking its price; a flat range draws none", () => {
+    render(<TableRenderer data={rows} spec={spec} />);
+    const marker = cell(0, "day_range").querySelector<HTMLElement>(".cell-range-marker");
+    expect(marker?.style.left).toMatch(/0\.5/);
+    expect(cell(1, "day_range").querySelector(".cell-range")).toBeNull();
+  });
+
+  it("puts a percent companion after the value, and leaves a row without one plain", () => {
+    render(<TableRenderer data={rows} spec={spec} />);
+    expect(cell(0, "change")).toHaveTextContent("1.24 (3.4%)");
+    expect(cell(1, "change")).toHaveTextContent(/^-0\.01$/);
+  });
+
+  it("aligns a declared column's cells and its header", () => {
+    render(<TableRenderer data={rows} spec={spec} />);
+    expect(cell(0, "day_low")).toHaveClass("align-right");
+    expect(cell(0, "day_high")).toHaveClass("align-left");
+    expect(document.querySelector('th[data-field="day_low"]')).toHaveClass("align-right");
+    expect(cell(0, "symbol")).not.toHaveClass("align-left");
   });
 });
 

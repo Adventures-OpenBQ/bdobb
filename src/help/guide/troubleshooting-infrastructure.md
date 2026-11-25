@@ -74,9 +74,9 @@ By design. The OpenBQ MCP neutralises its `install_skill` tool on the server, an
 Not an infrastructure fault. The card is a standard LIVE table, whose paging runs on the server, so Rita cannot inspect or arrange it; she can still read it with `describe_widget` and `get_widget_data`. See [[troubleshooting-using-bdobb|Using BDOBB]].
 
 ---
-*Source: `openbq-docker` `README.md`, `VERIFICATION.md`, `credentials.env.example`, `docker-compose.yml`, `docker-compose.v3.yml`, `ts-config/serve.json`, `v3/openbq_settings.py`, `v4/routes/` and `scripts/verify-isolation.sh` at `v7.0.0`; `key-maint/README.md` at `v7.0.0`; `README.md` and `docker-compose.v6.yml` at `v9.0.0`; BDOBB v3.0.1 in-app manual, "Provider keys"; Adventures in OpenBQ, Eps. 1–3.*
+*Source: `openbq-docker` `README.md`, `VERIFICATION.md`, `credentials.env.example`, `docker-compose.yml`, `docker-compose.v3.yml`, `ts-config/serve.json`, `v3/openbq_settings.py`, `v4/routes/` and `scripts/verify-isolation.sh` at `v7.0.0`; `key-maint/README.md` at `v7.0.0`; `README.md` and `docker-compose.v6.yml` at `v10.0.0`; BDOBB v3.0.1 in-app manual, "Provider keys"; Adventures in OpenBQ, Eps. 1–3.*
 *See also: [[openbq-docker-stack|The openbq-docker Stack]] · [[tailscale-networking|Tailscale Networking]]*
 
 ---
 
-Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

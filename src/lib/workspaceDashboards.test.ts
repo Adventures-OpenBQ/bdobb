@@ -267,7 +267,6 @@ describe("v8 card state through the Workspace server (R2)", () => {
   });
 
 });
-
 it('syncs managed source references and selected linked chains with remapped parent identities',()=>{
  const source=makeCard({id:'source',widgetId:'managed',managedSource:{sourceId:'durable-source',kind:'upload',version:1},tableDefinition:{table:{},search:'saved'},tableSelection:{kind:'allMatching',excludedIds:['r204']}});
  const child=makeCard({id:'child',widgetId:'linked_table',linkedSource:{kind:'widget',sourceWidgetId:'source'},tableDefinition:{table:{},search:'child'}});

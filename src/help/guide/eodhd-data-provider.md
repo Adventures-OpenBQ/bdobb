@@ -48,7 +48,7 @@ The extension can attach a per-column aggregation hint to a statement or price-h
 - Fundamentals cost EODHD credits per call. The extension fetches one bundle per symbol and caches it for a short while, so several statement cards for one symbol share one call, and a **Refresh** soon after can return the same data.
 - Intraday history is capped per request by EODHD (roughly 120 days of one-minute bars). Narrow the date range for fine intervals.
 - The exchange calendars behind date expressions such as `T-1bd` use EODHD's trading-calendar *format* but not its data: they come from the backend's own `api/v1/calendar/trading` route or the NYSE calendar bundled with the app, and need no EODHD key (see [[date-expression|Date Expressions]]).
-- EODHD's live streaming quotes are not part of 9.0.0.
+- EODHD's live streaming quotes are not part of 9.0.0. From 10.0.0 they reach BDOBB as a live grid served by the stack's live-grid backend, not through openbq-api — see [[tables|Tables]] (Live grids) and the 10.0.0 example in [[example-dashboards|Example Dashboards]].
 
 ---
 *Source: BDOBB 9.0.0 `src/lib/aggregationHint.ts` (`toAggregationHint`, called from `src/lib/widgetsJson.ts`), `src/lib/calendarView.ts` (`filterSeries`, `eventPath`, `eodhdLogoUrl`), `src/components/renderers/CalendarRenderer.tsx`, `src/lib/statementTaxonomy.ts`, `src/lib/statementRows.ts`, `src/lib/calendar.ts`, `src/lib/dataClient.ts` and `web/server.mjs`; `openbb-eodhd/README.md`, `openbb_eodhd/eodhd_router.py`, `openbb_eodhd/aggregation.py`, `models/_fundamentals.py`, `models/fundamental.py` and `models/calendar.py` in openbq-eodhd 9.0.1 (ported from the openbb-docker v9.6 line); the development line's `eodhd-data-provider` page at bdobb-v2 v9.6.3, checked against this line.*
@@ -56,4 +56,4 @@ The extension can attach a per-column aggregation hint to a statement or price-h
 
 ---
 
-Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

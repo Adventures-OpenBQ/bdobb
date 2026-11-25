@@ -14,7 +14,7 @@ import { isRecord } from "./isRecord";
  * hoverCardOf (src/lib/tableColumns.ts). `columnColor` needs no code of its own:
  * colorRules colour a cell whatever renderFn says, and `renderFnParams.colorValueKey`
  * points them at another field of the row. Parsed and deliberately ignored, per
- * the design's out-of-scope list: `showCellChange`, `sparkline`.
+ * the renderer also draws `showCellChange`, `logo`, `rangeBar`, and sparklines.
  */
 
 export type ColorRuleCondition =

@@ -295,7 +295,7 @@ export function uploadWorkspaceSettings(session: WorkspaceSession, settings: Set
 /**
  * Which mode, if any, this connection offers (spec: Probe and mode).
  * GET /pro/user with the connection's own key/value credential (none for a
- * Workspace connection) and no session token, 5 s at most: 200 carrying a
+ * Workspace connection) and no session token, 15 s at most: 200 carrying a
  * pro_display_settings object is key mode, 401/403 is login mode, anything
  * else -- another status, a body without settings, an error, silence -- is
  * no API. A connection whose address would not be allowed a credential is
@@ -307,7 +307,7 @@ export async function probeSettingsApi(connection: SettingsConnection): Promise<
   try {
     const response = await fetch(endpoint(connection, "/pro/user"), {
       headers: requestHeaders(connection), credentials: "omit", redirect: "error", maxRedirections: 0,
-      signal: AbortSignal.timeout(5_000),
+      signal: AbortSignal.timeout(15_000),
     });
     if (response.status === 401 || response.status === 403) {
       void response.body?.cancel().catch(() => {});

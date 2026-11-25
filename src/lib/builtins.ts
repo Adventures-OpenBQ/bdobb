@@ -376,9 +376,14 @@ const NO_FETCH_TYPES = new Set([
   // advanced_charting's renderer asks `{endpoint}/history` itself; the
   // endpoint is a UDF base, and fetching it bare is a 404.
   "advanced_charting",
+  // live_chart's renderer asks `/series` for its first symbol only.
+  "live_chart",
+  // Day Chart owns bounded visible/nearby snapshot polling.
+  "day_chart",
   ...SSRM_TYPES,
 ]);
 
 export function fetchesData(widget: WidgetDef): boolean {
   return !NO_FETCH_TYPES.has(widget.type) && widget.backendId !== BUILTIN_BACKEND_ID;
+
 }

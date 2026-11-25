@@ -5,8 +5,68 @@ import { expect, it } from 'vitest';
 import { liveDailyPriceDataset } from '../../../test/fixtures/liveDailyPrices';
 import { dailyPriceParameters } from '../../../test/fixtures/chartSources';
 import { dailyPriceRows, priceDataset, priceFields } from './fixtures';
+import { acceptsLiveDailyPriceRecipe, preparePriceChartInput } from './input';
 import { priceAcquisitionProvenance, priceOmissionEvidence } from './priceEvidence';
 import { admitReturnSummary, dailyReturnSamples, prepareSelectedPrices } from './priceSamples';
+import type { RecipeOptions } from './types';
+
+const liveRecipeSupport = {
+  drawdown: true, 'return-distribution': true, 'return-summary': true, 'small-multiples': true,
+  'yield-curve': false, 'estimate-range': false, 'monthly-returns': false, correlation: false,
+  'etf-pareto': false, 'etf-exposure': false, 'bubble-regression': false, 'dividend-steps': false,
+  'income-sankey': false, 'news-sentiment-calendar': false, 'ownership-snapshot': false,
+  'etf-sunburst': false, 'dual-axis-overlay': false, 'estimate-revisions': false, 'market-map': false,
+} satisfies Record<RecipeOptions['kind'], boolean>;
+
+it('supports live daily prices only for the four eligible recipes', () => {
+  const kinds = Object.keys(liveRecipeSupport) as (keyof typeof liveRecipeSupport)[];
+  for (const kind of kinds) expect(acceptsLiveDailyPriceRecipe(kind), kind).toBe(liveRecipeSupport[kind]);
+});
+
+it('preserves adjusted values and provider gap coordinates without certifying completeness', () => {
+  const symbol = 'AAPL.US';
+  const fields = { date: 'date', price: 'adjusted_close' };
+  const dataset = liveDailyPriceDataset([
+    { date: '2026-01-07', adjusted_close: 121, close: 130 },
+    { date: '2026-01-05', adjusted_close: 100, close: 105 },
+  ], [symbol], { omissions: [[symbol, '2026-01-06']] });
+
+  expect(preparePriceChartInput(dataset, fields, 'drawdown')).toEqual({
+    ok: true, sourceMode: 'live', scope: { start: '2026-01-01', end: '2026-01-31', interval: '1d' },
+    notes: ['Preserved 1 price gap(s) from provider omissions.', '1 price gap(s) in the delivered series.'],
+    series: [{ symbol, points: [
+      { date: '2026-01-05', price: 100 }, { date: '2026-01-06', price: null }, { date: '2026-01-07', price: 121 },
+    ] }],
+  });
+  expect(dataset.completeness.kind).toBe('unknown');
+  expect(preparePriceChartInput(dataset, { ...fields, price: 'close' }, 'drawdown')).toMatchObject({
+    ok: false, refused: true, message: 'Choose the source-documented adjusted-price field.',
+  });
+  expect(preparePriceChartInput(dataset, fields, 'correlation')).toMatchObject({ ok: false, refused: true });
+  expect(preparePriceChartInput(dataset, fields, 'monthly-returns')).toMatchObject({ ok: false, refused: true });
+});
+
+it('uses live selection only when requested and preserves selected listing order', () => {
+  const dataset = liveDailyPriceDataset([
+    ...dailyPriceRows([100], 'AAPL.US'), ...dailyPriceRows([200], 'MCD.US'),
+  ], ['AAPL.US', 'MCD.US']);
+  expect(prepareSelectedPrices(dataset, priceFields, ['AAPL.US'])).toMatchObject({ ok: false, refused: true });
+  expect(prepareSelectedPrices(dataset, priceFields, ['AAPL.US'], 'return-distribution')).toMatchObject({
+    ok: true, sourceMode: 'live', series: [{ symbol: 'AAPL.US' }],
+  });
+  expect(prepareSelectedPrices(dataset, priceFields, ['MCD.US', 'AAPL.US'], 'small-multiples')).toMatchObject({
+    ok: true, sourceMode: 'live', series: [{ symbol: 'MCD.US' }, { symbol: 'AAPL.US' }],
+  });
+  expect(prepareSelectedPrices(dataset, priceFields, ['AAPL.US', 'MSFT.US'], 'small-multiples')).toMatchObject({
+    ok: false, refused: true, message: expect.stringMatching(/selected symbol.*MSFT\.US/i),
+  });
+});
+
+it('reports snapshot mode through both recipe preparation and local selection', () => {
+  const dataset = priceDataset(dailyPriceRows([100]));
+  expect(preparePriceChartInput(dataset, priceFields, 'drawdown')).toMatchObject({ ok: true, sourceMode: 'snapshot' });
+  expect(prepareSelectedPrices(dataset, priceFields, ['A'])).toMatchObject({ ok: true, sourceMode: 'snapshot' });
+});
 
 it('preserves zero returns and breaks known gaps', () => {
   const dataset = priceDataset(dailyPriceRows([100, 100, 110, 99]));

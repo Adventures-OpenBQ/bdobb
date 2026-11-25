@@ -558,6 +558,7 @@ it.each(riskRecipes)('fences $kind across a failed relink, late calculation and 
     render(<LiveRiskChart/>);
     const first = await screen.findByTestId('chart-plot');
     const plot = vi.mocked(renderPlot);
+    await waitFor(() => expect(plot.mock.lastCall?.[0]).toBe(first));
     const figureA = plot.mock.lastCall![1];
     const tall = recipe.kind === 'small-multiples' || recipe.kind === 'etf-exposure';
     expect(first.style.height).toBe(tall ? figureA.layout.height + 'px' : '');

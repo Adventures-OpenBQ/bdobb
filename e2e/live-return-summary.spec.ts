@@ -3,11 +3,10 @@
 
 import { readFileSync } from 'node:fs';
 import { expect, type Locator, type Page } from '@playwright/test';
-import { openRail, read } from './fixtures';
 import { card, openParameters, plot } from './fixtures/chart-recipes';
 import {
-  alternateLiveOrigin, chooseReturnSource, dropFile, liveBackendId, liveOrigin, livePath, livePayload, liveRecipe, liveSourceId,
-  liveTable, liveWorkspace, prepareLiveReturns, returnChart, test,
+  alternateLiveOrigin, chooseReturnSource, dropFile, holdResponse, liveBackendId, liveOrigin, livePath, livePayload, liveRecipe,
+  liveTable, liveWorkspace, mockRitaPriceReads, prepareLiveReturns, returnChart, saveWorkspace, test,
 } from './fixtures/return-summary';
 
 const scope = 'Observed quote-to-quote returns; exchange-session completeness unknown.';
@@ -142,12 +141,6 @@ test('retains one stale chart on matching failure and retires a held result afte
   await expect(widget.getByRole('alert')).toHaveCount(0);
 });
 
-function holdResponse() {
-  let release = () => {};
-  const promise = new Promise<void>(resolve => { release = resolve; });
-  return { promise, resolve: release };
-}
-
 for (const replacementKind of ['symbol', 'interval', 'backend', 'selector', 'credential'] as const) {
   test(`retires a held live result when the ${replacementKind} is replaced`, async ({ page }) => {
     const old = holdResponse(), next = holdResponse();
@@ -210,16 +203,6 @@ for (const replacementKind of ['symbol', 'interval', 'backend', 'selector', 'cre
   });
 }
 
-async function saveWorkspace(page: Page, name: string) {
-  await openRail(page);
-  await page.locator('nav.left-rail').getByRole('button', { name, exact: true }).click({ button: 'right' });
-  await page.getByRole('menuitem', { name: 'Save…' }).click();
-  await page.getByRole('menuitem', { name: 'BDOBB Workspace', exact: true }).click();
-  const path = 'exports/' + name + '.apps.json';
-  await expect.poll(() => read(page, path)).toBeDefined();
-  return (await read(page, path))!;
-}
-
 test('exports only the question, reacquires it after import, and refuses portable live authority', async ({ page, context }) => {
   const options = { ...liveRecipe, window: { mode: 'common', start: '2026-10-13', end: '2026-11-18' } } as const;
   await prepareLiveReturns(page, { options });
@@ -271,28 +254,7 @@ test('imports the fixed live examples against the generated mirror widget', asyn
 
 for (const pinned of [false, true]) {
   test(`Rita reads the committed ${pinned ? 'pinned' : 'configured'} source off-tab and preserves explicit overrides across Run`, async ({ page }) => {
-    const ritaUrl = 'http://127.0.0.1:17917';
-    let round = 0;
-    let override: Record<string, string> | undefined;
-    type RitaMessage = { role: string; function?: string; data?: { items?: { content: string }[] }[] };
-    let lastTool: RitaMessage | undefined;
-    await page.route(ritaUrl + '/**', async route => {
-      const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*',
-        'Access-Control-Allow-Methods': 'POST, GET, OPTIONS' };
-      const request = route.request();
-      if (request.method() !== 'POST') {
-        await route.fulfill({ headers, json: {} });
-        return;
-      }
-      const { messages } = request.postDataJSON() as { messages: RitaMessage[] };
-      const firstRound = round++ % 2 === 0;
-      if (!firstRound) lastTool = messages.filter(message => message.role === 'tool').at(-1);
-      const event = firstRound ? 'copilotFunctionCall' : 'copilotMessageChunk';
-      const body = firstRound ? { function: 'get_widget_data', input_arguments: {
-        data_sources: [{ widget_uuid: liveSourceId, origin: liveBackendId, input_args: override }],
-      } } : { delta: 'Fixture read ' + round / 2 + '.' };
-      await route.fulfill({ headers, contentType: 'text/event-stream', body: 'event: ' + event + '\ndata: ' + JSON.stringify(body) + '\n\n' });
-    });
+    const { ritaUrl, readWithRita } = await mockRitaPriceReads(page);
     const { acquisitions } = await prepareLiveReturns(page, { options: liveRecipe, sourceOffTab: true,
       runButton: true, pinned, ritaUrl });
     const widget = card(page, returnChart), graph = plot(page, returnChart), source = card(page, liveTable);
@@ -312,15 +274,9 @@ for (const pinned of [false, true]) {
     const pane = page.getByRole('complementary', { name: 'Rita AI pane' });
     await pane.hover();
     await pane.getByRole('button', { name: 'Lock' }).click();
-    let turn = 0;
     async function ask(start: string, firstPrices: { symbol?: string; adjusted_close: number }[], input?: Record<string, string>) {
-      override = input;
-      lastTool = undefined;
-      const textbox = pane.getByRole('textbox', { name: 'Message Rita' });
-      await textbox.fill('Read the historical source ' + (++turn));
       const before = acquisitions.length;
-      await textbox.press('Enter');
-      await expect(pane.getByText('Fixture read ' + turn + '.', { exact: true })).toBeVisible();
+      const lastTool = await readWithRita(input);
       expect(acquisitions.slice(before).map(url => Object.fromEntries(url.searchParams))).toEqual([
         { ...fixedQuery, start_date: start, symbol: input?.symbol ?? fixedQuery.symbol },
       ]);

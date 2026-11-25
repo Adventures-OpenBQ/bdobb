@@ -40,6 +40,27 @@ export type CellClick = { paramName: string; forceUpdate: boolean; valueField?: 
 export type HoverCard = { cellField: string; title?: string; markdown: string };
 
 /**
+ * Which band a range bar is colouring. Declared here rather than beside the
+ * component that paints it, so this module keeps its no-imports-from-
+ * components direction; RangeBar owns the gradients, this owns the name.
+ */
+export type RangePalette = "week52" | "day";
+
+/**
+ * A validated `renderFn: "rangeBar"`. `palette` matters because a row shows a
+ * day range and a 52-week range side by side, and two identically coloured
+ * bars read as one repeated column. `valueKey` is the ROW field marked on the
+ * bar, never the column's own: a rangeBar column is presentation-only, and no
+ * row carries a `day_range` field.
+ */
+export type RangeBarSpec = {
+  lowKey: string;
+  highKey: string;
+  valueKey: string;
+  palette: RangePalette;
+};
+
+/**
  * One rendered column: everything the spec says about it, already resolved,
  * plus the two defaults (its place in the order and whether it starts hidden)
  * that the card's persisted state may override.
@@ -48,11 +69,19 @@ export type TableColumn = {
   hint?: AggregationHint;
   /** Opaque later-renderer metadata preserved/stripped by the maintained engine. */
   editable?: boolean;
+  /** `renderFn: "logo"`: the column's own value is an image URL, and the cell is the image. */
   isLogo?: boolean;
   flash?: boolean;
-  rangeBar?: unknown;
+  /** `renderFn: "rangeBar"` with both ends named. Absent renders plainly. */
+  rangeBar?: RangeBarSpec;
   rangeMeter?: unknown;
+  /**
+   * `renderFnParams.percentKey`: a second row key shown in parentheses after
+   * this column's own value, as a percentage of a fraction (0.034 -> 3.4%).
+   */
   percentKey?: string;
+  /** columnsDefs `align`: which edge the cell's content (and its header) sits against. */
+  align?: "left" | "right" | "center";
   field: string;
   /** headerName ?? field, wrapped in the spec's prefix and suffix. */
   header: string;
@@ -185,6 +214,56 @@ function undeclared(field: string, spec: TableSpec | undefined): TableColumn {
   };
 }
 
+/** A non-empty string at `key` in an opaque renderFnParams, or undefined. */
+function stringParam(params: Record<string, unknown> | undefined, key: string): string | undefined {
+  const value = params?.[key];
+  return typeof value === "string" && value !== "" ? value : undefined;
+}
+
+/**
+ * `renderFn: "logo"` -- this column's own value is an image URL. No `urlKey`:
+ * the column carries the URL itself. It is used verbatim and never derived
+ * from the symbol (the logo CDN's filenames are case-inconsistent, `aapl.png`
+ * but `MSFT.png`, so a derived one 404s).
+ */
+export function isLogoOf(spec: ColumnSpec): boolean {
+  return spec.renderFn?.includes("logo") ?? false;
+}
+
+/**
+ * The value a range bar marks when the column names no `valueKey`: the row's
+ * `price`, the last-trade field both the stack's live-grid and the donor's
+ * rows carry. openbb-docker v10.1.7's live-grid manifest declares its two
+ * bars with `lowKey`/`highKey` only, so without a default those bars would
+ * never draw (the donor's own client required valueKey). V10-P2.
+ */
+export const RANGE_BAR_DEFAULT_VALUE_KEY = "price";
+
+/**
+ * `renderFn: "rangeBar"` -- the row keys holding the range's ends. BOTH must
+ * be present: a bar with one end is not a shorter bar, it is an undrawable
+ * one, and answering undefined renders the column plainly instead. An
+ * unknown palette falls back to week52 rather than failing the column.
+ */
+export function rangeBarOf(spec: ColumnSpec): RangeBarSpec | undefined {
+  if (!spec.renderFn?.includes("rangeBar")) return undefined;
+  const lowKey = stringParam(spec.renderFnParams, "lowKey");
+  const highKey = stringParam(spec.renderFnParams, "highKey");
+  if (lowKey === undefined || highKey === undefined) return undefined;
+  const valueKey = stringParam(spec.renderFnParams, "valueKey") ?? RANGE_BAR_DEFAULT_VALUE_KEY;
+  const palette: RangePalette = stringParam(spec.renderFnParams, "palette") === "day" ? "day" : "week52";
+  return { lowKey, highKey, valueKey, palette };
+}
+
+/**
+ * `renderFnParams.percentKey` -- deliberately NOT gated on a renderFn: it
+ * decorates the column's own rendering rather than replacing it, which is
+ * why `change` can be both `greenRed` and percent-suffixed at once.
+ */
+export function percentKeyOf(spec: ColumnSpec): string | undefined {
+  return stringParam(spec.renderFnParams, "percentKey");
+}
+
 function declared(column: ColumnSpec, spec: TableSpec): TableColumn {
   const colorValueKey = column.renderFnParams?.colorValueKey;
   return {
@@ -212,6 +291,10 @@ function declared(column: ColumnSpec, spec: TableSpec): TableColumn {
     hoverCard: hoverCardOf(column),
     hint: column.aggregation,
     pinned: column.pinned,
+    ...(column.align !== undefined ? { align: column.align } : {}),
+    ...(isLogoOf(column) ? { isLogo: true } : {}),
+    ...(rangeBarOf(column) !== undefined ? { rangeBar: rangeBarOf(column) } : {}),
+    ...(percentKeyOf(column) !== undefined ? { percentKey: percentKeyOf(column) } : {}),
     hiddenByDefault: column.hide === true,
     size: column.width,
     minSize: column.minWidth,
@@ -240,7 +323,12 @@ export function tableColumns(rows: Row[], spec: TableSpec | undefined): TableCol
   const taken = new Set<string>();
   const out: TableColumn[] = [];
   for (const column of spec.columns) {
-    if (taken.has(column.field) || !present.has(column.field)) continue;
+    if (taken.has(column.field)) continue;
+    // A rangeBar column is presentation-only: its content comes from other
+    // keys of the row (lowKey/highKey/valueKey), so no row carries its own
+    // field, and the "does the payload have it" test would drop the column
+    // the manifest asked for.
+    if (!present.has(column.field) && rangeBarOf(column) === undefined) continue;
     taken.add(column.field);
     out.push(declared(column, spec));
   }

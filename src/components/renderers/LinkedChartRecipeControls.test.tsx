@@ -7,6 +7,8 @@ import { datasetFromRows } from '../../lib/localTableData';
 import { runRecipe } from '../../lib/widgetData/chartRecipes/run';
 import { LinkedChartRecipeControls, recipeAvailability } from './LinkedChartRecipeControls';
 import type { DatasetColumn } from '../../lib/widgetData/types';
+import { dailyPriceRows, priceDataset } from '../../lib/widgetData/chartRecipes/fixtures';
+import { liveDailyPriceDataset } from '../../test/fixtures/liveDailyPrices';
 const columns = ['date', 'adjusted_close', 'symbol', 'close'].map(id => ({ id, label: id }));
 const loadSymbols = vi.fn(async () => ['A', 'B']);
 afterEach(cleanup);
@@ -82,6 +84,55 @@ it('saves 1–12 small-multiple symbols in selection order', async () => {
   fireEvent.click(screen.getByLabelText('S0'));
   fireEvent.click(apply);
   expect(save).toHaveBeenCalledWith(expect.objectContaining({ symbols: reversed.slice(0, 12) }));
+});
+
+it.each([
+  ['return-distribution', 'close'],
+  ['drawdown', 'revenue_adjusted'],
+  ['small-multiples', 'close'],
+] as const)('offers acquired origins and listings for a live %s', async (kind, alias) => {
+  const prices = [...dailyPriceRows([10, 11, 12], 'AAPL.US'), ...dailyPriceRows([20, 21, 22], 'MCD.US')];
+  const acquired = liveDailyPriceDataset(prices.map(row => ({ ...row, close: 99 })), ['AAPL.US', 'MCD.US']);
+  const delivered = {
+    ...acquired,
+    columns: acquired.columns.map(column => column.id === 'adjusted_close'
+      ? { ...column, id: alias, label: 'Acquired adjusted price', sourceFieldId: 'adjusted_close' }
+      : column.id === 'close' ? { ...column, id: 'raw', label: 'Raw close', sourceFieldId: 'close' } : column),
+    rows: acquired.rows.map(({ values: { adjusted_close, close, ...values }, ...row }) =>
+      ({ ...row, values: { ...values, [alias]: adjusted_close, raw: close } })),
+  };
+  const save = vi.fn();
+  render(<LinkedChartRecipeControls kind={kind} columns={delivered.columns} loadPriceInput={async () => delivered}
+    loadSymbols={loadSymbols} disabled={false} onApply={save}/>);
+
+  if (kind === 'return-distribution') {
+    await screen.findByRole('option', { name: 'MCD.US' });
+    fireEvent.change(screen.getByLabelText('Symbol'), { target: { value: 'AAPL.US' } });
+  } else {
+    fireEvent.click(await screen.findByLabelText('MCD.US'));
+    fireEvent.click(screen.getByLabelText('AAPL.US'));
+  }
+  expect(screen.getByLabelText('Adjusted price')).toHaveValue(alias);
+  expect(screen.queryByRole('option', { name: 'Raw close' })).toBeNull();
+  expect(screen.queryByLabelText('Return view')).toBeNull();
+  expect(screen.queryByLabelText('Return window')).toBeNull();
+  const apply = screen.getByRole('button', { name: /apply/i });
+  expect(apply).toBeEnabled();
+  fireEvent.click(apply);
+  expect(save).toHaveBeenCalledWith(expect.objectContaining({
+    kind, fields: { date: 'date', price: alias, symbol: 'symbol' },
+    ...(kind === 'return-distribution' ? { symbol: 'AAPL.US' } : { symbols: ['MCD.US', 'AAPL.US'] }),
+  }));
+});
+
+it('retains non-qualified listing names from the local symbol loader', async () => {
+  const snapshot = priceDataset([...dailyPriceRows([10, 11], 'A'), ...dailyPriceRows([20, 21], 'B')]);
+  const save = vi.fn();
+  render(<LinkedChartRecipeControls kind="drawdown" columns={snapshot.columns} loadPriceInput={async () => snapshot}
+    loadSymbols={loadSymbols} loadReturnListings={async () => []} disabled={false} onApply={save}/>);
+  fireEvent.click(await screen.findByLabelText('B'));
+  fireEvent.click(screen.getByRole('button', { name: /apply/i }));
+  expect(save).toHaveBeenCalledWith(expect.objectContaining({ symbols: ['B'] }));
 });
 
 it('offers exposure modes and saves only presented bindings and mode', () => {
@@ -180,7 +231,7 @@ it.each(['rejected acquisition', 'invalid declaration'] as const)('matches the R
   const save = vi.fn();
   render(<LinkedChartRecipeControls kind="return-summary"
     saved={recipe} columns={input.columns}
-    loadSymbols={loadSymbols} loadReturnInput={async () => input} loadReturnListings={async () => symbols}
+    loadSymbols={loadSymbols} loadPriceInput={async () => input} loadReturnListings={async () => symbols}
     disabled={false} onApply={save}/>);
   const refusal = await screen.findByText(/cannot verify its daily-price acquisition/i);
   expect(runRecipe(input, recipe, { theme: 'light', today: '2026-01-31', maxDecimals: 2 })).toMatchObject({

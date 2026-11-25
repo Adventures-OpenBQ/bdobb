@@ -52,6 +52,12 @@ export type ReconnectingSocketOptions = {
    */
   reconnectOnForeground?: boolean;
   /**
+   * The URL to open for ONE connection, asked again before every (re)connect:
+   * a gateway socket ticket is single use (V10-P1). A rejection opens `url`
+   * itself, as if this were unset.
+   */
+  resolveUrl?: (url: string) => Promise<string>;
+  /**
    * With reconnectOnForeground: a return to the foreground reconnects only
    * when the document was hidden at least this long, or the socket is not
    * open. 0 (the default) reconnects on every return -- the iOS case, where
@@ -67,6 +73,11 @@ export type ReconnectingSocketOptions = {
    * Its handle is the current connection until the next onConnect.
    */
   onConnect?: (conn: SocketConnection) => void;
+  /**
+   * The socket opened and its subscription went out: the per-open hook. Work
+   * for this one connection (a REST seed) hangs off `conn`.
+   */
+  onOpen?: (conn: SocketConnection) => void;
   /** The connection ended and a retry is scheduled. */
   onDrop?: (conn: SocketConnection) => void;
 };
@@ -142,7 +153,13 @@ export function useReconnectingSocket(
     const connect = () => {
       if (closed) return;
       setStatus(attempt === 0 ? "connecting" : "reconnecting");
-      const sock = new WebSocket(url);
+      const resolveUrl = optionsRef.current.resolveUrl;
+      if (resolveUrl) void resolveUrl(url).catch(() => url).then(open);
+      else open(url);
+    };
+    const open = (target: string) => {
+      if (closed) return;
+      const sock = new WebSocket(target);
       socketRef.current = sock;
       let done = false;
       const conn: SocketConnection = {
@@ -170,6 +187,7 @@ export function useReconnectingSocket(
         openedAt = Date.now();
         setStatus("live");
         sock.send(JSON.stringify(subscribeRef.current));
+        optionsRef.current.onOpen?.(conn);
       };
       sock.onmessage = (event: MessageEvent) => {
         if (conn.stale()) return;

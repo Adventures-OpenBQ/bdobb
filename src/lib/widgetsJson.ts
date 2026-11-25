@@ -351,6 +351,8 @@ function toColumnSpec(c: Record<string, unknown>): ColumnSpec | null {
     column.decimalPlaces = c.decimalPlaces;
   }
   if (c.pinned === "left" || c.pinned === "right") column.pinned = c.pinned;
+  if (c.align === "left" || c.align === "right" || c.align === "center") column.align = c.align;
+
   // The live manifest sends both `"greenRed"` and `["greenRed"]`;
   // toStringArray already normalises exactly that pair.
   const renderFn = toStringArray(c.renderFn);
@@ -633,6 +635,8 @@ export function normalizeWidgets(
       subCategory: str(w.subCategory, ""),
       endpoint: str(w.endpoint, ""),
       wsEndpoint: typeof w.wsEndpoint === "string" && w.wsEndpoint !== "" ? w.wsEndpoint : undefined,
+      chartStreamV1: asRecord(w.extra_metadata)?.chart_stream_v1 === true || undefined,
+      closedSessionHistory: asRecord(w.extra_metadata)?.closed_session_history === true || undefined,
       wsRowIdColumn: data && typeof data.wsRowIdColumn === "string" ? data.wsRowIdColumn : undefined,
       gridData: toGridData(w.gridData),
       params,

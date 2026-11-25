@@ -66,6 +66,7 @@ describe("docs/examples", () => {
   // unchanged, and the list must now name every example file, so a new one is
   // added here too.
   const KNOWN = [
+    "v10.0.0-live-grid.apps.json",
     "v3.1.0-builtins.apps.json",
     "v3.1.0-demo-providers.apps.json",
     "v3.1.0-openbb-workspace.apps.json",
@@ -91,6 +92,7 @@ describe("docs/examples", () => {
     "v9-next-market-map.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
+    "v10-live-price-views.apps.json",
     "v5-financial-demo/apps.json",
   ];
   it("ships every known example file, and no file the list does not name", () => {
@@ -546,6 +548,25 @@ describe("docs/examples", () => {
     // request ran past the gateway's 55 s.
     expect(calendars.cards[0].params).toMatchObject({ start_date: "T-1mo", end_date: "T+2mo" });
     expect(calendars.cards[2].params).toMatchObject({ start_date: "T-MON", end_date: "T+1m" });
+  });
+
+  // Episode 10 (donor e69f4155, 1621cee1). The one example openbb-docker also
+  // edits: its #72 added the two chart cards to live-grid/apps.json directly,
+  // and apps:sync overwrites that file from here, so the card ids are pinned
+  // by name -- a divergence on either side shows up as a named difference.
+  // Every card is live-grid's own widget id, and the grid's symbols ride as
+  // its saved param, so the card subscribes to them on open.
+  it("v10.0.0-live-grid: the live grid, its subscriptions, the tick history, both charts and the sector map", () => {
+    const { apps, ids } = load("v10.0.0-live-grid.apps.json");
+    expect(ids).toEqual(["live_grid", "subscriptions", "kdb_ticks", "live_chart", "kdb_cache_chart", "sector_map", "day_chart"]);
+    expect(apps[0].description).toContain("BDOBB 10.0.0 or later");
+    const { dashboards } = importApps(apps, [...new Set(ids)].map(widget));
+    const [live] = dashboards[0].tabs;
+    expect(live.name).toBe("Live");
+    expect(live.cards[0].params).toEqual({ symbol: "AAPL,MSFT,NVDA,TSLA,BTC-USD,ETH-USD,EURUSD" });
+    expect(live.cards.map((c) => c.params.interval)).toEqual([undefined, undefined, undefined, "1m", "1d", undefined, undefined]);
+    expect(live.cards[5].params).toEqual({});
+    expect(live.cards[6].params).toEqual({symbol:"AAPL,MSFT,NVDA"});
   });
 
   // Every example says which BDOBB it needs, in words a reader sees in the

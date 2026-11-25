@@ -13,10 +13,11 @@ part of the app to leave out.
 
 ## Lightweight Charts™ by TradingView
 
-The **TradingView** chart card (OpenBB's `advanced_charting` widget) is drawn
+The **TradingView** chart card (OpenBB's `advanced_charting` widget) and the
+**Live Chart** card (live-grid's `live_chart`) are drawn
 with **TradingView Lightweight Charts™**, Copyright (c) TradingView, Inc.,
 <https://www.tradingview.com/>, licensed under the Apache License 2.0. Every
-chart it draws carries the visible credit *Rendered by TradingView*, linked to
+chart they draw carries the visible credit *Rendered by TradingView*, linked to
 <https://www.tradingview.com/lightweight-charts/>, as that library's licence
 asks. The app does not offer a way to hide it.
 
@@ -78,4 +79,4 @@ used only to identify OpenBB connections.
 
 ---
 
-Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

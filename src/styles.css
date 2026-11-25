@@ -1132,6 +1132,10 @@ body {
    other columns keep theirs (bdobb#10). The plain transposed grid stays
    100% wide. Cells clip rather than spill into the next. */
 .widget-table.sized { table-layout: fixed; }
+/* Tabular digits in every table cell: each digit the same width, so a number
+   that changes keeps its columns of digits still. With proportional digits a
+   live grid's price shuffled sideways on every tick (donor 24f16e3d). */
+.widget-table td { font-variant-numeric: tabular-nums; }
 .widget-table.sized th,
 .widget-table.sized td { overflow: hidden; text-overflow: ellipsis; }
 
@@ -1301,6 +1305,62 @@ body {
    inline style instead and therefore wins over these. */
 .widget-table td.cell-pos { color: var(--accent); }
 .widget-table td.cell-neg { color: var(--error); }
+
+/* columnsDefs `align`. Declared for a range bar's flanking columns: the low
+   right-aligned and the high left-aligned put both numbers against the bar
+   they describe. Applied to the header too. */
+.widget-table td.align-left,
+.widget-table th.align-left { text-align: left; }
+.widget-table td.align-right,
+.widget-table th.align-right { text-align: right; }
+.widget-table td.align-center,
+.widget-table th.align-center { text-align: center; }
+
+/* renderFn: logo. Its own column, so the image is the whole cell. The backing
+   colour stops a transparent PNG vanishing on either theme. */
+.cell-logo {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 0 auto;
+  object-fit: contain;
+  border-radius: 3px;
+  background: var(--bg-panel);
+}
+
+/* renderFn: rangeBar. A gradient track with the row's value marked on it, in
+   CSS rather than a chart: a tick moves one inline `left`, which the browser
+   composites without React touching the rest of the cell. */
+.cell-range {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 22px;
+  overflow: hidden;
+}
+.cell-range-track {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 3px;
+  pointer-events: none;
+}
+/* `left` is set inline as calc(4px + (100% - 8px) * f): the track's own 4px
+   inset, so f=0 and f=1 land on its ends. translateX centres the marker. */
+.cell-range-marker {
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 14px;
+  margin-top: -7px;
+  transform: translateX(-50%);
+  background: var(--text);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
 
 /* renderFn: cellOnClick. A real <button> so the cell is keyboard reachable,
    stripped back to the text it replaced: `color: inherit` is what carries the
@@ -2443,6 +2503,7 @@ body {
    be allowed to shrink (min-height: 0) when the card does. */
 .tv-chart { display: flex; flex-direction: column; width: 100%; height: 100%; }
 .tv-chart-plot { flex: 1; min-height: 0; }
+.live-chart-note { margin: 0; padding: 0 4px 2px; font-size: var(--font-size-11); color: var(--text-muted); }
 .tv-credit { align-self: flex-end; padding: 2px 4px 0; font-size: var(--font-size-11); color: var(--text-muted); }
 
 /* The linked Parameters form stays mounted while the panel is closed. */
@@ -2469,6 +2530,7 @@ body {
 :is(.linked-chart-renderer, .card-params-panel) .chart-controls .chart-measures { display: inline-flex; align-items: center; gap: 4px; }
 .card-params-panel .chart-controls { max-height: none; overflow: visible; margin-top: 6px; }
 .linked-chart-status { flex: 0 1 auto; max-height: 25%; overflow: auto; }
+.linked-chart-renderer--price-views .linked-chart-status { max-height: 50%; }
 .linked-chart-status p { margin: 4px 0; }
 .linked-chart-plot { flex: 1; min-height: 0; overflow: hidden; }
 /* Match the news plot viewport's stable scrollbar gutter without occupying card height. */

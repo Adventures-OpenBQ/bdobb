@@ -5,7 +5,7 @@ import { themedLayout } from '../../chartShapes';
 import { formatCell } from '../../format';
 import { color, escape, list } from '../figureHelpers';
 import type { WidgetDataset } from '../types';
-import { preparePrices } from './input';
+import { preparePriceChartInput } from './input';
 import type { RecipeContext, RecipeOptions, RecipeResult } from './types';
 
 // Plotly's tozeroy fill joins disconnected segments. Close each run at zero
@@ -37,7 +37,7 @@ export function buildDrawdown(
   context: RecipeContext,
 ): RecipeResult {
   const { fields, symbols } = options;
-  const prepared = preparePrices(dataset, fields);
+  const prepared = preparePriceChartInput(dataset, fields, options.kind);
   if (!prepared.ok) return prepared;
 
   const selected = new Set(symbols);
@@ -45,6 +45,8 @@ export function buildDrawdown(
   const plotted = new Set(series.map(({ symbol }) => symbol));
   const unavailable = symbols.filter(symbol => !plotted.has(symbol));
   const notes = [...prepared.notes];
+  if (prepared.sourceMode === 'live')
+    notes.push('Drawdown uses observed adjusted prices in the loaded history; exchange-session completeness and peaks during missing observations are unknown.');
   if (unavailable.length)
     notes.push(`Omitted ${unavailable.length} selected symbol(s) (${list(unavailable)}) with no valid daily prices in the delivered history.`);
   if (!series.length) return { ok: false, refused: true, message: notes.join(' ') };

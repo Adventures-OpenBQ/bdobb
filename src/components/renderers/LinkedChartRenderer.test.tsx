@@ -7,14 +7,19 @@ import { createTableExecutionStore } from '../../stores/tableExecutionStore';
 import { createWorkerExecutor } from '../../lib/tableExecution/workerClient';
 import { Boundary } from '../../test/tableWorkerBoundary';
 import { input } from '../../lib/tableExecution/fixtures';
-import type { Dashboard } from '../../lib/types';
+import type { Dashboard, DashboardCard } from '../../lib/types';
 import type { ChartResult } from '../../lib/tableExecution/types';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useDashboardStore } from '../../stores/dashboardStore';
+import { __resetJsonStoreForTests } from '../../lib/jsonStore';
+import { __read, __reset } from '../../test/memfs';
 import { DEFAULT_SETTINGS } from '../../lib/settingsFile';
 import { useEffect, useState, type ComponentProps } from 'react';
 import { LinkedChartRenderer as Renderer } from './LinkedChartRenderer';
 import { liveDailyPriceDataset } from '../../test/fixtures/liveDailyPrices';
-import type { ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
+import type { RecipeOptions, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
+import type { WidgetDataset } from '../../lib/widgetData/types';
+import { acquisitionConfiguration } from '../../lib/widgetData/sources';
 
 function LinkedChartRenderer(props: Omit<ComponentProps<typeof Renderer>, 'parametersTarget' | 'onOpenParameters'> & { controlsHost?: HTMLElement | null }) {
   const { controlsHost, ...rest } = props;
@@ -549,13 +554,13 @@ it('offers five financial recipes and explains missing fields on an incompatible
 });
 
 const curve = { version: 1, kind: 'yield-curve', fields: { date: 'date', maturity: 'maturity', rate: 'rate' } } as const;
-async function setupCurve(inputDataset?: import('../../lib/widgetData/types').WidgetDataset) {
+async function setupCurve(inputDataset?: WidgetDataset, sourceConfig?: Partial<Pick<DashboardCard, 'backendId' | 'params'>>) {
   const { datasetFromRows } = await import('../../lib/localTableData');
   const data = inputDataset ?? datasetFromRows([{ date: '2026-01-02', maturity: 'year_10', rate: .04 }], 's', 1, 'localFile');
   data.provenance.receipt ??= { start_date: '2026-01-01', end_date: '2026-01-31' };
   const acquire = vi.fn(async () => ({ kind: 'dataset' as const, dataset: data }));
   const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire }) });
-  const source = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined };
+  const source = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined, ...sourceConfig };
   store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, chart] }] } as Dashboard);
   store.ensureTable('d', 'c'); await store.settled('d');
   const { runRecipe } = await import('../../lib/widgetData/chartRecipes/run');
@@ -567,7 +572,7 @@ async function setupCurve(inputDataset?: import('../../lib/widgetData/types').Wi
   const actualRead = executor.chartData.bind(executor);
   const read = vi.spyOn(executor, 'chartData');
   const change = async (hidden?: string[]) => act(async () => { store.updateDefinition('d', 's', { table: { hidden }, search: '' }, { kind: 'none' }); await store.settled('d'); });
-  return { store, run, props, change, factory, read, actualRead, acquire };
+  return { store, run, props, change, factory, read, actualRead, acquire, source };
 }
 
 const returnsRecipe: ReturnSummaryOptions = {
@@ -577,8 +582,7 @@ const returnsRecipe: ReturnSummaryOptions = {
 const returnsRows = Array.from({ length: 21 }, (_, index) => ({
   date: '2026-01-' + String(index + 1).padStart(2, '0'), adjusted_close: 100 + 10 * (index % 5),
 }));
-function liveReturnsWithAlias() {
-  const data = liveDailyPriceDataset(returnsRows, ['AAPL.US']);
+function livePricesWithCloseAlias(data = liveDailyPriceDataset(returnsRows, ['AAPL.US'])) {
   return { ...data,
     columns: data.columns.map(column => column.id === 'adjusted_close'
       ? { ...column, id: 'close', label: 'Presented price', sourceFieldId: 'adjusted_close' } : column),
@@ -587,7 +591,7 @@ function liveReturnsWithAlias() {
 }
 
 it('drafts and renders box and violin from the same verified live prices through a presented alias', async () => {
-  const { store, props, factory, run } = await setupCurve(liveReturnsWithAlias());
+  const { store, props, factory, run } = await setupCurve(livePricesWithCloseAlias());
   const save = vi.fn(async () => true);
   const withQuestion = (recipe: ReturnSummaryOptions) => ({
     ...props, onSettingsChange: save, viewer: false,
@@ -642,7 +646,7 @@ it('passes a columnless counted-empty live acquisition to the recipe for the ins
 });
 
 it('retires a completed live chart and fences a held worker projection after acquisition replacement', async () => {
-  const { store, props, factory, read, actualRead } = await setupCurve(liveReturnsWithAlias());
+  const { store, props, factory, read, actualRead } = await setupCurve(livePricesWithCloseAlias());
   const card = { ...props.card, linkedChart: { ...settings, type: returnsRecipe.kind, recipe: returnsRecipe } };
   let release: (() => void) | undefined;
   let signal: AbortSignal | undefined;
@@ -663,6 +667,229 @@ it('retires a completed live chart and fences a held worker projection after acq
     expect(screen.queryByTestId('figure')).toBeNull();
     await act(async () => release?.());
     expect(screen.queryByTestId('figure')).toBeNull();
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+const liveViewOptions = [
+  { version: 1, kind: 'return-distribution', fields: returnsRecipe.fields, symbol: 'AAPL.US', bins: 10 },
+  { version: 1, kind: 'drawdown', fields: returnsRecipe.fields, symbols: ['AAPL.US'] },
+  { version: 1, kind: 'small-multiples', fields: returnsRecipe.fields, symbols: ['AAPL.US'] },
+] satisfies [RecipeOptions, RecipeOptions, RecipeOptions];
+const liveViewNotes = [
+  'Observed quote-to-quote returns; exchange-session completeness unknown.',
+  'Drawdown uses observed adjusted prices in the loaded history; exchange-session completeness and peaks during missing observations are unknown.',
+  'Indexed observed adjusted prices; exchange-session completeness unknown.',
+] as const;
+const liveViewCases = liveViewOptions.map((options, i) => [options.kind, options, liveViewNotes[i]] as const);
+
+function ToggleableParameters(props: Omit<ComponentProps<typeof Renderer>, 'parametersTarget' | 'onOpenParameters'>) {
+  const [target, setTarget] = useState<HTMLDivElement | null>(null);
+  const [open, setOpen] = useState(false);
+  return <>
+    <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>Parameters</button>
+    <div role="region" aria-label="Parameters" ref={setTarget} hidden={!open}/>
+    <Renderer {...props} parametersTarget={target} onOpenParameters={() => setOpen(true)}/>
+  </>;
+}
+
+it.each(liveViewCases)('draws live %s with an adjusted close alias and unknown completeness', async (type, recipe, note) => {
+  const { store, props, factory, run } = await setupCurve(livePricesWithCloseAlias());
+  try {
+    render(<LinkedChartRenderer {...props} card={{ ...props.card, linkedChart: { ...settings, type, recipe } }}/>);
+    expect(await screen.findByText(note)).toBeVisible();
+    expect(screen.getByTestId('figure')).toBeVisible();
+    expect(screen.getByText('unknown data')).toBeVisible();
+    expect(run).toHaveBeenCalledWith(expect.objectContaining({ completeness: expect.objectContaining({ kind: 'unknown' }) }),
+      recipe, expect.anything(), expect.any(AbortSignal));
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it.each(liveViewCases)('offers repair after a worker refusal of invalid live evidence for %s', async (type, options) => {
+  const data = liveDailyPriceDataset(returnsRows, ['AAPL.US'], { unsafe: { missing_adjusted_basis: true } });
+  const recipe = { ...options, fields: { date: 'date', price: 'adjusted_close' } };
+  const { store, props, factory, run } = await setupCurve(data);
+  try {
+    render(<ToggleableParameters {...props} viewer={false} card={{ ...props.card, linkedChart: { ...settings, type, recipe } }}/>);
+    await waitFor(() => expect(run).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText('The source must be fully loaded. Acquisition is unknown.')).toHaveAttribute('role', 'status');
+    expect(screen.queryByTestId('figure')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open Parameters' }));
+    expect(screen.getByLabelText('Chart type')).toBeVisible();
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it.each(liveViewCases)('sends a columnless empty live %s to the worker', async (type, recipe) => {
+  const { store, props, factory, read, run } = await setupCurve(liveDailyPriceDataset([], ['AAPL.US']));
+  try {
+    render(<ToggleableParameters {...props} viewer={false} card={{ ...props.card, linkedChart: { ...settings, type, recipe } }}/>);
+    expect(await screen.findByText('No valid daily prices remain.', { ignore: '[hidden] *' })).toHaveAttribute('role', 'status');
+    expect(read.mock.calls[0][1]).toEqual([]);
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('figure')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open Parameters' }));
+    expect(screen.getByLabelText('Chart type')).toBeVisible();
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it.each([
+  { version: 1, kind: 'correlation', fields: { date: 'date', price: 'adjusted_close' }, symbols: ['AAPL.US', 'MCD.US'], lookback: 20, minOverlap: 4 },
+  { version: 1, kind: 'monthly-returns', fields: { date: 'date', price: 'adjusted_close' }, symbol: 'AAPL.US' },
+] satisfies RecipeOptions[])('keeps the completeness requirement for $kind', async recipe => {
+  const { store, props, factory, run } = await setupCurve(liveDailyPriceDataset(returnsRows, ['AAPL.US']));
+  try {
+    render(<LinkedChartRenderer {...props} card={{ ...props.card, linkedChart: { ...settings, type: recipe.kind, recipe } }}/>);
+    expect(await screen.findByText('The source must be fully loaded. Acquisition is unknown.')).toBeVisible();
+    expect(run).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('figure')).toBeNull();
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it('keeps a new live view as a draft across closing and reopening Parameters', async () => {
+  const { store, props, factory } = await setupCurve(livePricesWithCloseAlias());
+  const recipe = liveViewOptions[1];
+  const save = vi.fn(async (...[, guard]: Parameters<ComponentProps<typeof Renderer>['onSettingsChange']>) => guard?.() ?? true);
+  try {
+    render(<ToggleableParameters {...props} onSettingsChange={save} viewer={false} card={{
+      ...props.card, linkedChart: { ...settings, type: recipe.kind, recipe },
+    }}/>);
+    const figure = await screen.findByTestId('figure');
+    const drawn = figure.textContent;
+    const toggle = screen.getByRole('button', { name: 'Parameters' });
+    fireEvent.click(toggle);
+    const types = screen.getByLabelText('Chart type');
+    expect(screen.getByRole('option', { name: 'Return distribution' })).toBeEnabled();
+    fireEvent.change(types, { target: { value: 'return-distribution' } });
+    await screen.findByRole('option', { name: 'AAPL.US' });
+    fireEvent.change(screen.getByLabelText('Symbol'), { target: { value: 'AAPL.US' } });
+    fireEvent.change(screen.getByLabelText('Bins'), { target: { value: '17' } });
+    fireEvent.click(toggle);
+    expect(screen.getByLabelText('Bins')).not.toBeVisible();
+    fireEvent.click(toggle);
+    expect(types).toHaveValue('return-distribution');
+    expect(screen.getByLabelText('Bins')).toHaveValue(17);
+    expect(screen.getByLabelText('Symbol')).toHaveValue('AAPL.US');
+    expect(screen.getByTestId('figure').textContent).toBe(drawn);
+    expect(save).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Apply chart settings' }));
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({
+      recipe: { ...liveViewOptions[0], bins: 17 },
+    }), expect.any(Function));
+    await waitFor(() => expect(screen.getByLabelText('Chart type')).toBeEnabled());
+    expect(await save.mock.results[0].value).toBe(true);
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it.each(liveViewCases)('refuses a queued %s Apply after a source replacement commits', async type => {
+  __reset();
+  __resetJsonStoreForTests();
+  const { store, props, factory, source } = await setupCurve(livePricesWithCloseAlias());
+  const previous = useDashboardStore.getState();
+  const replacement = { ...source, id: 'replacement', params: { file: 'replacement.csv' } };
+  const dashboard: Dashboard = { id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, replacement, chart] }] };
+  useDashboardStore.setState({ dashboards: [dashboard], viewer: false });
+  const readCurrentSource = () => {
+    const cards = useDashboardStore.getState().dashboards[0].tabs[0].cards;
+    return { view: store.readView('d', 'c'), executor: store.readExecutor('d', 's'),
+      sourceCurrent: store.sourceMatches('d', 'c', cards), card: cards.find(card => card.id === chart.id) };
+  };
+  const save = vi.fn((...args: Parameters<ComponentProps<typeof Renderer>['onSettingsChange']>) =>
+    useDashboardStore.getState().commitLinkedChartSettings('d', 'c', ...args));
+  try {
+    render(<LinkedChartRenderer {...props} viewer={false} card={chart} readCurrentSource={readCurrentSource} onSettingsChange={save}/>);
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: type } });
+    if (type === 'return-distribution') {
+      await screen.findByRole('option', { name: 'AAPL.US' });
+      fireEvent.change(screen.getByLabelText('Symbol'), { target: { value: 'AAPL.US' } });
+    } else {
+      fireEvent.click(await screen.findByLabelText('AAPL.US'));
+    }
+    const apply = screen.getByRole('button', { name: 'Apply chart settings' });
+    expect(apply).toBeEnabled();
+
+    await act(async () => {
+      const replaced = useDashboardStore.getState().replaceLinkedSource('c', replacement.id);
+      fireEvent.click(apply);
+      expect(await replaced).toBe(true);
+      await save.mock.results[0].value;
+    });
+    const persisted = JSON.parse(__read('dashboards/d.json')!) as Dashboard;
+    expect(persisted.tabs[0].cards.find(card => card.id === chart.id)).toMatchObject({
+      linkedSource: { kind: 'widget', sourceWidgetId: replacement.id },
+      linkedChart: settings,
+    });
+    expect(screen.getByText(/chart source or settings changed/i)).toBeVisible();
+  } finally {
+    cleanup();
+    factory.mockRestore();
+    store.disposeDashboard('d');
+    useDashboardStore.setState(previous);
+    __reset();
+    __resetJsonStoreForTests();
+  }
+});
+
+it('cannot restore a held old live chart projection after replacing bounds, symbols and backend', async () => {
+  const initialBounds = { start_date: '2026-01-01', end_date: '2026-01-31' };
+  const replacementBounds = { start_date: '2026-02-01', end_date: '2026-02-28' };
+  const sourcePrices = (bounds: typeof initialBounds, second: string) =>
+    livePricesWithCloseAlias(liveDailyPriceDataset(['AAPL.US', second].flatMap(symbol => returnsRows.map(row => ({
+      ...row, symbol, date: bounds.start_date.slice(0, 7) + row.date.slice(7),
+    }))), ['AAPL.US', second], { bounds }));
+  const { store, props, factory, read, actualRead, acquire, source } = await setupCurve(sourcePrices(initialBounds, 'MCD.US'), {
+    backendId: 'first', params: { ...initialBounds, symbol: 'AAPL.US,MCD.US' },
+  });
+  const recipe = { ...liveViewOptions[1], fields: { ...returnsRecipe.fields, symbol: 'symbol' } };
+  const card = { ...props.card, linkedChart: { ...settings, type: recipe.kind, recipe } };
+  let currentSource = source;
+  const readCurrentSource = () => ({
+    view: store.readView('d', 'c'), card,
+    sourceCurrent: store.sourceMatches('d', 'c', [currentSource, card]),
+  });
+  const viewOf = (source: DashboardCard) => <LinkedChartRenderer {...props} card={card} sourceAcquisitionKey={JSON.stringify(acquisitionConfiguration(source))}
+    readCurrentSource={readCurrentSource}/>;
+  let release: (() => void) | undefined;
+  let signal: AbortSignal | undefined;
+  try {
+    const { rerender } = render(viewOf(source));
+    await screen.findByTestId('figure');
+    read.mockImplementationOnce(async (...args) => {
+      const result = await actualRead(...args);
+      signal = args[2];
+      return new Promise(resolve => { release = () => resolve(result); });
+    });
+    await act(async () => { store.refresh('d', 'c'); await store.settled('d'); });
+    await waitFor(() => expect(release).toBeDefined());
+    expect(screen.getByText(/showing completed data \(stale\)/i)).toBeVisible();
+    currentSource = { ...source, backendId: 'replacement', params: { ...replacementBounds, symbol: 'AAPL.US,MSFT.US' } };
+    rerender(viewOf(currentSource));
+    expect(signal?.aborted).toBe(true);
+    expect(screen.queryByTestId('figure')).toBeNull();
+    acquire.mockResolvedValue({ kind: 'dataset', dataset: sourcePrices(replacementBounds, 'MSFT.US') });
+    await act(async () => {
+      store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [currentSource, card] }] });
+      store.ensureTable('d', 'c');
+      await store.settled('d');
+    });
+    const replacementFigure = (await screen.findByTestId('figure')).textContent;
+    expect(replacementFigure).toContain('2026-02-01');
+    await act(async () => release?.());
+    expect(screen.getByTestId('figure').textContent).toBe(replacementFigure);
+    expect(screen.queryByText(/2026-01-01/)).toBeNull();
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it('labels the completed live figure stale when a refresh of the same source fails', async () => {
+  const { store, props, factory, acquire } = await setupCurve(livePricesWithCloseAlias());
+  const recipe = liveViewOptions[0];
+  try {
+    render(<LinkedChartRenderer {...props} card={{ ...props.card, linkedChart: { ...settings, type: recipe.kind, recipe } }}
+      sourceAcquisitionKey="same-price-source"/>);
+    const completed = (await screen.findByTestId('figure')).textContent;
+    acquire.mockRejectedValue(new Error('Price refresh failed'));
+    await act(async () => { store.refresh('d', 'c'); await store.settled('d'); });
+    expect(screen.getByRole('alert')).toHaveTextContent('Price refresh failed');
+    expect(screen.getByText(/showing completed data \(stale\)/i)).toBeVisible();
+    expect(screen.getByTestId('figure').textContent).toBe(completed);
   } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
 });
 
@@ -847,7 +1074,7 @@ it('rejects a malformed legacy recipe declaration before reading fields or execu
   } finally { cleanup(); store.disposeDashboard('d'); }
 });
 
-it('clears a saved adjusted-price chart before projected reads when its bound ID changes provider role', async () => {
+it('clears a saved local drawdown when the worker refuses a changed provider role', async () => {
   const { priceDataset, drawdownOptions } = await import('../../lib/widgetData/chartRecipes/fixtures');
   const data = priceDataset([{ date: '2026-01-02', symbol: 'A', px: 12 }]);
   const price = data.columns.find(c => c.id === 'px')!;
@@ -862,10 +1089,10 @@ it('clears a saved adjusted-price chart before projected reads when its bound ID
     price.sourceFieldId = 'eps_low';
     await act(async () => { store.refresh('d', 'c'); await store.settled('d'); });
     expect(store.readView('d', 'c').ready!.columns.find(c => c.id === 'px')).toMatchObject({ sourceFieldId: 'eps_low' });
+    expect(await screen.findByText(/px.*adjusted price.*repair/i)).toHaveAttribute('role', 'status');
     expect(screen.queryByTestId('figure')).toBeNull();
-    expect(screen.getByRole('alert')).toHaveTextContent(/px.*adjusted price.*repair/i);
-    expect(read).toHaveBeenCalledTimes(reads);
-    expect(run).toHaveBeenCalledTimes(1);
+    expect(read).toHaveBeenCalledTimes(reads + 1);
+    expect(run).toHaveBeenCalledTimes(2);
   } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
 });
 

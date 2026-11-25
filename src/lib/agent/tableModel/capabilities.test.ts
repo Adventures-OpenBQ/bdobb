@@ -67,3 +67,24 @@ it("provides a complete flat-operation example accepted by the actual arrangemen
   expect(parseArrangement(example).errors).toEqual([]);
   expect(example.operations.map((op: { op: string }) => op.op)).toEqual(["category.add", "measure.add", "layout.set"]);
 });
+
+it("maps calendar units explicitly so a quarter-named field does not change a requested year grouping", () => {
+  const rules = capabilitiesFor(undefined, columns, "authoring").how_to_arrange!.join(" ");
+  expect(rules).toContain('calendar year: "Y"');
+  expect(rules).toContain('calendar quarter: "Q"');
+  expect(rules).toContain('calendar month: "M"');
+  expect(rules).toContain("requested grouping");
+});
+
+it("makes inspection-only status and the required execution step explicit in the returned guidance", () => {
+  const rules = capabilitiesFor(undefined, columns, "authoring").how_to_arrange!.join(" ");
+  expect(rules).toContain("describe_table has not changed the table");
+  expect(rules).toContain("contains no grouped totals");
+  expect(rules).toContain("call arrange_table");
+});
+
+it("requires direct apply for changes because apply already validates and previews atomically", () => {
+  const rules = capabilitiesFor(undefined, columns, "authoring").how_to_arrange!.join(" ");
+  expect(rules).toContain("do not precede it with a separate preview call");
+  expect(rules).toContain("apply transaction already validates");
+});

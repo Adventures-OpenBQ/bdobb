@@ -25,6 +25,21 @@ translate into a chart. That is the app telling you it fetched something fine
 and does not know how to draw it. The **News** built-in is not one of these: it
 fetches nothing from a backend, and with no server set it asks for one.
 
+## A live grid shows its first snapshot and never ticks
+
+The snapshot arrived and the stream did not, so look at the socket, not the
+table. The log says *websocket dropped:* once, with the socket's address, and
+the grid keeps retrying on its own.
+
+A browser websocket cannot carry a header. If the connection sends its
+credential in the query, it rides the socket's address too; a header or cookie
+credential does not. With a header credential the app asks the backend for a
+single-use socket ticket before every connect, and the companion stack's
+gateway issues one. A backend that issues no ticket and checks a header on the
+socket handshake refuses the socket, and the grid holds its snapshot. Through
+the gateway, a socket that never opens means the ticket was refused: check the
+connection's token. **Refresh** still re-fetches the snapshot.
+
 ## A framed page is blank
 
 Many sites refuse to be embedded, and the card cannot tell that from a page
@@ -84,4 +99,4 @@ rotated generations beside it. It rotates at 10 MB.
 
 ---
 
-Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

@@ -5,7 +5,7 @@ tags: [bdobb, help, integrations, rita, agent, mcp, setup, openbq]
 
 # Setting Up the Rita AI Agent
 
-**Rita** is the chat agent inside BDOBB, and **MCP servers** are the tool services Rita can call for exact numbers. Both are off until you point BDOBB at them: a fresh profile has no Rita URL and no MCP server, so nothing about your dashboards leaves the app and no request goes out. This page covers the two OpenBQ services BDOBB v6 is built against, how to connect them, what Check proves, and exactly what Rita can and cannot do to a dashboard. Nothing here is built by BDOBB itself; the app only needs the resulting URLs. On the openbq-docker stack both come from its Episode 6 overlay, `docker-compose.v6.yml`, shipped in openbq-docker `v9.0.0`.
+**Rita** is the chat agent inside BDOBB, and **MCP servers** are the tool services Rita can call for exact numbers. Both are off until you point BDOBB at them: a fresh profile has no Rita URL and no MCP server, so nothing about your dashboards leaves the app and no request goes out. This page covers the two OpenBQ services BDOBB v6 is built against, how to connect them, what Check proves, and exactly what Rita can and cannot do to a dashboard. Nothing here is built by BDOBB itself; the app only needs the resulting URLs. On the openbq-docker stack both come from its Episode 6 overlay, `docker-compose.v6.yml`, shipped in openbq-docker `v10.0.0`.
 
 ## The three pieces
 
@@ -112,9 +112,10 @@ Fetch `<rita-url>/agents.json`; a JSON document describing the agent means Rita 
 Rita and MCP failures — a chat that errors on every message, a tool call that is refused, a round-limit warning, timeouts, an unreachable MCP server and the private-network warning — are indexed in [[troubleshooting-using-bdobb|Using BDOBB]] and [[troubleshooting-infrastructure|Configuring the Infrastructure]].
 
 ---
-*Source: BDOBB v6.0.0 `src/lib/agent/localTools.ts`, `src/lib/agent/tableModel/`, `src/lib/agent/limits.ts`, `src/lib/agent/query.ts`, `src/lib/agent/execute.ts`, `src/lib/settingsFile.ts` and `src/components/ai/AgentsTab.tsx`; the OpenBQ Rita and MCP services' pinned sources (`Adventures-OpenBQ/agent-rita-bdobb` `v6.0.0`: `sources.lock`, `patches/`, `scripts/build.sh`); `openbq-docker` `README.md`, `docker-compose.v6.yml`, `mcp/Dockerfile`, `mcp/requirements.lock`, `ts-config/serve-v6.json` and `rita.env.example` at `v9.0.0`.*
+*Source: BDOBB v6.0.0 `src/lib/agent/localTools.ts`, `src/lib/agent/tableModel/`, `src/lib/agent/limits.ts`, `src/lib/agent/query.ts`, `src/lib/agent/execute.ts`, `src/lib/settingsFile.ts` and `src/components/ai/AgentsTab.tsx`; the OpenBQ Rita and MCP services' pinned sources (`Adventures-OpenBQ/agent-rita-bdobb` `v6.0.0`: `sources.lock`, `patches/`, `scripts/build.sh`); `openbq-docker` `README.md`, `docker-compose.v6.yml`, `mcp/Dockerfile`, `mcp/requirements.lock`, `ts-config/serve-v6.json` and `rita.env.example` at `v10.0.0`.*
+
 *See also: [[rita-chat|Rita (AI Chat)]] · [[ai-library|The AI Library]] · [[openbq-docker-stack|The openbq-docker Stack]] · [[tables|Tables]] · [[tailscale-networking|Tailscale Networking]] · [[troubleshooting-infrastructure|Configuring the Infrastructure]]*
 
 ---
 
-Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

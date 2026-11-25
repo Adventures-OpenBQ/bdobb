@@ -13,11 +13,11 @@ import { buildDualAxisOverlay } from './dualAxisOverlay';
 import { buildEstimateRange } from './estimateRange';
 import { buildEstimateRevisions } from './estimateRevisions';
 import { buildIncomeSankey } from './incomeSankey';
+import { acceptsLiveDailyPriceRecipe, snapshotDailyPriceIssue } from './input';
 import { buildMarketMap } from './marketMap';
 import { buildMonthlyReturns } from './monthlyReturns';
 import { buildNewsCalendar } from './newsCalendar';
 import { buildOwnershipSnapshot } from './ownershipSnapshot';
-import { snapshotDailyPriceIssue } from './input';
 import { calendarDate } from './priceEvidence';
 import { decodeRecipeRequestOptions } from './settings';
 import type { RecipeContext, RecipeRequestOptions, RecipeResult } from './types';
@@ -77,10 +77,13 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeRequestOptions,
   if (recipe.kind === 'dual-axis-overlay') return buildDualAxisOverlay(dataset, recipe, context);
   const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar' || recipe.kind === 'etf-sunburst'
     ? undefined : savedBindingIssue(recipe, dataset.columns, dataset.rows);
-  // Qualified live returns bind against acquired field origins. Their admission also handles empty acquisitions.
-  if (issue && !(recipe.kind === 'return-summary' && readLiveDailyPriceSource(dataset))) {
-    const sourceIssue = recipe.kind === 'return-summary' ? snapshotDailyPriceIssue(dataset) : undefined;
-    return { ok: false, refused: true, message: sourceIssue ?? issue };
+  // Qualified live prices bind against acquired field origins. Their admission also handles empty acquisitions.
+  if (issue) {
+    const livePriceRecipe = acceptsLiveDailyPriceRecipe(recipe.kind);
+    if (!livePriceRecipe || !readLiveDailyPriceSource(dataset)) {
+      const sourceIssue = livePriceRecipe ? snapshotDailyPriceIssue(dataset) : undefined;
+      return { ok: false, refused: true, message: sourceIssue ?? issue };
+    }
   }
   switch (recipe.kind) {
     case 'drawdown': return buildDrawdown(dataset, recipe, context);

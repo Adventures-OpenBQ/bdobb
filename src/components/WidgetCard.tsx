@@ -24,7 +24,9 @@ import { saveBinaryFile, saveTextFile } from "../lib/saveTextFile";
 import { useResolvedTheme } from "../hooks/useResolvedTheme";
 import { useStatementRows } from "../hooks/useStatementRows";
 import { useWidgetData } from "../hooks/useWidgetData";
+import type { SocketStatus } from "../hooks/useReconnectingSocket";
 import { useCardRequest } from "../hooks/useCardRequest";
+
 import { UNRESOLVED_BACKEND_ID } from "../lib/appsJson";
 import { BUILTIN_BACKEND_ID, SSRM_TYPES, fetchesData, isLinkedMetricCard } from "../lib/builtins";
 import { isCardAgentOffLimits, keyMaintBackendIds } from "../lib/providerKeys";
@@ -41,7 +43,7 @@ import { importRefusal } from "../lib/importLimits";
 import { NEWS_RAIL_TITLE, defaultNewsBase, trimBase } from "../lib/news";
 import { NEWS_FILE_NAME, parseNewsFile, serializeNewsState } from "../lib/newsFile";
 import { bodyParams, paramsKey, visibleParams, wireParams } from "../lib/params";
-import { splitParamEdit, type ParamEdit } from "../lib/paramGroups";
+import { groupFor, splitParamEdit, type ParamEdit } from "../lib/paramGroups";
 import { parseFyEndMonth } from "../lib/periods";
 import { relativeTime } from "../lib/relativeTime";
 import { FISCAL_AS_REPORTED } from "../lib/statementFiscal";
@@ -86,6 +88,8 @@ import {releaseNow} from "../lib/pictureInPicture";
 import {PIP_GRAB_MARKER} from "../lib/youtubePlayback";
 import { PictureInPictureMute, PictureInPictureRenderer } from "./renderers/PictureInPictureRenderer";
 import { NewsfeedRenderer } from "./renderers/NewsfeedRenderer";
+import { DayChartRenderer } from "./renderers/DayChartRenderer";
+import { LiveChartRenderer } from "./renderers/LiveChartRenderer";
 import { LiveGridRenderer } from "./renderers/LiveGridRenderer";
 import { OmniRenderer } from "./renderers/OmniRenderer";
 import { vegaLiteToPlotly } from "../lib/vegaLite";
@@ -164,7 +168,7 @@ const TRANSPOSABLE_TYPES = new Set(["table", "local_table"]);
  * whatever fetchesData says about the card. Kept in step with body(): every
  * renderer there handed `refreshKey={attempt + refreshEpoch}` is listed.
  */
-const SELF_REFRESHING_TYPES = new Set(["rss", "local_table", "multi_file_viewer", "live_grid"]);
+const SELF_REFRESHING_TYPES = new Set(["rss", "local_table", "multi_file_viewer", "live_grid", "live_chart", "day_chart"]);
 
 /** The card types that render nothing but "Waiting for widget…" until their widget is discovered. */
 const WAITS_FOR_WIDGET = new Set<string>(["iframe", "note", "markdown_editor", "clock", "rss", "local_table"]);
@@ -259,6 +263,10 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   const [renaming, setRenaming] = useState(false);
   /** The News feed manager. Transient: closing it is the only thing it remembers. */
   const [feedsOpen, setFeedsOpen] = useState(false);
+  // When a live_grid's renderer last took data (see timerTitle).
+  const [snapshotAt, setSnapshotAt] = useState<number | null>(null);
+  const [liveAt, setLiveAt] = useState<number | null>(null);
+  const [liveStatus, setLiveStatus] = useState<SocketStatus>("idle");
   /**
    * The ⋯ menu. Still named for the export wrapper that used to be its only
    * content — the wrapper, its ref and its dismiss effect are unchanged; only
@@ -442,10 +450,33 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   const fiscalNote = fiscalRows.asReported || !!executionView.ready?.diagnostics.some((d) => d.code === FISCAL_AS_REPORTED.code);
   const localFiscal = widget?.type === "local_table" && (fiscalNote || !!card.params.fiscalYearEndBackend);
 
+  /** A card whose renderer owns its feed and reports through onLive/onStatus. */
+  const liveFeed = widget?.type === "live_grid" || widget?.type === "live_chart";
   // The timer's tooltip, as the Workspace words it. `stale` (un-run edits) is
   // the run-button card's message; `stalePastInterval` (an old answer) only
   // colours the control, it does not change the words.
   const baseTimerTitle = (() => {
+    // The card never fetches a live_grid or a live_chart (their renderers
+    // do), so completedAt stays null while rows tick; the renderer reports
+    // when it last took data.
+    // A live_chart without a wsEndpoint has no feed: it is a fetched chart,
+    // and its tooltip is an ordinary card's, timed by the renderer's seed
+    // (review F14).
+    if (widget?.type === "day_chart") {
+      return snapshotAt === null
+        ? "Not fetched yet"
+        : `Last snapshot ${relativeTime(snapshotAt)} · ${new Date(snapshotAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`;
+    }
+    if (widget?.type === "live_chart" && !widget.wsEndpoint && status !== "error") {
+      return liveAt === null
+        ? "Not fetched yet"
+        : `Last refresh ${relativeTime(liveAt)} · ${new Date(liveAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`;
+    }
+    if (liveFeed && status !== "error") {
+      return liveAt === null
+        ? "Waiting for the feed"
+        : `Live · last update ${relativeTime(liveAt)} · ${new Date(liveAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "medium" })}`;
+    }
     if (widget?.runButton) {
       // ⌘/Ctrl-click refreshes without adopting the edited parameters; the
       // tooltip is the only place that says so.
@@ -463,7 +494,16 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   const timerTitle = [baseTimerTitle, dataStale ? "Data is older than its stale time" : undefined, dataUpdateLine]
     .filter((line): line is string => line !== undefined)
     .join("\n");
-  const timerTone = status === "error" || stalePastInterval || dataStale ? "stale" : completedAt === null ? "idle" : "fresh";
+  const doneAt = widget?.type === "day_chart" ? snapshotAt : liveFeed ? liveAt : completedAt;
+  // A live grid that has data but no open socket -- retrying, a first connect
+  // still waiting, or minimised -- is stale, whatever its last row's age. So
+  // is a live chart, but only one that has a socket to lose: without a
+  // wsEndpoint it is a seeded chart and its socket is idle by design.
+  const feedDown =
+    (widget?.type === "live_grid" || (widget?.type === "live_chart" && !!widget.wsEndpoint)) &&
+    liveAt !== null &&
+    liveStatus !== "live";
+  const timerTone = status === "error" || stalePastInterval || dataStale || feedDown ? "stale" : doneAt === null ? "idle" : "fresh";
 
   // Declared controls that render in the BODY rather than in the header row:
   // tabs are meant to be seen, and a form is the card's main verb.
@@ -1254,8 +1294,32 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       // Like multi_file_viewer: fetchesData is false for live_grid, so the
       // card's data===null gate would otherwise claim it. The renderer fetches
       // its own snapshot and opens the socket. `query` carries the resolved
-      // symbol selection, the same params a GET would send.
-      return <LiveGridRenderer widget={widget} backend={backend} params={query} refreshKey={attempt + refreshEpoch} />;
+      // symbol selection, the same params a GET would send -- the EFFECTIVE
+      // ones, so a group-bound symbol subscribes from the group (donor
+      // b3d7ac4c). A live grid is a table card with a feed behind it, so it
+      // gets everything the table case below gets (donor 811b7905), and
+      // refreshKey is how the header's Refresh re-fetches its snapshot.
+      return (
+        <LiveGridRenderer
+          // Reset table remounts the table, not the socket.
+          tableKey={tableResetKey}
+          widget={widget}
+          backend={backend}
+          params={query}
+          refreshKey={attempt + refreshEpoch}
+          onLive={setLiveAt}
+          onStatus={setLiveStatus}
+          state={card.table}
+          onStateChange={(patch) => void saveTable(patch)}
+          onCellClick={(click) => void handleCellClick(click)}
+          // Gated like the table case below (canShare): a streamed row is card data too.
+          onSendToAgent={
+            !canShare || ritaUrl === "" ? undefined : (text, agentId) => useChatStore.getState().pushUserMessage({ text, agentId })
+          }
+          filterRow={filterRowOpen}
+          autosizeKey={autosizeKey}
+        />
+      );
     }
 
     // Same shape as live_grid above, and for the same reason: fetchesData is
@@ -1271,6 +1335,33 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
           backend={backend}
           spec={widget.udfChart}
           refreshKey={attempt + refreshEpoch}
+        />
+      );
+    }
+
+    if (widget?.type === "day_chart" && backend) {
+      const inputGroup=groupFor(card,groups,"symbol");
+      const outputGroup=groupFor(card,groups,"selected_symbol");
+      const conflict=!groupsDisabled && inputGroup && inputGroup.id===outputGroup?.id;
+      return <DayChartRenderer backend={backend} params={query} refreshKey={attempt + refreshEpoch} onSnapshot={setSnapshotAt}
+        selectionError={conflict?"Choose a different group for Selected symbol so chart selection does not replace the watchlist.":undefined}
+        onReorder={(symbols)=>{void handleParamsUpdate(widget,{symbol:symbols},[]);}}
+        onSelectSymbol={conflict?undefined:(symbol)=>{void handleCellClick({paramName:"selected_symbol",value:symbol,forceUpdate:false});}} />;
+    }
+
+    // live-grid's Live Chart (V10-P4). The live_grid case's shape and reasons:
+    // fetchesData is false, the renderer seeds itself from `/series` (the
+    // first symbol of the EFFECTIVE params) and streams over the grid's
+    // socket, and reports to the same refresh tooltip and stale tone.
+    if (widget?.type === "live_chart" && backend) {
+      return (
+        <LiveChartRenderer
+          widget={widget}
+          backend={backend}
+          params={query}
+          refreshKey={attempt + refreshEpoch}
+          onLive={setLiveAt}
+          onStatus={setLiveStatus}
         />
       );
     }

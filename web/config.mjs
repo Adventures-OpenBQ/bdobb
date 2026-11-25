@@ -62,10 +62,19 @@ export function readConfig(env = process.env) {
   if (tableRelayToken && (!backend || !/^[A-Za-z0-9_-]{32,256}$/.test(tableRelayToken) || tableRelayToken === token)) throw new Error("TABLE_RELAY_TOKEN: distinct private credential required");
   let ssrmRoutes; try { ssrmRoutes = env.SSRM_ROUTES_JSON === undefined ? vendoredSsrmRoutes : JSON.parse(env.SSRM_ROUTES_JSON || "[]"); } catch { throw new Error("SSRM_ROUTES_JSON: invalid JSON"); }
   if (!validSsrmRoutes(ssrmRoutes)) throw new Error("SSRM_ROUTES_JSON: invalid routes");
+  // Rita through the door's /ai (openbq-docker funnel-gateway rita-policy.mjs). Only with a
+  // gateway, which must have "rita": true; the door forces the model and sets the limits.
+  if (env.PREVIEW_RITA !== undefined && !["true", "false"].includes(env.PREVIEW_RITA)) throw new Error("PREVIEW_RITA: true or false");
+  const rita = env.PREVIEW_RITA === "true";
+  if (rita && !backend) throw new Error("PREVIEW_RITA requires BACKEND_GATEWAY_ORIGIN");
+  // openbq-mcp through the door's /mcp (funnel-gateway mcp-policy.mjs, "mcp": true there).
+  if (env.PREVIEW_MCP !== undefined && !["true", "false"].includes(env.PREVIEW_MCP)) throw new Error("PREVIEW_MCP: true or false");
+  const mcp = env.PREVIEW_MCP === "true";
+  if (mcp && !backend) throw new Error("PREVIEW_MCP requires BACKEND_GATEWAY_ORIGIN");
   const apiTimeoutMs = Number(env.API_TIMEOUT_MS ?? 170000);
   if (!Number.isInteger(apiTimeoutMs) || apiTimeoutMs < 1000 || apiTimeoutMs > 170000) throw new Error("API_TIMEOUT_MS: expected 1000–170000 milliseconds");
   return {
-    apiTimeoutMs,
+    rita, mcp, apiTimeoutMs,
     tableRelayToken, ssrmRoutes, tableTimeoutMs, ssrmTimeoutMs,
     origin: origin(env.APP_ORIGIN, "APP_ORIGIN"), allowedIds: new Set(ids), feeds, backend, token,
     secret: env.AUTH_SECRET, githubId: env.AUTH_GITHUB_ID, githubSecret: env.AUTH_GITHUB_SECRET,

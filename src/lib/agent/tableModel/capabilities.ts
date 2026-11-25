@@ -16,6 +16,9 @@ const req = (op: keyof typeof OPERATIONS) => Object.keys(OPERATIONS[op].required
 const NATIVE: (typeof CATEGORY_TRANSFORMS)[number] = "native";
 /** The field / category / measure roles in a few lines, built from OPERATIONS; live Rita kept placing field ids directly. */
 const HOW_TO_ARRANGE = [
+  'Choose the requested grouping: calendar year: "Y", calendar quarter: "Q", calendar month: "M". The source field name (for example Quarter end) does not choose the grouping; calendar year of Quarter end still uses "Y". FY/FQ require the listed fiscal binding.',
+  'For an unambiguous request to change the table, send the complete arrangement directly with mode "apply". The apply transaction already validates and calculates a preview before committing; do not precede it with a separate preview call.',
+  'describe_table has not changed the table and contains no grouped totals. For a requested change, call arrange_table with mode "apply"; for a read-only summary call it with mode "preview". Wait for that result before quoting grouped values or claiming a change. An inspection result alone never makes Undo available.',
   'Every operation is a flat object with an "op" discriminator, for example {"op":"layout.set","rows":[],"values":[]}. Put operation fields beside "op", never inside a nested "layout" or operation-name object.',
   "A field (fields[].id) is a source column. It is never placed directly: make a category or a measure from it first.",
   `category.add {${req("category.add")}, alias} makes a category (a grouping) from the field source_field_id; transform comes from category_transforms ("${NATIVE}" groups by the field's own values).`,

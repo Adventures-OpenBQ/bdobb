@@ -107,12 +107,79 @@ export function buildIframeWidgetUrl(
  * carries the credential the same way a GET does (applyAuthQuery, so a
  * query-placed key rides the socket URL). The symbol selection is NOT put here
  * -- it goes in the subscription message the renderer sends after connecting.
+ *
+ * A header- or cookie-placed credential does NOT ride the socket: a browser
+ * WebSocket cannot set a header on its handshake, and this deliberately does
+ * not move the credential into the query on its own (the donor's 1171fe15
+ * did). Neither socket a clean line targets would read it there -- OpenBB's
+ * reference /live_grid_ws takes no auth, the stack's live-grid reads HTTP Basic
+ * from the Authorization header only, and its gateway admits a Bearer header or
+ * a signed ticket and refuses a query token -- so it would only write the
+ * credential into URLs and access logs. The web preview's socket authenticates
+ * by ticket instead (src/browser-shim/socket.ts), and so does the desktop's
+ * socket through the gateway (ticketedWsUrl). See OPEN-QUESTIONS V10-P1.
  */
 export function buildWidgetWsUrl(backend: BackendConfig, widget: WidgetDef): string | null {
   if (!widget.wsEndpoint) return null;
   const url = new URL(joinUrl(backend.baseUrl, widget.wsEndpoint));
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
   return applyAuthQuery(url, backend).toString();
+}
+
+/** Only a header credential needs a ticket: a query one rides the URL, a cookie none. */
+export const wantsSocketTicket = (backend: BackendConfig): boolean =>
+  backend.authLocation === "header" && !!backend.headerName && !!backend.headerValue;
+
+/**
+ * The URL to open ONE live-grid socket on (V10-P1, user ruling 2026-10-15).
+ * A header credential cannot ride a webview socket, so the gateway mints a
+ * thirty-second, single-use ticket for it over HTTP, behind that header:
+ * `GET {baseUrl}/ws_ticket?target=<the socket's path>`. The ticket is appended
+ * LAST, spelled literally, because the gateway verifies what precedes it.
+ * Asked again for every (re)connect (useReconnectingSocket's resolveUrl).
+ *
+ * Any other backend -- no credential, a query or cookie one, no ticket
+ * endpoint (a 404) or any failure -- gets `wsUrl` back unchanged, which is the
+ * pre-ticket behaviour: a header-checking socket refuses it and the grid holds
+ * its snapshot. The ticket is never logged: the drop notice logs the plain URL.
+ */
+export async function ticketedWsUrl(backend: BackendConfig, wsUrl: string): Promise<string> {
+  if (!wantsSocketTicket(backend)) return wsUrl;
+  const socket = new URL(wsUrl);
+  const ask = new URL(joinUrl(backend.baseUrl, "ws_ticket"));
+  ask.searchParams.set("target", socket.pathname + socket.search);
+  try {
+    // An end-to-end deadline, which the connect timeout is not: a gateway
+    // that accepts and then stalls would otherwise hold the hook with no
+    // socket and no retry timer. The rejection falls through to the plain URL.
+    const answer = await request("GET", ask.toString(), authHeaders(backend), undefined, {
+      signal: AbortSignal.timeout(CONNECT_TIMEOUT_MS),
+    });
+    const ticket = (answer as { ticket?: unknown } | null)?.ticket;
+    if (typeof ticket !== "string") return wsUrl;
+    return `${wsUrl}${socket.search ? "&" : "?"}ticket=${encodeURIComponent(ticket)}`;
+  } catch {
+    return wsUrl;
+  }
+}
+
+/**
+ * `GET {backend.baseUrl}/{path}?{params}` -- a SIBLING of the widget's own
+ * endpoint (a live grid's `symbol_meta` beside its `live_grid`), not a child
+ * of it. Goes through the same `request` as every other GET, so authHeaders
+ * and applyAuthQuery place the credential exactly as they do for the
+ * widget's own data. An empty value is left off, as buildWidgetUrl does.
+ */
+export async function fetchWidgetPath(
+  backend: BackendConfig,
+  path: string,
+  params: Record<string, string>,
+): Promise<unknown> {
+  const url = new URL(joinUrl(backend.baseUrl, path));
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== "") url.searchParams.set(key, value);
+  }
+  return request("GET", applyAuthQuery(url, backend).toString(), authHeaders(backend));
 }
 
 /**
@@ -256,7 +323,7 @@ export function retryAfterSeconds(message: string): number | undefined {
   return seconds >= 1 && seconds <= 300 ? seconds : undefined;
 }
 
-function stripQuery(url: string): string {
+export function stripQuery(url: string): string {
   try {
     const u = new URL(url);
     u.search = "";
@@ -700,7 +767,9 @@ export async function postForm(
  * answers would hold every other backend's widgets out of the registry --
  * every card on every backend "unresolved".
  */
-export const WIDGETS_TIMEOUT_MS = 10_000;
+// Large OpenBB catalogs can take more than ten seconds over a private gateway.
+// Keep a finite body deadline without classifying a healthy slow catalog offline.
+export const WIDGETS_TIMEOUT_MS = 30_000;
 
 export async function fetchWidgetsJson(backend: BackendConfig): Promise<unknown> {
   return request("GET", endpointUrl(backend, "widgets.json"), authHeaders(backend), undefined, {

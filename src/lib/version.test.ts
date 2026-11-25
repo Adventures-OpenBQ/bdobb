@@ -36,9 +36,10 @@ describe("the version is one number, in three files", () => {
     expect(cargoVersion(at("src-tauri/Cargo.toml"))).toBe(pkg);
   });
 
-  it("is the clean v9 development version", () => {
-    expect(pkg).toBe("9.0.0");
-    expect(at("src/help/guide/VERSION").trim()).toBe("v9.0.0 clean development candidate; qualification pending");
-    expect(at("src-tauri/Cargo.lock")).toMatch(/name = "bdobb"\nversion = "9\.0\.0"/);
+  // Review B9: the Help snapshot names a release, as v3.0.0's did, not a candidate.
+  it("is the clean v10 release version", () => {
+    expect(pkg).toBe("10.0.0");
+    expect(at("src/help/guide/VERSION").trim()).toBe("v10.0.0 clean-release");
+    expect(at("src-tauri/Cargo.lock")).toMatch(/name = "bdobb"\nversion = "10\.0\.0"/);
   });
 });

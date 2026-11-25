@@ -260,16 +260,20 @@ describe("useReconnectingSocket reconnect mode (one frame per connection)", () =
     }
   });
 
-  it("calls onConnect per socket, with a handle that goes stale when superseded", () => {
+  it("calls onConnect per socket and onOpen per open, after the frame, with a handle that goes stale when superseded", () => {
     const connects: SocketConnection[] = [];
+    const opens: { conn: SocketConnection; sentAtOpen: number }[] = [];
     const options = (key: number): ReconnectingSocketOptions => ({
       mode: "reconnect",
       reconnectKey: key,
       onConnect: (conn) => connects.push(conn),
+      onOpen: (conn) => opens.push({ conn, sentAtOpen: lastSock().sent.length }),
     });
     const { rerender } = render(<OptionsHarness url="ws://x/ws" sub={{}} onMsg={vi.fn()} options={options(0)} />);
     expect(connects).toHaveLength(1);
+    expect(opens).toHaveLength(0);
     act(() => lastSock().open());
+    expect(opens).toEqual([{ conn: connects[0], sentAtOpen: 1 }]);
     expect(connects[0].stale()).toBe(false);
     rerender(<OptionsHarness url="ws://x/ws" sub={{}} onMsg={vi.fn()} options={options(1)} />);
     expect(connects).toHaveLength(2);
@@ -328,5 +332,42 @@ describe("useReconnectingSocket reconnect mode (one frame per connection)", () =
     rerender(<OptionsHarness url="ws://x/ws" sub={{}} onMsg={onMsg} options={{ mode: "reconnect", reconnectKey: 1 }} />);
     act(() => first.message({ late: true }));
     expect(onMsg).not.toHaveBeenCalled();
+  });
+});
+
+// V10-P1: a ticket is single use, so the URL is resolved again for every
+// connection, retries included; a failed resolve opens the plain URL.
+describe("useReconnectingSocket resolveUrl", () => {
+  it("opens every (re)connect on a freshly resolved URL", async () => {
+    let n = 0;
+    const resolveUrl = vi.fn((url: string) => Promise.resolve(`${url}?ticket=t${++n}`));
+    render(<OptionsHarness url="ws://x/ws" sub={{}} onMsg={vi.fn()} options={{ resolveUrl, retryMs: 1000 }} />);
+    expect(FakeSocket.instances).toHaveLength(0);
+    await act(async () => {});
+    expect(lastSock().url).toBe("ws://x/ws?ticket=t1");
+    act(() => lastSock().open());
+    act(() => lastSock().close());
+    await act(async () => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(FakeSocket.instances).toHaveLength(2);
+    expect(lastSock().url).toBe("ws://x/ws?ticket=t2");
+    expect(resolveUrl).toHaveBeenNthCalledWith(2, "ws://x/ws");
+  });
+
+  it("opens the plain URL when resolving fails", async () => {
+    const resolveUrl = () => Promise.reject(new Error("no ticket"));
+    render(<OptionsHarness url="ws://x/ws" sub={{}} onMsg={vi.fn()} options={{ resolveUrl }} />);
+    await act(async () => {});
+    expect(lastSock().url).toBe("ws://x/ws");
+  });
+
+  it("opens nothing when unmounted while resolving", async () => {
+    let finish: (url: string) => void = () => {};
+    const resolveUrl = () => new Promise<string>((resolve) => (finish = resolve));
+    const { unmount } = render(<OptionsHarness url="ws://x/ws" sub={{}} onMsg={vi.fn()} options={{ resolveUrl }} />);
+    unmount();
+    await act(async () => finish("ws://x/ws?ticket=t"));
+    expect(FakeSocket.instances).toHaveLength(0);
   });
 });

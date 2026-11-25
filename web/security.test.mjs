@@ -15,9 +15,10 @@ import { encode } from "@auth/core/jwt";
 import { WebSocket, WebSocketServer } from "ws";
 import { readConfig, SESSION_COOKIE } from "./config.mjs";
 import { authConfig, identity } from "./auth.mjs";
-import { newsSubscription, refSubscription, socketTarget, socketTicket, socketTicketValid, upstreamPath } from "./policy.mjs";
+import { newsSubscription, refSubscription, socketTarget, socketTicket, socketTicketNonce, socketTicketValid, upstreamPath } from "./policy.mjs";
+import * as vendoredPolicy from "./policy.mjs";
 import { bootstrap } from "./bootstrap.mjs";
-import { createPreviewServer } from "./server.mjs";
+import { createPreviewServer, gridSocketServed } from "./server.mjs";
 
 const env = {
   APP_ORIGIN: "https://preview.example.com",
@@ -547,9 +548,14 @@ test("News upgrade authenticates cookies, exact Origin, exact path, no query tok
   assert.equal(await rejectedWs(port, "/news/ws/news", { origin: env.APP_ORIGIN }), 401);
   assert.equal(await rejectedWs(port, "/news/ws/news", { cookie: c, origin: "https://evil.example.com" }), 403);
   assert.equal(await rejectedWs(port, "/news/ws/news", { cookie: c }), 403); // Origin is required, not optional
-  // /ref/live_grid_ws is a socket target, but this layer relays only the wire: the browser opens
-  // the reference's socket on the gateway with a ticket.
-  for (const path of ["/news/ws/news?token=x", "/news/ws/news?ticket=1.n.s", "/news/ws/news/", "/grid/live_grid_ws", "/ref/live_grid_ws",
+  // /grid/live_grid_ws is a route from openbq-docker v10.0.0 (the grid tests below), so
+  // it left this list at the re-vendor; its query, ticket and trailing-slash spellings
+  // took its place, with the tick chart's socket, which this layer never relays.
+  // /ref/live_grid_ws is a socket target, but this layer does not relay it: the browser
+  // opens the reference's socket on the gateway with a ticket.
+  for (const path of ["/news/ws/news?token=x", "/news/ws/news?ticket=1.n.s", "/news/ws/news/",
+    "/grid/live_grid_ws?token=x", "/grid/live_grid_ws?ticket=1.n.s", "/grid/live_grid_ws/",
+    "/grid/ta_chart_ws", "/grid/ta_chart_ws?symbol=AAPL&interval=5m", "/ref/live_grid_ws",
     "/grid/ta_series_ws", "/ai/v1/query", "/tick", "/"]) {
     assert.equal(await rejectedWs(port, path, { cookie: c, origin: env.APP_ORIGIN }), 404, path);
   }
@@ -782,7 +788,7 @@ test("a socket ticket binds one target, expires, and needs the gateway token", (
   assert.equal(ticket.includes(token), false);
 });
 
-test("the ticket route issues only to a session, and only for /news/ws/news", async t => {
+test("the ticket route issues only to a session, and only for the vendored policy's socket targets", async t => {
   const { call, cfg } = await fixture(t);
   const c = await cookie();
   const ask = target => call("/socket-ticket?for=" + encodeURIComponent(target), { headers: { cookie: c } });
@@ -795,9 +801,30 @@ test("the ticket route issues only to a session, and only for /news/ws/news", as
   assert.equal(socketTicketValid(cfg.token, "/news/ws/news", url.searchParams.get("ticket"), Date.now()), true);
   assert.equal(news.body.includes(cfg.token), false);
 
-  // Every other target 404s, the live-grid and study sockets included: socketTarget
-  // (policy.mjs, vendored from openbq-docker v8.0.0) names /news/ws/news and nothing else.
-  for (const target of ["/grid/live_grid_ws", "/grid/ta_series_ws?symbol=AAPL&interval=5m",
+  // socketTarget (policy.mjs, vendored from openbq-docker v10.0.0) names three sockets:
+  // /news/ws/news and /grid/live_grid_ws with no query, and /grid/ta_chart_ws with the
+  // query /grid/ta_chart's grammar admits, re-serialised. The grid's ticket is signed
+  // over exactly its target.
+  const grid = await ask("/grid/live_grid_ws");
+  assert.equal(grid.status, 200);
+  const gridUrl = new URL(JSON.parse(grid.body).url);
+  assert.equal(gridUrl.protocol + "//" + gridUrl.host + gridUrl.pathname, "wss://gateway.example.com/grid/live_grid_ws");
+  assert.deepEqual([...gridUrl.searchParams.keys()], ["ticket"]);
+  assert.equal(socketTicketValid(cfg.token, "/grid/live_grid_ws", gridUrl.searchParams.get("ticket"), Date.now()), true);
+  const ta = await ask("/grid/ta_chart_ws?symbol=AAPL&interval=5m");
+  assert.equal(ta.status, 200);
+  const taUrl = JSON.parse(ta.body).url;
+  assert.ok(taUrl.startsWith("wss://gateway.example.com/grid/ta_chart_ws?symbol=AAPL&interval=5m&ticket="), taUrl);
+  assert.equal(socketTicketValid(cfg.token, "/grid/ta_chart_ws?symbol=AAPL&interval=5m",
+    new URL(taUrl).searchParams.get("ticket"), Date.now()), true);
+
+  // Every other target 404s: the study sockets, any query on the grid socket (a token
+  // or a ticket in it included), a tick-chart query its grammar refuses, and the rest.
+  for (const target of ["/grid/ta_series_ws?symbol=AAPL&interval=5m",
+    "/grid/live_grid_ws?symbol=AAPL", "/grid/live_grid_ws?token=x", "/grid/live_grid_ws?ticket=1.n.s",
+    "/grid/live_grid_ws/", "/grid/ta_chart_ws?symbol=AAPL&provider=eodhd", "/grid/ta_chart_ws?symbol=AAPL&token=x",
+    "/grid/ta_chart_ws?symbol=AAPL&interval=7m", "https://evil.example.com/grid/live_grid_ws",
+    "//evil.example.com/grid/live_grid_ws",
     "/tick", "/news/ws/news?x=1", "https://evil.example.com/news/ws/news", "//evil.example.com/news/ws/news",
     "/api/api/v1/equity/price/quote", ""]) {
     assert.equal((await ask(target)).status, 404, target);
@@ -996,6 +1023,287 @@ test("private web policy permits only Wasm compilation alongside self", async t 
   assert.match(response.headers["content-security-policy"], /script-src 'self' 'wasm-unsafe-eval'/);
   assert.doesNotMatch(response.headers["content-security-policy"], /(?:^| )'unsafe-eval'/);
 });
+
+// ---- live-grid's /grid family (Ep. 10; donor c183f880) ----------------------
+//
+// The relay was written against openbb-docker v10.1.7's funnel-gateway contract and
+// switches itself on only when the vendored policy serves the grid socket
+// (gridSocketServed). The vendored policy is openbq-docker v10.0.0's (the bytes policy.vendored.json records, V10-P3
+// resolved), which does. So the grid tests below run under the VENDORED policy, and the
+// switch is still proved the other way with `withoutGrid`: the same policy with every
+// /grid rule taken out, which is what openbq-docker v8.0.0's (cab61a9) admitted.
+const withoutGrid = {
+  ...vendoredPolicy,
+  liveGridSubscription: undefined,
+  upstreamPath(url, config) {
+    return url.pathname.startsWith("/grid/") ? null : vendoredPolicy.upstreamPath(url, config);
+  },
+  socketTarget(raw, origin) {
+    const target = vendoredPolicy.socketTarget(raw, origin);
+    return target?.startsWith("/grid/") ? null : target;
+  },
+};
+const jsonResponse = body => new Response(JSON.stringify(body), { headers: { "content-type": "application/json" } });
+
+test("the vendored v10.0.0 policy serves the /grid family; a policy without the grid rules refuses all of it", async t => {
+  assert.equal(gridSocketServed(vendoredPolicy, env.APP_ORIGIN), true);
+  assert.equal(gridSocketServed(withoutGrid, env.APP_ORIGIN), false);
+  const c = await cookie();
+  const documents = ["/grid/widgets.json", "/grid/apps.json", "/grid/live_grid?symbol=AAPL", "/grid/symbol_meta?symbol=AAPL"];
+
+  // Served: the four documents the grid card reads, its ticket and the seeded tab.
+  const asked = [];
+  const served = await fixture(t, { fetchUpstream: async url => { asked.push(url); return jsonResponse([]); } });
+  for (const path of documents) assert.equal((await served.call(path, { headers: { cookie: c } })).status, 200, path);
+  assert.deepEqual(asked, documents.map(p => env.BACKEND_GATEWAY_ORIGIN + p));
+  assert.equal((await served.call("/socket-ticket?for=%2Fgrid%2Flive_grid_ws", { headers: { cookie: c } })).status, 200);
+  assert.ok((await served.call("/preview-bootstrap.js", { headers: { cookie: c } })).body.includes("preview-grid"));
+
+  // Without the grid rules: every route, the ticket and the socket refused, nothing asked
+  // upstream, and the seed names no backend the door refuses.
+  const { call, port } = await fixture(t, { policy: withoutGrid,
+    fetchUpstream: async () => { throw new Error("nothing /grid may be asked for without the grid rules"); } });
+  for (const path of documents) assert.equal((await call(path, { headers: { cookie: c } })).status, 404, path);
+  assert.equal((await call("/socket-ticket?for=%2Fgrid%2Flive_grid_ws", { headers: { cookie: c } })).status, 404);
+  assert.equal(await rejectedWs(port, "/grid/live_grid_ws", { cookie: c, origin: env.APP_ORIGIN }), 404);
+  const seeded = await call("/preview-bootstrap.js", { headers: { cookie: c } });
+  assert.ok(!seeded.body.includes("preview-grid"));
+});
+
+test("the example's /grid routes are relayed under their grammars, and nothing outside them is", async t => {
+  const asked = [];
+  const { call } = await fixture(t, { fetchUpstream: async url => { asked.push(url); return jsonResponse({}); } });
+  const c = await cookie();
+  // What docs/examples/v10.0.0-live-grid.apps.json's cards ask for: the tick history
+  // (kdb_ticks), the cached chart with the theme every chart card carries
+  // (kdb_cache_chart) and the series (live_chart).
+  for (const path of ["/grid/ticks?symbol=AAPL&limit=200", "/grid/chart?symbol=AAPL&interval=1d&theme=dark",
+    "/grid/series?symbol=AAPL&interval=1m", "/grid/series?symbol=AAPL&interval=1m&start=2026-10-01&end=2026-10-12&provider=kdb",
+    "/grid/ta_chart?symbol=AAPL&interval=5m&source=local&macro=none&indicators=supertrend:period=10"]) {
+    assert.equal((await call(path, { headers: { cookie: c } })).status, 200, path);
+  }
+  assert.equal(asked.length, 5);
+  for (const path of ["/grid/ticks?symbol=AAPL&limit=1001", "/grid/ticks?symbol=AAPL&limit=0", "/grid/ticks?symbol=AAPL,MSFT",
+    "/grid/series?symbol=AAPL&interval=7m", "/grid/series?symbol=AAPL&provider=yfinance", "/grid/series?symbol=AAPL&theme=dark",
+    "/grid/chart?symbol=AAPL&theme=sepia", "/grid/series?symbol=AAPL&start=T-1d", "/grid/ta_chart?symbol=AAPL&provider=eodhd",
+    "/grid/ta_chart?symbol=AAPL&macro=..%2Fx", "/grid/live_grid?symbol=AAPL&token=x", "/grid/widgets.json?token=x",
+    "/grid/live_grid?symbol=AAPL;DROP", "/grid/live_grid?symbol=AAPL&symbol=MSFT", "/grid/subscriptions",
+    "/grid/api/subscriptions", "/grid/health", "/grid/ta_registry", "/grid/"]) {
+    assert.equal((await call(path, { headers: { cookie: c } })).status, 404, path);
+  }
+  assert.equal(asked.length, 5);
+});
+
+// `gateway` stands in for the gateway's side of the socket: by default it records each
+// frame and answers with one row; a test may give it the gateway's own refusals.
+async function gridRelay(t, { gateway, session = {}, ...options } = {}) {
+  const upstream = new WebSocketServer({ port: 0, host: "127.0.0.1" });
+  await once(upstream, "listening");
+  t.after(() => { for (const client of upstream.clients) client.terminate(); upstream.close(); });
+  const seen = { frames: [] };
+  upstream.on("connection", (client, req) => {
+    seen.headers = req.headers; seen.upstream = client;
+    client.on("message", data => gateway ? gateway(client, data, seen)
+      : (seen.frames.push(data.toString()), client.send('{"symbol":"AAPL","price":1}')));
+  });
+  const { port } = await fixture(t, { ...options, connectUpstream: (url, opts) => {
+    seen.url = url; seen.options = opts;
+    return new WebSocket(`ws://127.0.0.1:${upstream.address().port}`, opts);
+  } });
+  const client = new WebSocket(`ws://127.0.0.1:${port}/grid/live_grid_ws`, {
+    headers: { host: "preview.example.com", origin: env.APP_ORIGIN, cookie: await cookie(session) },
+  });
+  t.after(() => client.terminate()); client.on("error", () => {});
+  await once(client, "open");
+  return { client, seen };
+}
+
+// Review F11: since the no-relay-socket-timer ruling (b9b1c965) the session's deadline is
+// a relayed socket's ONLY lifetime -- it must still close both ends when the session ends.
+test("a relayed grid socket closes, both ends, when its session expires", async t => {
+  const config = configuration(); config.feeds = {};
+  const { client, seen } = await gridRelay(t, { config, session: { deadline: Date.now() / 1000 + 1.5 } });
+  client.send('{"params":{"symbol":"AAPL"}}');
+  await once(client, "message");
+  assert.equal(client.readyState, WebSocket.OPEN);
+  const upstreamClosed = once(seen.upstream, "close");
+  const started = Date.now();
+  await once(client, "close");
+  await upstreamClosed;
+  // Closed by the session deadline, not by some later bound.
+  assert.ok(Date.now() - started < 5000);
+});
+
+test("the grid relay forwards a REPEATING subscription, rebuilt, and stays open", async t => {
+  // No approved feeds: a grid socket needs the gateway and nothing else.
+  const config = configuration(); config.feeds = {};
+  const { client, seen } = await gridRelay(t, { config });
+  client.send('{"params":{"symbol":"AAPL,MSFT"}}');
+  const [first] = await once(client, "message");
+  assert.equal(JSON.parse(first).symbol, "AAPL");
+  // A second frame is the grid's resubscribe on a param edit: forwarded, not a close.
+  client.send('{"params":{"symbol":"AAPL"}}');
+  await once(client, "message");
+  assert.equal(client.readyState, WebSocket.OPEN);
+  assert.deepEqual(seen.frames.map(f => JSON.parse(f)), [{ params: { symbol: "AAPL,MSFT" } }, { params: { symbol: "AAPL" } }]);
+  assert.equal(seen.url, "wss://gateway.example.com/grid/live_grid_ws");
+  // The gateway's Bearer and its own Origin go upstream; the browser's cookie never does.
+  assert.equal(seen.options.headers.Authorization, "Bearer " + env.BACKEND_GATEWAY_TOKEN);
+  assert.equal(seen.options.headers.Origin, env.BACKEND_GATEWAY_ORIGIN);
+  assert.equal(seen.headers.cookie, undefined);
+});
+
+// The per-viewer budgets (240 requests a minute, GRID_DAILY_SYMBOLS) were removed (user
+// ruling 2026-10-17): repeat grid frames are relayed, however many, and the socket stays open.
+test("repeat grid frames are not metered: 300 frames relay and the socket stays open", async t => {
+  const { client, seen } = await gridRelay(t, { gateway: (upstream, data, s) => {
+    s.frames.push(data.toString());
+    if (s.frames.length === 1) upstream.send('{"symbol":"AAPL","price":1}');
+  } });
+  client.send('{"params":{"symbol":"AAPL,MSFT"}}');
+  await once(client, "message");
+  for (let i = 0; i < 299; i++) client.send('{"params":{"symbol":"AAPL,MSFT"}}');
+  while (seen.frames.length < 300) await new Promise(resolve => setTimeout(resolve, 5));
+  assert.equal(client.readyState, WebSocket.OPEN);
+  assert.equal(readConfig({ ...env, GRID_DAILY_SYMBOLS: "5" }).gridDailySymbols, undefined);
+});
+
+test("a grid frame the contract refuses closes the socket, and nothing of it is forwarded", async t => {
+  for (const frame of ['{"params":{"symbol":"AAPL","extra":1}}', '{"params":{"symbol":"AAPL"},"x":1}',
+    '{"params":{"symbol":"AAPL;DROP"}}', '{"subscribe":[]}', "not json", Buffer.from("binary")]) {
+    const { client, seen } = await gridRelay(t);
+    client.send(frame);
+    await once(client, "close");
+    assert.deepEqual(seen.frames, [], String(frame));
+  }
+});
+
+test("a grid ticket without feeds, 503 without a gateway, no query on the socket", async t => {
+  const c = await cookie();
+  const noFeeds = configuration(); noFeeds.feeds = {};
+  const { call, cfg, port } = await fixture(t, { config: noFeeds });
+  const res = await call("/socket-ticket?for=%2Fgrid%2Flive_grid_ws", { headers: { cookie: c } });
+  assert.equal(res.status, 200);
+  const url = new URL(JSON.parse(res.body).url);
+  assert.equal(url.protocol + "//" + url.host + url.pathname, "wss://gateway.example.com/grid/live_grid_ws");
+  assert.equal(socketTicketValid(cfg.token, "/grid/live_grid_ws", url.searchParams.get("ticket"), Date.now()), true);
+  assert.equal(await rejectedWs(port, "/grid/live_grid_ws?symbol=AAPL", { cookie: c, origin: env.APP_ORIGIN }), 404);
+  assert.equal(await rejectedWs(port, "/grid/live_grid_ws", { origin: env.APP_ORIGIN }), 401);
+  const noBackend = configuration(); noBackend.backend = null; noBackend.token = null;
+  const bare = await fixture(t, { config: noBackend });
+  assert.equal(await rejectedWs(bare.port, "/grid/live_grid_ws", { cookie: c, origin: env.APP_ORIGIN }), 503);
+  assert.equal((await bare.call("/socket-ticket?for=%2Fgrid%2Flive_grid_ws", { headers: { cookie: c } })).status, 503);
+});
+
+test("the gateway's bare 404 for an optional /grid document is relayed as a 404; any other failure is a 502", async t => {
+  const asked = [];
+  const { call } = await fixture(t, { fetchUpstream: async url => {
+    asked.push(url);
+    return new Response("not found: secret detail", { status: 404, headers: { "content-type": "text/plain" } });
+  } });
+  const c = await cookie();
+  for (const path of ["/grid/apps.json", "/grid/symbol_meta?symbol=AAPL%2CMSFT"]) {
+    const res = await call(path, { headers: { cookie: c } });
+    assert.equal(res.status, 404, path);
+    assert.ok(!res.body.includes("secret"), path);
+  }
+  assert.equal((await call("/grid/live_grid?symbol=AAPL", { headers: { cookie: c } })).status, 502);
+  assert.equal((await call("/api/apps.json", { headers: { cookie: c } })).status, 502);
+  assert.equal(asked[1], "https://gateway.example.com/grid/symbol_meta?symbol=AAPL%2CMSFT");
+});
+
+// What the gateway refuses on /grid, the preview refuses too, or carries to the
+// gateway unchanged so it can (openbq-docker v10.0.0 funnel-gateway/server.mjs):
+// a credential in the query, a foreign or missing Origin, an expired or reused
+// ticket, and the 61st frame on one socket (FRAME_CAP).
+test("the grid socket refuses a token or ticket in its query, a foreign or missing Origin, and no session", async t => {
+  const { call, port } = await fixture(t, { connectUpstream: () => { throw new Error("no refused upgrade may dial the gateway"); } });
+  const c = await cookie();
+  const issued = new URL(JSON.parse((await call("/socket-ticket?for=%2Fgrid%2Flive_grid_ws", { headers: { cookie: c } })).body).url);
+  // A ticket is for the gateway, on the gateway's own host: this relay is the Bearer
+  // path and takes no credential in a query, the signed ticket included.
+  for (const path of ["/grid/live_grid_ws?token=" + env.BACKEND_GATEWAY_TOKEN, "/grid/live_grid_ws?access_token=x",
+    "/grid/live_grid_ws?apikey=x", "/grid/live_grid_ws" + issued.search, "/grid/live_grid_ws?symbol=AAPL&" + issued.search.slice(1)]) {
+    assert.equal(await rejectedWs(port, path, { cookie: c, origin: env.APP_ORIGIN }), 404, path);
+  }
+  assert.equal(await rejectedWs(port, "/grid/live_grid_ws", { cookie: c, origin: "https://evil.example.com" }), 403);
+  assert.equal(await rejectedWs(port, "/grid/live_grid_ws", { cookie: c, origin: env.BACKEND_GATEWAY_ORIGIN }), 403);
+  assert.equal(await rejectedWs(port, "/grid/live_grid_ws", { cookie: c }), 403);
+  assert.equal(await rejectedWs(port, "/grid/live_grid_ws", { origin: env.APP_ORIGIN }), 401);
+  assert.equal(await rejectedWs(port, "/grid/live_grid_ws", { cookie: c, origin: "https://evil.example.com",
+    "sec-fetch-site": "cross-site", "sec-fetch-mode": "websocket", "sec-fetch-dest": "websocket" }), 403);
+  // The HTTP half: a foreign Origin is refused before any /grid route is matched.
+  assert.equal((await call("/grid/live_grid?symbol=AAPL", { headers: { cookie: c, origin: "https://evil.example.com" } })).status, 403);
+  assert.equal((await call("/grid/live_grid?symbol=AAPL", { headers: { authorization: "Bearer " + env.BACKEND_GATEWAY_TOKEN } })).status, 401);
+});
+
+test("a grid ticket lasts thirty seconds, names one target, and is single-use at the gateway", async t => {
+  const { call, cfg } = await fixture(t);
+  const c = await cookie();
+  const ticketOf = async () => new URL(JSON.parse((await call("/socket-ticket?for=%2Fgrid%2Flive_grid_ws",
+    { headers: { cookie: c } })).body).url).searchParams.get("ticket");
+  const asked = Date.now();
+  const first = await ticketOf(), second = await ticketOf();
+  const now = Date.now(), expiry = Number(first.split(".")[0]);
+  assert.ok(expiry >= asked + 30_000 && expiry <= now + 30_000, String(expiry - now));
+  // The gateway's own check (the vendored socketTicketNonce): exactly this target, and
+  // not once the expiry has passed.
+  assert.ok(socketTicketNonce(cfg.token, "/grid/live_grid_ws", first, now));
+  assert.equal(socketTicketNonce(cfg.token, "/grid/live_grid_ws", first, expiry + 1), null);
+  for (const other of ["/news/ws/news", "/grid/ta_chart_ws", "/grid/live_grid_ws?symbol=AAPL"]) {
+    assert.equal(socketTicketNonce(cfg.token, other, first, now), null, other);
+  }
+  assert.equal(socketTicketNonce("another-gateway-token", "/grid/live_grid_ws", first, now), null);
+  // Single use: the gateway admits a nonce once (its `admitted` map, until the ticket's
+  // expiry). Each ticket carries its own nonce, so a reconnect is a new ticket and a
+  // replayed one is refused -- mirrored here exactly as the gateway's upgrade does it.
+  const admitted = new Map();
+  const admit = ticket => {
+    const nonce = socketTicketNonce(cfg.token, "/grid/live_grid_ws", ticket, now);
+    if (!nonce || admitted.has(nonce)) return false;
+    admitted.set(nonce, Number(ticket.split(".")[0])); return true;
+  };
+  assert.notEqual(first, second);
+  assert.equal(admit(first), true);
+  assert.equal(admit(first), false);
+  assert.equal(admit(second), true);
+});
+
+test("the gateway's 60-frame cap closes the browser's socket, and nothing past it is answered", async t => {
+  const FRAME_CAP = 60; // openbq-docker v10.0.0 funnel-gateway/server.mjs
+  let frames = 0;
+  const { client, seen } = await gridRelay(t, { gateway: (upstream, data) => {
+    if (++frames > FRAME_CAP) return upstream.close();
+    seen.frames.push(data.toString());
+    upstream.send(JSON.stringify({ symbol: "AAPL", price: frames }));
+  } });
+  const answers = [];
+  client.on("message", m => answers.push(JSON.parse(m).price));
+  client.send('{"params":{"symbol":"AAPL"}}');
+  await once(client, "message");
+  // The relay re-validates every frame; the cap is the gateway's, and its close
+  // reaches the browser as a close.
+  for (let i = 2; i <= FRAME_CAP + 1; i++) client.send('{"params":{"symbol":"AAPL"}}');
+  await once(client, "close");
+  assert.equal(seen.frames.length, FRAME_CAP);
+  assert.equal(answers.length, FRAME_CAP);
+  assert.equal(answers.at(-1), FRAME_CAP);
+  assert.equal(client.readyState, WebSocket.CLOSED);
+});
+
+test("bootstrap seeds the Live quotes tab only with a gateway AND a policy that serves the grid socket", () => {
+  const withGrid = bootstrap(configuration(), undefined, { grid: true });
+  assert.ok(withGrid.includes("preview-grid"));
+  assert.ok(withGrid.includes('\\"widgetId\\":\\"live_grid\\"'));
+  assert.ok(withGrid.includes("https://preview.example.com/grid"));
+  assert.ok(!withGrid.includes(env.BACKEND_GATEWAY_ORIGIN));
+  const cfg = configuration(); cfg.backend = null; cfg.token = null;
+  for (const text of [bootstrap(configuration()), bootstrap(configuration(), undefined, { grid: false }), bootstrap(cfg, undefined, { grid: true })]) {
+    assert.ok(!text.includes("preview-grid"));
+    assert.ok(!text.includes('\\"widgetId\\":\\"live_grid\\"'));
+  }
+});
+
 
 test("managed table web relay derives owner from session, requires CSRF and strips spoofed credentials",async t=>{
   const calls=[];

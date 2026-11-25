@@ -6,6 +6,7 @@ import { startMockServer } from '../../../test/mockServer';
 import {
   dailyPriceParameters, dailyPricePaths, dailyPriceReceipt, dailyPriceResponse, dailyPriceRows,
 } from '../../../test/fixtures/chartSources';
+import { liveDailyPriceDataset } from '../../../test/fixtures/liveDailyPrices';
 import { fetchWidgetData } from '../../dataClient';
 import { datasetFromBytes, datasetFromRows } from '../../localTableData';
 import {
@@ -13,6 +14,9 @@ import {
 } from './chartSourceContracts';
 import { readLiveDailyPriceSource } from './dailyPriceEvidence';
 import type { BackendAcquisition } from './financialEvidence';
+import { dailyPriceRows as snapshotRows, priceDataset, priceFields } from './fixtures';
+import { preparePriceChartInput } from './input';
+import { admitReturnSummary } from './priceSamples';
 
 vi.mock('@tauri-apps/plugin-http', () => ({
   fetch: (...args: Parameters<typeof globalThis.fetch>) => globalThis.fetch(...args),
@@ -143,7 +147,7 @@ const makeDataset = (receipt: unknown = dailyPriceReceipt, rows: Record<string, 
 
 const expectedLiveSource = {
   receipt: dailyPriceReceipt, scope: { interval: '1d', start: '2026-10-12', end: '2026-11-19' },
-  symbols: ['MCD.US', 'AAPL.US'], rawOmissions: [['MCD.US', '2026-10-14'], ['AAPL.US', '2026-10-14']],
+  symbols: ['MCD.US', 'AAPL.US'], tableOmissions: [], rawOmissions: [['MCD.US', '2026-10-14'], ['AAPL.US', '2026-10-14']],
 };
 
 it('carries the completed HTTP acquisition into the table and keeps ordinary rows available', async () => {
@@ -177,6 +181,9 @@ it('test_live_authority_cannot_be_imported_or_filtered_clean', async () => {
   expect(readLiveDailyPriceSource(valid)).toEqual(expectedLiveSource);
   const forgedLocal = { ...valid.provenance, sourceKind: 'localFile' };
   expect(readLiveDailyPriceSource({ ...valid, provenance: forgedLocal })).toBeUndefined();
+  expect(preparePriceChartInput({ ...valid, provenance: forgedLocal }, priceFields, 'drawdown')).toMatchObject({
+    ok: false, refused: true,
+  });
   expect(validatedChartProvenance(forgedLocal).metadata).toEqual({ dailyPriceRejected: true });
 
   const envelope = { version: 1, receipts: [dailyPriceReceipt] };
@@ -199,7 +206,53 @@ it('test_live_authority_cannot_be_imported_or_filtered_clean', async () => {
     const rows = acquired.rows.slice(0, 1);
     const provenance = projectChartSources(acquired.provenance, acquired.columns, rows);
     expect(readLiveDailyPriceSource({ ...acquired, rows, provenance })).toBeUndefined();
+    expect(preparePriceChartInput({ ...acquired, rows, provenance }, priceFields, 'drawdown')).toMatchObject({
+      ok: false, refused: true,
+    });
   }
+});
+
+it('refuses a recognized invalid receipt even when the same rows would qualify as a snapshot', () => {
+  const symbol = 'AAPL.US';
+  const snapshot = priceDataset(snapshotRows([100, 101, 102, 103, 104, 105], symbol));
+  const summary = (dataset: typeof snapshot) => admitReturnSummary(dataset, priceFields, [symbol], { mode: 'own' });
+  expect(summary(snapshot)).toMatchObject({ ok: true });
+
+  const invalid = { ...snapshot, provenance: { ...snapshot.provenance, metadata: {
+    ...snapshot.provenance.metadata, chartSources: { 'daily-price': { ...dailyPriceReceipt, delivered_count: 0 } },
+  } } };
+  expect(summary(invalid)).toMatchObject({ ok: false, refused: true });
+  expect(preparePriceChartInput(snapshot, priceFields, 'drawdown')).toMatchObject({ ok: true, sourceMode: 'snapshot' });
+  expect(preparePriceChartInput(invalid, priceFields, 'drawdown')).toMatchObject({ ok: false, refused: true });
+});
+
+it.each([
+  { ticker: 'MCD.US' }, { currency: 'CAD' }, { unit: 'cents' }, { interval: '1w' },
+])('refuses conflicting original declarations even if the conflicting row is filtered: %j', change => {
+  const rows = [
+    { date: '2026-01-05', adjusted_close: 100, ticker: 'AAPL.US', currency: 'USD', unit: 'dollars', interval: '1d' },
+    { date: '2026-01-06', adjusted_close: 101, ticker: 'AAPL.US', currency: 'USD', unit: 'dollars', interval: '1d' },
+  ];
+  const fields = { date: 'date', price: 'adjusted_close' };
+  expect(preparePriceChartInput(liveDailyPriceDataset(rows, ['AAPL.US']), fields, 'drawdown')).toMatchObject({
+    ok: true, sourceMode: 'live',
+  });
+
+  const acquired = liveDailyPriceDataset([rows[0], { ...rows[1], ...change }], ['AAPL.US']);
+  const visible = acquired.rows.slice(0, 1);
+  const provenance = projectChartSources(acquired.provenance, acquired.columns, visible);
+  expect(preparePriceChartInput(acquired, fields, 'drawdown')).toMatchObject({ ok: false, refused: true });
+  expect(preparePriceChartInput({ ...acquired, rows: visible, provenance }, fields, 'drawdown')).toMatchObject({
+    ok: false, refused: true,
+  });
+});
+
+it('refuses a counted empty daily-price acquisition', () => {
+  const empty = liveDailyPriceDataset([], ['AAPL.US']);
+  expect(readLiveDailyPriceSource(empty)).toBeDefined();
+  expect(preparePriceChartInput(empty, { date: 'date', price: 'adjusted_close' }, 'drawdown')).toEqual({
+    ok: false, refused: true, message: 'No valid daily prices remain.',
+  });
 });
 
 it('reconciles original columns and the exact presented coordinates after an alias and filter', () => {
@@ -213,11 +266,17 @@ it('reconciles original columns and the exact presented coordinates after an ali
   const rows = [{ ...mcd, values: { day: mcd.values.date, price: mcd.values.adjusted_close, listing: mcd.values.symbol } }];
   const provenance = projectChartSources(full.provenance, columns, rows);
   const projected = { ...full, rows, columns, provenance };
-  expect(readLiveDailyPriceSource(projected)).toEqual(expectedLiveSource);
+  expect(readLiveDailyPriceSource(projected)).toEqual({ ...expectedLiveSource, tableOmissions: [['AAPL.US', '2026-10-13']] });
   expect(readChartSourceProjection(provenance, 'daily-price')).toEqual({
     filtered: false, omitted: ['["AAPL.US","2026-10-13"]'],
   });
   expect(provenance.metadata).not.toHaveProperty('priceOmissions');
+  expect(preparePriceChartInput(projected, { date: 'day', price: 'price', symbol: 'listing' }, 'drawdown')).toMatchObject({
+    ok: true, sourceMode: 'live', notes: expect.arrayContaining(['Preserved 1 price gap(s) from table filtering.']),
+    series: [{ symbol: 'MCD.US', points: [
+      { date: '2026-10-13', price: 104 }, { date: '2026-10-14', price: null },
+    ] }],
+  });
   expect(readLiveDailyPriceSource({ ...projected, provenance: full.provenance })).toBeUndefined();
   expect(readLiveDailyPriceSource({ ...projected, columns: [
     ...columns.slice(0, 2), { id: 'price', label: 'adjusted_close', sourceFieldId: 'close' },
@@ -232,6 +291,17 @@ it('reconciles original columns and the exact presented coordinates after an ali
     { ...rows[0], values: { ...rows[0].values, day: '2026-10-15' } },
   ] })).toBeUndefined();
   expect(readLiveDailyPriceSource({ ...full, rows: [mcd, aapl] })).toEqual(expectedLiveSource);
+});
+
+it('refuses ambiguous mixed column origins and aggregate observations', () => {
+  const full = makeDataset();
+  const duplicateOrigin = { ...full, columns: [
+    ...full.columns, { id: 'second-price', label: 'Second price', sourceFieldId: 'adjusted_close' },
+  ] };
+  const aggregate = { ...full, provenance: { ...full.provenance, inputMayContainAggregates: true } };
+  for (const invalid of [duplicateOrigin, aggregate]) {
+    expect(preparePriceChartInput(invalid, priceFields, 'drawdown')).toMatchObject({ ok: false, refused: true });
+  }
 });
 
 it('validates the delivered coordinate supplement without letting it supply numeric prices', () => {

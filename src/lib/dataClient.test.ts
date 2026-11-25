@@ -40,6 +40,8 @@ import {
   fetchEndpoint,
   fetchParamOptions,
   fetchWidgetData,
+  fetchWidgetPath,
+  ticketedWsUrl,
   obbjectWarnings,
   fetchAppsJson,
   DOCUMENT_MAX_BYTES,
@@ -420,6 +422,25 @@ describe("fetchWidgetData over real HTTP", () => {
     server = await startMockServer({ "/equity/price": { __status: 204 } });
     const b = { ...backend, baseUrl: server.url };
     expect(await fetchWidgetData(b, widget({ dataKey: "results" }), {})).toBeNull();
+  });
+
+  // openbq-docker v10's live-grid adds keys to /series' `cache` object when its lake
+  // read-back is configured (`rows_from_lake`, `lake_days`; live-grid/app/lake.py,
+  // ledger C4). The client parses no schema there: the envelope reaches the card
+  // whole, the new keys included, with or without a dataKey; the Episode 10
+  // example's live_chart card reads only its `bars` (src/lib/liveChart.ts).
+  it("passes live-grid's /series envelope through whole, the lake read-back's unknown cache keys included", async () => {
+    const bars = [{ date: "2026-10-09T13:30:00+00:00", open: 1, high: 2, low: 0.5, close: 1.5, volume: 10 }];
+    const cache = { cache: "hit", rows_from_cache: 0, rows_from_upstream: 10, rows_from_ticks: 3, gaps_fetched: 0,
+      upstream_ms: 1.5, kdb_ms: 0.4, seam: "2026-10-12T13:30:00+00:00", rows_from_lake: 390, lake_days: ["2026-10-09", "2026-10-10"],
+      a_key_no_release_has_yet: { nested: [1, 2] } };
+    const envelope = { symbol: "AAPL", interval: "1m", start: "2026-10-09", end: "2026-10-12", bars, cache };
+    server = await startMockServer({ "/series": envelope });
+    const b = { ...backend, baseUrl: server.url };
+    const series = widget({ type: "live_chart", endpoint: "series", wsEndpoint: "live_grid_ws" });
+    expect(await fetchWidgetData(b, series, { symbol: "AAPL", interval: "1m" })).toEqual(envelope);
+    expect(await fetchWidgetData(b, { ...series, dataKey: "bars" }, { symbol: "AAPL", interval: "1m" })).toEqual(bars);
+    expect(await fetchWidgetData(b, { ...series, dataKey: "cache.lake_days" }, {})).toEqual(["2026-10-09", "2026-10-10"]);
   });
 
   // A structured-syntax suffix (RFC 6839) is still JSON: an endpoint that
@@ -1191,6 +1212,24 @@ describe("postForm over real HTTP", () => {
   });
 });
 
+describe("fetchWidgetPath", () => {
+  let server: MockServer;
+  afterEach(async () => {
+    await server?.close();
+  });
+
+  it("GETs a sibling of the widget's endpoint, with the credential placed as for the widget's own data", async () => {
+    server = await startMockServer({ "/grid/symbol_meta": [{ symbol: "AAPL", logo_url: "u" }] });
+    const b = makeBackend({ baseUrl: `${server.url}/grid`, authLocation: "query", headerName: "key", headerValue: "abc" });
+    await expect(fetchWidgetPath(b, "symbol_meta", { symbol: "AAPL,MSFT", empty: "" })).resolves.toEqual([
+      { symbol: "AAPL", logo_url: "u" },
+    ]);
+    const asked = server.requests.at(-1);
+    expect(asked?.path).toBe("/grid/symbol_meta");
+    expect(Object.fromEntries(new URLSearchParams(asked?.search))).toEqual({ symbol: "AAPL,MSFT", key: "abc" });
+  });
+});
+
 describe("buildWidgetWsUrl", () => {
   const wsWidget = { ...makeWidget({}), wsEndpoint: "grid_ws" };
   it("turns an http base into a ws URL joined to wsEndpoint", () => {
@@ -1210,8 +1249,84 @@ describe("buildWidgetWsUrl", () => {
     );
     expect(url).toContain("key=abc");
   });
+  // V10-P1: a browser socket cannot carry a header, and no socket a clean line
+  // targets reads a credential from the query unless the backend asked for
+  // query placement -- so a header or cookie credential is never written into
+  // the socket URL (where access logs would keep it).
+  it.each(["header", "cookie"] as const)("puts no %s-placed credential on the socket URL", (authLocation) => {
+    const url = buildWidgetWsUrl(
+      makeBackend({ baseUrl: "https://h", authLocation, headerName: "Authorization", headerValue: "Basic c2VjcmV0" }),
+      wsWidget,
+    );
+    expect(url).toBe("wss://h/grid_ws");
+  });
   it("returns null when the widget has no wsEndpoint", () => {
     expect(buildWidgetWsUrl(makeBackend({ baseUrl: "http://h" }), makeWidget({}))).toBeNull();
+  });
+});
+
+// V10-P1 (user ruling 2026-10-15): the desktop's socket through the gateway
+// authenticates by a single-use ticket fetched over HTTP with the header
+// credential, never by the credential itself on the URL.
+describe("ticketedWsUrl", () => {
+  let server: MockServer;
+  afterEach(async () => {
+    await server?.close();
+  });
+  const bearer = { authLocation: "header" as const, headerName: "Authorization", headerValue: "Bearer s3cret" };
+
+  it("asks the backend's ws_ticket for the socket's path and appends the ticket last", async () => {
+    server = await startMockServer({ "/grid/ws_ticket": { ticket: "1.n.sig" } });
+    const b = makeBackend({ baseUrl: `${server.url}/grid`, ...bearer });
+    const socket = buildWidgetWsUrl(b, { ...makeWidget({}), wsEndpoint: "live_grid_ws" })!;
+    const url = await ticketedWsUrl(b, socket);
+    expect(url).toBe(`${socket}?ticket=1.n.sig`);
+    expect(url).not.toContain("s3cret");
+    const asked = server.requests.at(-1);
+    expect(asked?.path).toBe("/grid/ws_ticket");
+    expect(new URLSearchParams(asked?.search).get("target")).toBe("/grid/live_grid_ws");
+    expect(asked?.headers.authorization).toBe("Bearer s3cret");
+  });
+
+  it("keeps the plain socket URL when the backend has no ticket endpoint or answers no ticket", async () => {
+    server = await startMockServer({ "/grid/other": {} });
+    const b = makeBackend({ baseUrl: `${server.url}/grid`, ...bearer });
+    await expect(ticketedWsUrl(b, "ws://h/grid/live_grid_ws")).resolves.toBe("ws://h/grid/live_grid_ws");
+    await server.close();
+    server = await startMockServer({ "/grid/ws_ticket": { nope: 1 } });
+    const c = makeBackend({ baseUrl: `${server.url}/grid`, ...bearer });
+    await expect(ticketedWsUrl(c, "ws://h/grid/live_grid_ws")).resolves.toBe("ws://h/grid/live_grid_ws");
+  });
+
+  // Review B12: a gateway that accepts the connection and never answers must
+  // not leave the grid with no socket and no retry. The real deadline is ten
+  // seconds; it is stubbed short here and the value asked for is pinned.
+  it("falls back to the plain URL when ws_ticket never answers", async () => {
+    const realTimeout = AbortSignal.timeout.bind(AbortSignal);
+    const asked: number[] = [];
+    const spy = vi.spyOn(AbortSignal, "timeout").mockImplementation((ms) => {
+      asked.push(ms);
+      return realTimeout(250);
+    });
+    try {
+      server = await startMockServer({ "/grid/ws_ticket": { __hang: true } });
+      const b = makeBackend({ baseUrl: `${server.url}/grid`, ...bearer });
+      await expect(ticketedWsUrl(b, "ws://h/grid/live_grid_ws")).resolves.toBe("ws://h/grid/live_grid_ws");
+      expect(asked).toEqual([10_000]);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it.each([
+    ["no credential", {}],
+    ["a query credential", { authLocation: "query" as const, headerName: "key", headerValue: "abc" }],
+    ["a cookie credential", { authLocation: "cookie" as const, headerName: "sid", headerValue: "abc" }],
+  ])("asks nothing for %s", async (_, auth) => {
+    server = await startMockServer({ "/grid/ws_ticket": { ticket: "1.n.sig" } });
+    const b = makeBackend({ baseUrl: `${server.url}/grid`, ...auth });
+    await expect(ticketedWsUrl(b, "ws://h/grid/live_grid_ws")).resolves.toBe("ws://h/grid/live_grid_ws");
+    expect(server.requests).toHaveLength(0);
   });
 });
 

@@ -132,3 +132,50 @@ export async function importExample(page: Page, manifest = example) {
   await expect(page.locator('nav.left-rail')).toHaveAttribute('data-expanded', 'false');
   return overrides;
 }
+
+type RecipeRequest = import('../../src/lib/widgetData/chartRecipes/workerClient').RecipeRequest;
+type RecipeReply = import('../../src/lib/widgetData/chartRecipes/workerClient').RecipeReply;
+type RecordedRecipe = { options: RecipeRequest['options']; reply: RecipeReply };
+
+export async function recordRecipeReplies(page: Page) {
+  await page.addInitScript(() => {
+    const replies: RecordedRecipe[] = [];
+    Object.assign(window, { recipeReplies: replies });
+    const NativeWorker = window.Worker;
+    window.Worker = class extends NativeWorker {
+      constructor(...args: ConstructorParameters<typeof Worker>) {
+        super(...args);
+        if (!String(args[0]).includes('/recipe.worker')) return;
+        const send = this.postMessage;
+        const pending = new Map<number, RecipeRequest['options']>();
+        this.postMessage = (...args: [RecipeRequest, unknown?]) => {
+          const { identity, options } = args[0];
+          pending.set(identity.requestId, options);
+          Reflect.apply(send, this, args);
+        };
+        this.addEventListener('message', (event: MessageEvent<RecipeReply>) => {
+          const reply = event.data;
+          const options = pending.get(reply.requestId);
+          if (options) replies.push({ options, reply });
+          pending.delete(reply.requestId);
+        });
+      }
+    };
+  });
+  return () => page.evaluate(() => (window as Window & { recipeReplies?: RecordedRecipe[] }).recipeReplies ?? []);
+}
+
+export type PlotlyTrace = {
+  type: string; name: string; mode?: string; fill?: string; legendgroup?: string;
+  x: (string | number | null)[]; y: (number | null)[]; width?: number[]; connectgaps?: boolean;
+  xaxis?: string; yaxis?: string; visible?: boolean | 'legendonly';
+};
+
+export async function plotlyTraces(graph: Locator): Promise<PlotlyTrace[]> {
+  return graph.evaluate(element => {
+    const traces = (element as HTMLElement & { _fullData?: PlotlyTrace[] })._fullData;
+    return (traces ?? []).map(({ type, name, mode, fill, legendgroup, x, y, width, connectgaps, xaxis, yaxis, visible }) => ({
+      type, name, mode, fill, legendgroup, x: Array.from(x), y: Array.from(y), width, connectgaps, xaxis, yaxis, visible,
+    }));
+  });
+}

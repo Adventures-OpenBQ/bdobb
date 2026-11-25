@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import type { IPrimitivePaneRenderer, ISeriesPrimitive, SeriesAttachedParameter } from "lightweight-charts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // lightweight-charts draws to canvas, which jsdom lacks -- the same reason
@@ -8,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // options and data this module hands the library, so that is what's asserted.
 const series = () => {
   const scale = { applyOptions: vi.fn() };
-  return { setData: vi.fn(), priceScale: vi.fn(() => scale) };
+  return { setData: vi.fn(), update: vi.fn(), priceScale: vi.fn(() => scale), attachPrimitive: vi.fn(), detachPrimitive: vi.fn((p:ISeriesPrimitive)=>p.detached?.()) };
 };
 const fitContent = vi.fn();
 const chart = {
@@ -23,6 +24,7 @@ vi.mock("lightweight-charts", () => ({
   CandlestickSeries: { type: "Candlestick" },
   HistogramSeries: { type: "Histogram" },
   LineSeries: { type: "Line" },
+  TickMarkType: { Year: 0, Month: 1, DayOfMonth: 2, Time: 3, TimeWithSeconds: 4 },
   createChart: (el: HTMLElement, opts: unknown) => createChart(el, opts),
 }));
 
@@ -56,6 +58,32 @@ describe("mountCandleChart", () => {
       rightPriceScale: { borderColor: GRID.dark },
       timeScale: { borderColor: GRID.dark },
     });
+  });
+
+  it("shows local hours and minutes on an intraday axis, and leaves a daily one on dates", async () => {
+    type Axis = {
+      timeVisible: boolean;
+      secondsVisible: boolean;
+      tickMarkFormatter: (t: number, type: number) => string | null;
+    };
+    const axis = (n: number) => (createChart.mock.calls[n][1] as { timeScale: Axis }).timeScale;
+    // Built from local parts, so 09:30 holds in whatever zone the suite runs in.
+    const open = new Date(2026, 9, 16, 9, 30, 15).getTime() / 1000;
+
+    await mountCandleChart(document.createElement("div"), { theme: "dark", colors: {}, showVolume: true, barSeconds: 60 });
+    expect(axis(0)).toMatchObject({ borderColor: GRID.dark, timeVisible: true, secondsVisible: false });
+    expect(axis(0).tickMarkFormatter(open, 3)).toBe("09:30");
+    // A day mark keeps the library's own label.
+    expect(axis(0).tickMarkFormatter(open, 2)).toBeNull();
+
+    await mountCandleChart(document.createElement("div"), { theme: "dark", colors: {}, showVolume: true, barSeconds: 1 });
+    expect(axis(1)).toMatchObject({ timeVisible: true, secondsVisible: true });
+    expect(axis(1).tickMarkFormatter(open, 4)).toBe("09:30:15");
+
+    await mountCandleChart(document.createElement("div"), { theme: "dark", colors: {}, showVolume: true, barSeconds: 86400 });
+    expect(createChart.mock.calls[2][1]).toMatchObject({ timeScale: { borderColor: GRID.dark } });
+    expect(createChart.mock.calls[2][1]).not.toHaveProperty("timeScale.timeVisible");
+    expect(createChart.mock.calls[2][1]).not.toHaveProperty("localization");
   });
 
   it("hands the candle colours to the candlestick series and keeps the volume ones back", async () => {
@@ -125,4 +153,25 @@ describe("mountCandleChart", () => {
 it("exports the credit the card shows", () => {
   expect(TRADINGVIEW_CREDIT_URL).toBe("https://www.tradingview.com/lightweight-charts/");
   expect(TRADINGVIEW_CREDIT_LABEL).toBe("Rendered by TradingView");
+});
+
+it("keeps wider-wick geometry synchronized with replacements and detaches it before chart disposal", async () => {
+  const handle = await mountCandleChart(document.createElement("div"), {theme:"dark",colors:{},showVolume:false,wickWidth:2});
+  const candles = chart.addSeries.mock.results[0].value;
+  expect(candles.attachPrimitive).toHaveBeenCalledTimes(1);
+  const primitive = candles.attachPrimitive.mock.calls[0][0] as ISeriesPrimitive & {draw:IPrimitivePaneRenderer['draw']};
+  primitive.attached?.({chart:{timeScale:()=>({getVisibleLogicalRange:()=>({from:0,to:0}),logicalToCoordinate:()=>10,options:()=>({barSpacing:6})})},series:{options:()=>({wickVisible:true,wickUpColor:'#0f0',wickDownColor:'#f00'}),priceToCoordinate:(price:number)=>100-price},requestUpdate:vi.fn()} as unknown as SeriesAttachedParameter);
+  const rectangles: number[][] = [];
+  const target = {useBitmapCoordinateSpace(callback:(scope:unknown)=>void) {callback({context:{save() {},restore() {},fillRect(...geometry:number[]) {rectangles.push(geometry);}},horizontalPixelRatio:1,verticalPixelRatio:1,bitmapSize:{width:400,height:400}});}} as unknown as Parameters<IPrimitivePaneRenderer['draw']>[0];
+  handle.setBars([{time:1,open:10,high:30,low:5,close:20,volume:1}]);
+  primitive.draw(target);
+  expect(rectangles).toEqual([[9,70,2,10],[9,90,2,5]]);
+  rectangles.length=0;
+  handle.setBars([{time:1,open:10,high:40,low:5,close:20,volume:1}]);
+  primitive.draw(target);
+  expect(rectangles[0]).toEqual([9,60,2,20]);
+  handle.dispose();
+  expect(candles.detachPrimitive).toHaveBeenCalledWith(primitive);
+  rectangles.length=0;primitive.draw(target);
+  expect(rectangles).toEqual([]);
 });

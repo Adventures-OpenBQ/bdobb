@@ -29,16 +29,16 @@ A fresh public install starts with no saved connections. The **Add** dialog offe
 
 ## Where the credentials go
 
-Into `backends.json` in the app's data directory, in the clear. Choosing **Query Parameter** as the location puts the key in every request URL, where a proxy log can catch it; the dialog warns, and the app itself strips query strings before logging a failed request's URL. See [[app-data-and-settings|App Data and Settings]].
+Into `backends.json` in the app's data directory, in the clear. Choosing **Query Parameter** as the location puts the key in every request URL, where a proxy log can catch it; the dialog warns, and the app itself strips query strings before logging a failed request's URL. A **Query Parameter** credential also rides a live grid's websocket address, and its drop notice in the log leaves the query off. A browser websocket cannot carry a header, so a **Header** or **Cookie** credential does not reach a live grid's socket at all; the app does not move it into the address on its own, because a backend that checks a header on the handshake would not read it there either. Instead, with a **Header** credential the app asks the backend for a short-lived, single-use socket ticket (`ws_ticket`, sent with the header) before every connect, and the socket carries only the ticket. The companion stack's gateway issues them; against a backend that does not, nothing changes. See [[tables|Tables]] (Live grids). See [[app-data-and-settings|App Data and Settings]].
 
 ## Multiple backends, independent health
 
 Each connection is tracked independently. Discovery runs at launch and on demand; a backend that fails moves to *Inactive* with a red dot, its cards show a retry state, and nothing else notices. A single dashboard can mix cards from every connection — a Platform table beside a widget from a backend of your own — because each card only ever depends on its own backend being reachable.
 
 ---
-*Source: BDOBB v3.0.2 in-app manual, "Connections"; `openbq-docker` `README.md`, `credentials.env.example`, `docker-compose.yml`, `docker-compose.v3.yml`, `ts-config/serve.json` and `ts-config/serve-v3.json` at `v7.0.0`; `key-maint/README.md` at `v7.0.0`.*
+*Source: BDOBB v3.0.2 in-app manual, "Connections"; `openbq-docker` `README.md`, `credentials.env.example`, `docker-compose.yml`, `docker-compose.v3.yml`, `ts-config/serve.json` and `ts-config/serve-v3.json` at `v7.0.0`; `key-maint/README.md` at `v7.0.0`; at 10.0.0, `src/lib/dataClient.ts` (`buildWidgetWsUrl`).*
 *See also: [[connecting-a-backend|Connecting a Backend]] · [[openbq-docker-stack|The openbq-docker Stack]] · [[tailscale-networking|Tailscale Networking]] · [[provider-keys|Provider Keys]]*
 
 ---
 
-Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

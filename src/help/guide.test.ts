@@ -15,7 +15,7 @@ describe("the help guide", () => {
     expect(new Set(slugs).size).toBe(slugs.length);
     expect(slugs).toEqual(GUIDE_PAGES.map((p) => p.slug));
     // Added v4 Calendar and v5 Workspace/Statement pages, v6's three Rita/AI pages, v7's two iPad pages, and v8's News, Locked and Pinned Widgets and Picture in Picture pages, are deliberate; so is v4's Linked Widgets page.
-    expect(GUIDE_PAGES).toHaveLength(46);
+    expect(GUIDE_PAGES).toHaveLength(47);
   });
 
   it("gives every page a title from its own H1, with the frontmatter gone", () => {
@@ -141,9 +141,9 @@ describe("v6 troubleshooting and guide hunks", () => {
     const t = body("troubleshooting-using-bdobb") + body("troubleshooting-infrastructure");
     for (const s of ["fresh chat", "rejected", "round limit", "keepalive", "MCP", "private network", "server-execution-pending"]) expect(t).toContain(s);
   });
-  it("guide pages mention v9.0.0 consistently", () => {
-    expect(body("home")).toMatch(/version 9\.0\.0/);
-    expect(body("about-this-guide")).toMatch(/clean BDOBB \*\*v9\.0\.0\*\*/);
+  it("guide pages mention v10.0.0 consistently", () => {
+    expect(body("home")).toMatch(/version 10\.0\.0/);
+    expect(body("about-this-guide")).toMatch(/clean BDOBB \*\*v10\.0\.0\*\*/);
   });
   it("no longer claims the app has no AI side", () => {
     const all = GUIDE_PAGES.map((p) => p.body).join("\n");

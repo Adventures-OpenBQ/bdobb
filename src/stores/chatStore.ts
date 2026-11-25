@@ -454,12 +454,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
       for (;;) {
         const next = await gen.next();
         if (next.done) {
+          // A stopped query can return its completed engine history instead of throwing.
+          if (mine.signal.aborted) turn.push({role: "ai", content: "Stopped by the user. Completed tool actions are recorded above. Do not resume this interrupted request unless the user asks."});
           // Rita's function-round messages (ai call + tool result) come back in the history.
           if (live()) set({ messages: [...prior, human, ...next.value.slice(outgoing.length), ...turn] });
           break;
         }
         const event = next.value;
-        if (event.type === "chunk") {
+        if (event.type === "tableSummary") {
+          // Preserve artifacts and prior conversation; replace only this turn's prose.
+          for (let i = turn.length - 1; i >= 0; i--) {
+            const message = turn[i];
+            if (message.role === "ai" && typeof message.content === "string") turn.splice(i, 1);
+          }
+          turn.push({ role: "ai", content: event.text });
+          show();
+          noticed();
+        } else if (event.type === "chunk") {
           const last = turn[turn.length - 1];
           if (last && last.role === "ai" && typeof last.content === "string") {
             last.content += event.delta;

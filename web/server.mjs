@@ -10,7 +10,12 @@ import { resolve, extname } from "node:path";
 import { WebSocket, WebSocketServer } from "ws";
 import { readConfig } from "./config.mjs";
 import { handleAuth, identity } from "./auth.mjs";
-import { newsSubscription, socketTarget, socketTicket, stateFile, upstreamPath, tableRoute, tableControlRoute, TABLE_CONTROL_CONCURRENCY, TABLE_DEADLINE_MS, TABLE_RESPONSE_BYTES } from "./policy.mjs";
+// A namespace, not named imports: the policy is taken by injection (tests prove the
+// relay with and without the grid rules), and a policy without liveGridSubscription
+// must still load. The vendored copy is openbq-docker v10.0.0's (the bytes policy.vendored.json records), which
+// serves the /grid family; under a policy without it every /grid route and socket is
+// refused.
+import * as vendoredPolicy from "./policy.mjs";
 import { bootstrap } from "./bootstrap.mjs";
 
 // Full feed lists include inline icons; browser requests and articles stay 64 KiB.
@@ -85,9 +90,33 @@ async function boundedBody(stream, max) {
   return Buffer.concat(parts);
 }
 
+/** live-grid's quote socket (Ep. 10): wsEndpoint "live_grid_ws" on the /grid backend. */
+const GRID_SOCKET = "/grid/live_grid_ws";
+/**
+ * The two documents the gateway relays as a bare 404 rather than a failure (its
+ * OPTIONAL_DOCS, openbb-docker v10.1.7 funnel-gateway/server.mjs): an older
+ * live-grid serves neither, and the client reads that 404 as designed -- no apps
+ * from this backend, a grid with blank logo and 52-week columns. Every other
+ * non-200 is still a 502 here, its body never relayed.
+ */
+const OPTIONAL_DOCS = new Set(["/grid/apps.json", "/grid/symbol_meta"]);
+
+/**
+ * Whether the vendored contract serves live-grid's socket: a socketTarget that
+ * names it and the frame rule that re-validates every grid frame. True under the
+ * vendored openbq-docker v10.0.0 policy (the bytes policy.vendored.json records); false under v8.0.0's (cab61a9,
+ * vendored until 10.0.0), where the grid socket, its ticket and the seeded Live
+ * quotes tab all stay off.
+ */
+export function gridSocketServed(policy, origin) {
+  return typeof policy.liveGridSubscription === "function" && policy.socketTarget(GRID_SOCKET, origin) === GRID_SOCKET;
+}
+
 /** Dependency injection is test-only code composition, never an environment auth bypass. */
 export function createPreviewServer({ config: supplied, assets = resolve("dist/web"),
-  fetchUpstream = fetch, connectUpstream = (url, options) => new WebSocket(url, options) } = {}) {
+  fetchUpstream = fetch, connectUpstream = (url, options) => new WebSocket(url, options),
+  policy = vendoredPolicy } = {}) {
+  const { newsSubscription, socketTarget, socketTicket, stateFile, upstreamPath } = policy;
   const config = () => supplied ?? readConfig();
   let tableInflight = 0, tableControlInflight = 0;
   /**
@@ -128,6 +157,83 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
     await response.body?.cancel();
     // The user's own quota is theirs to hear about; nothing else the gateway says is.
     return reply(res, response.status === 204 ? 204 : response.status === 413 ? 413 : 502);
+  }
+  /**
+   * Rita, through the door's /ai: her document, and her one POST with its event stream piped
+   * back as it arrives (Vercel streams this function; it stops at 300 s, as the door does). The
+   * door rewrites and limits the query; this layer adds the session's GitHub id as the
+   * principal it charges, and the POST asks what /state's writes ask. Nothing of the
+   * browser's goes upstream but the body.
+   */
+  async function relayRita(req, res, url, cfg, who) {
+    const agents = url.pathname === "/ai/agents.json" && req.method === "GET";
+    if (url.search || !(agents || (url.pathname === "/ai/v1/query" && req.method === "POST"))) return reply(res, 404);
+    if (!/^\d{1,20}$/.test(who.id)) return reply(res, 503);
+    const headers = { ...gatewayHeaders(cfg), "X-Rita-Principal": `github:${who.id}` };
+    if (agents) {
+      if (req.headers.origin && req.headers.origin !== cfg.origin) return reply(res, 403);
+      const response = await fetchUpstream(`${cfg.backend}/ai/agents.json`, { headers, redirect: "error", signal: AbortSignal.timeout(12000) });
+      if (!response.ok || !/^application\/json(?:\s*;|$)/i.test(response.headers.get("content-type") ?? "")) {
+        await response.body?.cancel(); return reply(res, 502);
+      }
+      return reply(res, 200, await boundedBody(response.body, 65536), MIME[".json"]);
+    }
+    if (foreign(req, cfg)) return reply(res, 403);
+    const body = await jsonBody(req, 1024 * 1024);
+    if (typeof body === "number") { if (body === 413) res.setHeader("Connection", "close"); return reply(res, body); }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 300000);
+    const disconnect = () => { if (!res.writableEnded) controller.abort(); };
+    res.once("close", disconnect);
+    try {
+      const response = await fetchUpstream(`${cfg.backend}/ai/v1/query`, { method: "POST", body, redirect: "error", signal: controller.signal,
+        headers: { ...headers, Accept: "text/event-stream", "Content-Type": "application/json" } });
+      if (!response.ok || !response.body || !/^text\/event-stream(?:\s*;|$)/i.test(response.headers.get("content-type") ?? "")) {
+        await response.body?.cancel();
+        // The door's own limits are the user's to hear about; nothing else it says is.
+        return reply(res, [400, 413, 429].includes(response.status) ? response.status : 502);
+      }
+      res.writeHead(200, { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff", "X-Accel-Buffering": "no" });
+      await pipeline(Readable.fromWeb(response.body), res);
+    } finally { clearTimeout(timer); res.off("close", disconnect); }
+  }
+  /**
+   * openbq-mcp, through the door's /mcp: one JSON-RPC message per POST, its JSON or event-stream
+   * answer piped back. The door filters each message and binds each session to the principal;
+   * this layer adds the session's GitHub id, carries MCP's own two headers each way and nothing
+   * else of the browser's, and asks of the POST what /state's writes ask.
+   */
+  async function relayMcp(req, res, url, cfg, who) {
+    if (url.pathname !== "/mcp" || url.search) return reply(res, 404);
+    if (req.method !== "POST") return reply(res, 405);
+    if (foreign(req, cfg)) return reply(res, 403);
+    if (!/^\d{1,20}$/.test(who.id)) return reply(res, 503);
+    const session = req.headers["mcp-session-id"], version = req.headers["mcp-protocol-version"];
+    if ((session !== undefined && !/^[A-Za-z0-9._~-]{1,200}$/.test(session)) || (version !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(version))) return reply(res, 400);
+    const body = await jsonBody(req, 1024 * 1024);
+    if (typeof body === "number") { if (body === 413) res.setHeader("Connection", "close"); return reply(res, body); }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 125000);
+    const disconnect = () => { if (!res.writableEnded) controller.abort(); };
+    res.once("close", disconnect);
+    try {
+      const response = await fetchUpstream(`${cfg.backend}/mcp`, { method: "POST", body, redirect: "error", signal: controller.signal,
+        headers: { ...gatewayHeaders(cfg), Accept: "application/json, text/event-stream", "Content-Type": "application/json",
+          "X-Preview-Principal": `github:${who.id}`, ...(session ? { "Mcp-Session-Id": session } : {}), ...(version ? { "MCP-Protocol-Version": version } : {}) } });
+      if (response.status === 202) { await response.body?.cancel(); return reply(res, 202); }
+      const type = response.headers.get("content-type") ?? "";
+      const stream = /^text\/event-stream(?:\s*;|$)/i.test(type);
+      // The door's refusals and limits are the user's to hear about; nothing else it says is.
+      if (!response.body || ![200, 400, 404, 429].includes(response.status) || !(stream || /^application\/json(?:\s*;|$)/i.test(type))) {
+        await response.body?.cancel(); return reply(res, 502);
+      }
+      const opened = response.headers.get("mcp-session-id");
+      res.writeHead(response.status, { "Content-Type": stream ? "text/event-stream; charset=utf-8" : MIME[".json"],
+        "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...(stream ? { "X-Accel-Buffering": "no" } : {}),
+        ...(opened && /^[A-Za-z0-9._~-]{1,200}$/.test(opened) ? { "Mcp-Session-Id": opened } : {}) });
+      await pipeline(Readable.fromWeb(response.body), res);
+    } finally { clearTimeout(timer); res.off("close", disconnect); }
   }
   /** The files to seed the page with: {} when nothing is saved, null when the store cannot be trusted. */
   async function savedState(cfg, who) {
@@ -215,17 +321,22 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
         return reply(res, 401, "Sign in with an approved GitHub account.");
       }
       if (url.pathname.startsWith("/state/")) return await saveState(req, res, url, cfg, who);
-      const table = tableRoute(url, req.method, cfg);
+      // Off (PREVIEW_RITA unset), /ai is what it always was here: 404, and its POST a 405.
+      if (cfg.rita && url.pathname.startsWith("/ai/")) return await relayRita(req, res, url, cfg, who);
+      // Off (PREVIEW_MCP unset), /mcp is what it always was here: 404, and its POST a 405.
+      if (cfg.mcp && (url.pathname === "/mcp" || url.pathname.startsWith("/mcp/"))) return await relayMcp(req, res, url, cfg, who);
+      const table = policy.tableRoute?.(url, req.method, cfg);
       if (table || url.pathname.startsWith("/table/")) {
         if (!table) return reply(res,404);
         if (req.method !== "GET" && foreign(req,cfg)) return reply(res,403);
         if (req.headers.origin && req.headers.origin !== cfg.origin) return reply(res,403);
         if (!cfg.backend || (table.managed && !cfg.tableRelayToken)) return reply(res,503);
-        const control = tableControlRoute(table, req.method) === true;
-        if (control ? tableControlInflight >= TABLE_CONTROL_CONCURRENCY : tableInflight >= 4) return reply(res,429);
+        const control = policy.tableControlRoute?.(table, req.method) === true;
+        if (control ? tableControlInflight >= policy.TABLE_CONTROL_CONCURRENCY : tableInflight >= 4) return reply(res,429);
+
         if (control) tableControlInflight++; else tableInflight++;
         const controller=new AbortController();
-        const timer=setTimeout(()=>controller.abort(),(table.managed?cfg.tableTimeoutMs:cfg.ssrmTimeoutMs) ?? TABLE_DEADLINE_MS);
+        const timer=setTimeout(()=>controller.abort(),(table.managed?cfg.tableTimeoutMs:cfg.ssrmTimeoutMs) ?? policy.TABLE_DEADLINE_MS);
         const disconnect=()=>{if(!res.writableEnded)controller.abort();};res.once("close",disconnect);
         const stopBody=()=>req.destroy();controller.signal.addEventListener("abort",stopBody,{once:true});
         try {
@@ -247,7 +358,7 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
           const response=await fetchUpstream(cfg.backend+table.path,{method:req.method,body,headers,redirect:"error",signal:controller.signal});
           if(!/^application\/json(?:;|$)/i.test(response.headers.get("content-type")??"")){await response.body?.cancel();return reply(res,502);}
           let bytes;
-          try{bytes=await boundedBody(response.body??[],TABLE_RESPONSE_BYTES);JSON.parse(bytes.toString("utf8"));}
+          try{bytes=await boundedBody(response.body??[],policy.TABLE_RESPONSE_BYTES);JSON.parse(bytes.toString("utf8"));}
           catch{controller.abort();return reply(res,502);}
           if(!response.ok)return reply(res,[400,401,404,409,410,413,429,503].includes(response.status)?response.status:502,
             JSON.stringify({error:{code:"upstream_refused",message:"Table request refused"}}),MIME[".json"]);
@@ -259,12 +370,16 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
       // there falls through to the 405 below.
       if (req.method !== "GET") return reply(res, 405);
       if (req.headers.origin && req.headers.origin !== cfg.origin) return reply(res, 403);
-      if (url.pathname === "/preview-bootstrap.js") return reply(res, 200, bootstrap(cfg, await savedState(cfg, who)), MIME[".js"]);
+      if (url.pathname === "/preview-bootstrap.js") {
+        return reply(res, 200, bootstrap(cfg, await savedState(cfg, who), { grid: gridSocketServed(policy, cfg.origin) }), MIME[".js"]);
+      }
       // A ticket is what a signed-in browser shows the gateway instead of the machine
       // token it must never hold (policy.mjs socketTicket). It names one validated socket
-      // target and lasts thirty seconds. Two targets at this line -- socketTarget (policy.mjs,
-      // vendored from openbq-docker v8.0.0) names /ref/live_grid_ws (the reference's Live
-      // Grid, since v3) and /news/ws/news -- so a ticket asked for anything else still 404s here.
+      // target and lasts thirty seconds. The targets are socketTarget's, under the
+      // vendored openbq-docker v10.0.0 policy: /ref/live_grid_ws (the reference's Live
+      // Grid, since v3), /news/ws/news (Ep. 8), /grid/live_grid_ws (Ep. 10) and
+      // /grid/ta_chart_ws with its validated query. A ticket asked for anything else 404s
+      // here. A grid or reference ticket needs only the gateway; a news ticket needs feeds too.
       if (url.pathname === "/socket-ticket") {
         const asked = url.searchParams.getAll("for");
         const target = asked.length === 1 && [...url.searchParams.keys()].length === 1
@@ -275,7 +390,11 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
         if (!cfg.backend || (target === "/news/ws/news" && !Object.keys(cfg.feeds).length)) {
           return reply(res, 503, "Backend ingress is not configured.");
         }
-        const ticket = socketTicket(cfg.token, target);
+        // Chart resume positions are data, not credentials. Bind this new
+        // protocol's short-lived ticket to the exact authenticated page origin
+        // as well as its target; the gateway verifies the same signed string.
+        const signedTarget = target === "/grid/chart_stream_ws" ? cfg.origin + target : target;
+        const ticket = socketTicket(cfg.token, signedTarget);
         return reply(res, 200, JSON.stringify({
           url: cfg.backend.replace("https:", "wss:") + target + (target.includes("?") ? "&" : "?") + "ticket=" + ticket,
         }), MIME[".json"]);
@@ -289,13 +408,26 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
         if (!cfg.backend) return reply(res, 503, "Backend ingress is not configured.");
         const disconnected = new AbortController();
         res.once("close", () => disconnected.abort());
-        const deadline = path.startsWith("/api/") ? cfg.apiTimeoutMs ?? 170000 : 12000;
+        const deadline = path.startsWith("/api/") ? cfg.apiTimeoutMs ?? 170000 : /^\/grid\/(day_charts|closed_session)\?/.test(path) ? 25000 : 12000;
         const response = await fetchUpstream(cfg.backend + path, {
           headers: gatewayHeaders(cfg),
           redirect: "error", signal: AbortSignal.any([AbortSignal.timeout(deadline), disconnected.signal]),
         });
         // Never relay backend authentication challenges, redirects, cookies, or error bodies.
-        if (!response.ok) { await response.body?.cancel(); return reply(res, 502, "Backend request failed."); }
+        if (!response.ok) {
+          await response.body?.cancel();
+          // The gateway's own bare 404 for an optional document, and only that.
+          if (response.status === 404 && OPTIONAL_DOCS.has(url.pathname)) return reply(res, 404);
+          return reply(res, 502, "Backend request failed.");
+        }
+        if (path.startsWith("/grid/symbol_logo?")) {
+          try {
+            const bytes = await boundedBody(response.body ?? [], policy.LOGO_RESPONSE_BYTES ?? 262144);
+            const mime = policy.rasterType?.(bytes, response.headers.get("content-type"));
+            if (!mime) return reply(res,502,"Invalid logo response.");
+            return reply(res,200,bytes,mime);
+          } catch { return reply(res,502,"Logo unavailable."); }
+        }
         // JSON, or text/plain: the video routes answer a bare URL.
         const plain = /^text\/plain(?:\s*;|$)/i.test(response.headers.get("content-type") ?? "");
         if (!plain && !response.headers.get("content-type")?.includes("application/json")) {
@@ -350,11 +482,20 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
   server.on("upgrade", async (req, socket, head) => {
     socket.on("error", () => {});
     socket.setTimeout(15000, () => socket.destroy());
-    // /news/ws/news is the only socket route at this line, and it is a ONE-SHOT
-    // subscription: the browser sends a single subscribe frame carrying its feed
-    // list, and everything after that is server push. A second client frame is a
-    // protocol violation and closes, as it does at the gateway. On Vercel the page's
-    // socket opens on the gateway on a ticket instead (src/browser-shim/socket.ts);
+    // Two socket routes, with DIFFERENT frame contracts, which is the whole reason
+    // this handler branches (donor c183f880):
+    //   /news/ws/news       ONE-SHOT. The browser sends a single subscribe frame
+    //                       carrying its feed list and everything after that is
+    //                       server push; a second client frame is a protocol
+    //                       violation and closes, as it does at the gateway.
+    //   /grid/live_grid_ws  REPEATING, and only when the vendored policy serves it
+    //                       (gridSocketServed). The grid re-sends
+    //                       {"params":{"symbol":...}} over the SAME open socket on
+    //                       every param edit, so each frame is re-validated by
+    //                       liveGridSubscription and forwarded rebuilt; a malformed
+    //                       one closes the socket.
+    // Neither takes a query: the subscription is the frame. On Vercel the page's
+    // sockets open on the gateway on a ticket instead (src/browser-shim/socket.ts);
     // this relay is what a plain Node host (web/local.mjs) uses.
     // The reference's /ref/live_grid_ws is not relayed here (404 below): the browser opens it
     // on the gateway with a ticket.
@@ -364,13 +505,19 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
       if (!url || req.method !== "GET" || req.headers.origin !== cfg.origin) return reject(socket, 403);
       const who = await identity(req.headers, cfg);
       if (!who) return reject(socket, 401);
-      if (url.pathname !== "/news/ws/news" || url.search) return reject(socket, 404);
-      if (!cfg.backend || !Object.keys(cfg.feeds).length) return reject(socket, 503);
+      const grid = url.pathname === GRID_SOCKET;
+      if (grid ? !gridSocketServed(policy, cfg.origin) : url.pathname !== "/news/ws/news") return reject(socket, 404);
+      if (url.search) return reject(socket, 404);
+      // A news socket with no approved feeds could only ever close (see the ticket
+      // route); a grid socket needs the gateway and nothing else.
+      if (!cfg.backend || (!grid && !Object.keys(cfg.feeds).length)) return reject(socket, 503);
+
       wss.handleUpgrade(req, socket, head, client => {
         socket.setTimeout(0);
         let upstream; let subscribed = false;
         const close = () => { client.terminate(); upstream?.terminate(); };
-        // Closes at session expiry: no socket lifetime beyond it.
+        // Bounds stale sessions: the relayed socket closes when the session does. No fixed lifetime.
+
         const timer = setTimeout(close, Math.max(0, who.deadline * 1000 - Date.now()));
         const firstFrame = setTimeout(close, 10000);
         client.once("close", () => { clearTimeout(timer); clearTimeout(firstFrame); upstream?.terminate(); });
@@ -397,8 +544,8 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
         upstream.on("error", close);
         upstream.once("close", close);
         client.on("message", (data, binary) => {
-          if (binary || subscribed) return close();
-          const frame = newsSubscription(data, cfg);
+          if (binary || (!grid && subscribed)) return close();
+          const frame = grid ? policy.liveGridSubscription(data) : newsSubscription(data, cfg);
           if (!frame) return close();
           subscribed = true; clearTimeout(firstFrame);
           if (upstream?.readyState === WebSocket.OPEN) return upstream.send(frame);

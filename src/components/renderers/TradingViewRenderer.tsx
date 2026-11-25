@@ -29,7 +29,7 @@ type Props = {
  * browser. A plain browser build whose opener is missing or refuses falls back
  * to a new tab, with no opener reference back into the app.
  */
-function openCredit(event: MouseEvent<HTMLAnchorElement>): void {
+export function openCredit(event: MouseEvent<HTMLAnchorElement>): void {
   event.preventDefault();
   openUrl(TRADINGVIEW_CREDIT_URL).catch(() => {
     window.open(TRADINGVIEW_CREDIT_URL, "_blank", "noopener,noreferrer");

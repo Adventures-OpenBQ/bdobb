@@ -1419,6 +1419,22 @@ describe("data.table.pivot", () => {
   });
 });
 
+describe("normalizeWidgets columnsDefs align (v10)", () => {
+  it("keeps left, right and center, and drops anything else", () => {
+    const raw = {
+      w: {
+        endpoint: "e",
+        data: { table: { columnsDefs: [
+          { field: "a", align: "left" }, { field: "b", align: "right" }, { field: "c", align: "center" },
+          { field: "d", align: "middle" }, { field: "e", align: 1 },
+        ] } },
+      },
+    };
+    const columns = normalizeWidgets(raw, "b1").widgets[0].table?.columns ?? [];
+    expect(columns.map((c) => c.align)).toEqual(["left", "right", "center", undefined, undefined]);
+  });
+});
+
 it('preserves explicit managed protocol metadata and standard SSRM capability declarations',()=>{
  const {widgets}=normalizeWidgets({managed:{type:'table_ssrm',endpoint:'/sessions',provider:'managed-native',protocolVersion:1},standard:{type:'ssrm_table',endpoint:'/data',ssrm:{grouping:true,aggregations:['sum'],sorting:false}}},'b');
  expect(widgets[0]).toMatchObject({provider:'managed-native',protocolVersion:1});
@@ -1537,4 +1553,10 @@ describe("staleTime and dataUpdateDisplay", () => {
     expect(widgets.map((w) => w.dataUpdateDisplay)).toEqual(["0 10 * * *", undefined, undefined]);
     expect(issues).toEqual([]);
   });
+});
+it('opts into chart stream only through the explicit boolean backend capability', () => {
+  const make = (flag:unknown) => normalizeWidgets({lc:{type:'live_chart',endpoint:'series',wsEndpoint:'chart_stream_ws',extra_metadata:{chart_stream_v1:flag}}},'b').widgets[0];
+  expect(make(true).chartStreamV1).toBe(true);
+  expect(make('true').chartStreamV1).toBeUndefined();
+  expect(make(undefined).chartStreamV1).toBeUndefined();
 });

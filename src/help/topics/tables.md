@@ -160,12 +160,40 @@ Sending a table row**). These cells need a Rita URL and Context sharing on, and
 are plain on an off-limits card, in a single-dashboard window and on grouped or
 total rows.
 
+## Live grids
+
+A **live grid** (`live_grid`) is a table card that keeps a websocket open to
+its backend. It first asks the widget's ordinary endpoint for a snapshot of
+rows, then streams: each update is merged into the row with the same **symbol**
+(or whichever column the widget names), field by field, so a tick does not
+erase what the snapshot carried, and a symbol the snapshot never had is added.
+Sorting, filters, pins, column order and every cell treatment below work as on
+any other table, and are saved per card the same way.
+
+The subscription follows the card's **symbol** parameter. Editing it sends the
+new list over the socket already open rather than reconnecting, re-fetches the
+snapshot, and a symbol you remove loses its row instead of freezing at its last
+price. **Refresh** re-fetches the snapshot; the socket carries on. An update
+may arrive one row at a time or as a list of rows; anything else is ignored, so
+a frame the app cannot read never blanks the grid. A grid with no rows yet
+reads *No rows.* until the first update arrives.
+
+A dropped socket reconnects by itself, waiting a little longer each time (from
+half a second up to a minute). The first drop is written once to the log, with
+the socket address's query left off; later drops are not.
+
+If the grid's columns show a logo or a 52-week range, the grid also asks the
+backend's `symbol_meta` for its symbols and fills those columns in. A backend
+without `symbol_meta` is not an error: the grid is complete without logos, and
+says so once in the log. A grid whose columns show neither asks for nothing.
+
 ## What the backend controls
 
 A widget can describe its columns, and when it does the app honours: which
 field each column shows, its header text and tooltip, its data type (which
-picks the filter control), its starting width and resize bounds, whether it
-starts hidden, whether it starts pinned, and how its values are formatted.
+picks the filter control), which edge its content sits against (`align`), its
+starting width and resize bounds, whether it starts hidden, whether it starts
+pinned, and how its values are formatted.
 
 Formatting covers integers, percentages (`5.12 %`), normalised values scaled by
 a hundred, and years pulled out of ISO dates. A per-column decimal-places
@@ -180,8 +208,23 @@ matching rule wins, and colour rules override `greenRed` entirely. A
 area or bar chart, with high/low markers and a hover tooltip. Point values use
 the configured `yKey`, or `y` by default. A `hoverCard` column opens a small
 card when you point at the cell, and a `showCellChange` column flashes green or
-red when its value changes. Any other renderer a column asks for draws a plain
-cell rather than an error.
+red when its value changes, unless the column sets `enableCellChangeWs: false`.
+Any other renderer a column asks for draws a plain cell rather than an error.
+
+Three more declarations draw something other than text:
+
+- `logo` — the cell's own value is an image URL, and the cell shows the image.
+  A blank value or the literal `NA` draws nothing, and an image that fails to
+  load is hidden rather than shown broken.
+- `rangeBar` — a coloured track with the row's value marked on it, between the
+  row's `lowKey` and `highKey` fields. The marked value is the row's `valueKey`
+  field, or its `price` when the column names none. Two palettes: `week52`
+  (red to green, the default) and `day` (blue to orange). A value outside the
+  band sits at the end of the bar; a band whose ends are equal draws no bar.
+  The column needs no field of its own, and the ends are not labelled on the
+  bar: they are their own columns beside it.
+- `percentKey` — a second field shown in brackets after the value, read as a
+  fraction: a `change` of 1.24 with 0.034 reads `1.24 (3.4%)`.
 
 A widget can also declare a starting pivot under `data.table.pivot`: its Row
 Groups (`grouping`), Column Groups (`split`), date buckets and aggregation
@@ -371,4 +414,4 @@ table already exposes, which she can change for that session only.
 
 ---
 
-Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

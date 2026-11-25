@@ -130,6 +130,225 @@ describe("fs shim persistence (web preview)", () => {
     expect(calls.map(c => c.url).sort()).toEqual(["/state/chat.json", "/state/folders.json", "/state/folders.json"]);
   });
 
+  describe("a page that goes away within the debounce", () => {
+    // 2026-10-19: a tab renamed and then reloaded at once was lost -- the 500 ms debounce
+    // never ran, so nothing was sent. Hidden or unloading, pending saves go out at once,
+    // as keepalive requests, which the browser finishes after the page is gone.
+    const sent: { url: string; keepalive?: boolean; body?: string }[] = [];
+    beforeEach(() => {
+      sent.length = 0;
+      window.__bdobbPersist = true;
+      vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit = {}) => {
+        sent.push({ url, keepalive: init.keepalive, body: init.body as string | undefined });
+        return new Response(null, { status: 204 });
+      }));
+    });
+
+    it("sends what is pending at once on pagehide, with keepalive, and not again after", async () => {
+      const fs = await import("./fs");
+      await fs.writeTextFile("settings.json", '{"theme":"dark"}');
+      window.dispatchEvent(new Event("pagehide"));
+      expect(sent).toEqual([
+        { url: "/state/dashboards/preview.json", keepalive: true, body: '{"id":"preview"}' },
+        { url: "/state/settings.json", keepalive: true, body: '{"theme":"dark"}' },
+      ]);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(sent).toHaveLength(2);
+    });
+
+    it("does the same when the page is hidden (an iPad sent to the background)", async () => {
+      const fs = await import("./fs");
+      await fs.writeTextFile("settings.json", '{"theme":"dark"}');
+      const hidden = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+      document.dispatchEvent(new Event("visibilitychange"));
+      hidden.mockRestore();
+      expect(sent.map(s => [s.url, s.keepalive])).toEqual([
+        ["/state/dashboards/preview.json", true], ["/state/settings.json", true]]);
+    });
+
+    it("a hide during a running flush sends what that flush has not finished", async () => {
+      // Review 2026-10-19: flush() took its whole batch out of `dirty`, so a page unloaded
+      // while it awaited the first PUT lost the rest -- and the in-flight one is an
+      // ordinary request the unload cancels.
+      let release = (_: Response) => {};
+      vi.stubGlobal("fetch", vi.fn((url: string, init: RequestInit = {}) => {
+        sent.push({ url, keepalive: init.keepalive });
+        return init.keepalive ? Promise.resolve(new Response(null, { status: 204 })) : new Promise<Response>(r => { release = r; });
+      }));
+      const fs = await import("./fs");
+      await fs.writeTextFile("settings.json", '{"theme":"dark"}');
+      await vi.advanceTimersByTimeAsync(600); // the debounced flush is now stuck on its first PUT
+      expect(sent).toEqual([{ url: "/state/dashboards/preview.json", keepalive: false }]);
+      window.dispatchEvent(new Event("pagehide"));
+      expect(sent.slice(1)).toEqual([
+        { url: "/state/dashboards/preview.json", keepalive: true },
+        { url: "/state/settings.json", keepalive: true },
+      ]);
+      // Settle the stuck flush: every test's module keeps its listeners on the shared window.
+      release(new Response(null, { status: 204 }));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    it("a hide during a first save too big for keepalive sends none of it with keepalive", async () => {
+      // Re-review 2026-10-19: the budget check keyed on `mirrored`, which the first flush
+      // sets before it sends, so a hide mid-mirror skipped it and could land part of a store.
+      let stuck = true, release = (_: Response) => {};
+      vi.stubGlobal("fetch", vi.fn((url: string, init: RequestInit = {}) => {
+        sent.push({ url, keepalive: init.keepalive });
+        return init.keepalive || !stuck ? Promise.resolve(new Response(null, { status: 204 })) : new Promise<Response>(r => { release = r; });
+      }));
+      window.__bdobbSeed = { ...window.__bdobbSeed, "dashboards/big.json": JSON.stringify({ id: "big", pad: "x".repeat(70000) }) };
+      const fs = await import("./fs");
+      await fs.writeTextFile("settings.json", '{"theme":"dark"}');
+      await vi.advanceTimersByTimeAsync(600); // the first mirror is stuck on its first PUT
+      // A reload: hidden first, then pagehide. Neither may send part of an empty store.
+      const hidden = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+      document.dispatchEvent(new Event("visibilitychange"));
+      hidden.mockRestore();
+      window.dispatchEvent(new Event("pagehide"));
+      expect(sent.filter(s => s.keepalive)).toEqual([]);
+      stuck = false; // then let the mirror finish, so this module's listeners stay quiet later
+      release(new Response(null, { status: 204 }));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    it("once part of the first mirror has landed, a hide sends all the rest, however big", async () => {
+      // Re-review 2026-10-19: the store is already partial then, and only finishing it
+      // keeps the next load from replacing the seed with part of it.
+      let plain = 0, release = (_: Response) => {};
+      vi.stubGlobal("fetch", vi.fn((url: string, init: RequestInit = {}) => {
+        sent.push({ url, keepalive: init.keepalive });
+        // The second ordinary PUT (zbig.json) stalls: preview.json has landed by then.
+        return init.keepalive || ++plain !== 2 ? Promise.resolve(new Response(null, { status: 204 })) : new Promise<Response>(r => { release = r; });
+      }));
+      window.__bdobbSeed = { ...window.__bdobbSeed, "dashboards/zbig.json": JSON.stringify({ id: "zbig", pad: "x".repeat(70000) }) };
+      const fs = await import("./fs");
+      await fs.writeTextFile("settings.json", '{"theme":"dark"}');
+      await vi.advanceTimersByTimeAsync(600);
+      expect(sent.map(s => s.url)).toEqual(["/state/dashboards/preview.json", "/state/dashboards/zbig.json"]);
+      window.dispatchEvent(new Event("pagehide"));
+      expect(sent.filter(s => s.keepalive).map(s => s.url)).toEqual(["/state/dashboards/zbig.json", "/state/settings.json"]);
+      release(new Response(null, { status: 204 }));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    it("on hide, a first save too big for keepalive sends nothing rather than part of the store", async () => {
+      // A partial store would replace the seed on the next load; nothing sent keeps the seed.
+      window.__bdobbSeed = { ...window.__bdobbSeed, "dashboards/big.json": JSON.stringify({ id: "big", pad: "x".repeat(70000) }) };
+      const fs = await import("./fs");
+      await fs.writeTextFile("settings.json", '{"theme":"dark"}');
+      window.dispatchEvent(new Event("pagehide"));
+      expect(sent).toEqual([]);
+    });
+
+    it("still sends, without keepalive, a body the browser refuses keepalive for", async () => {
+      vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit = {}) => {
+        if (init.keepalive) throw new TypeError("keepalive request body is too large");
+        sent.push({ url, keepalive: init.keepalive });
+        return new Response(null, { status: 204 });
+      }));
+      const fs = await import("./fs");
+      await fs.writeTextFile("settings.json", '{"theme":"dark"}');
+      window.dispatchEvent(new Event("pagehide"));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(sent.map(s => s.url)).toEqual(["/state/dashboards/preview.json", "/state/settings.json"]);
+    });
+  });
+
+  describe("a reload that reads the store before the hide-time save lands", () => {
+    // 2026-10-19, live: the keepalive PUT reached the NAS, but the reloaded page's own state
+    // read got there first, so the page showed the old copy (and would save it back). What
+    // a hide sends is kept for this tab in sessionStorage and laid over the seed on load.
+    const KEY = "bdobb-unsaved";
+    beforeEach(() => { sessionStorage.clear(); window.__bdobbPersist = true; });
+    afterEach(() => sessionStorage.clear());
+
+    it("keeps what a hide sends for this tab", async () => {
+      const fs = await import("./fs");
+      await fs.writeTextFile("settings.json", '{"theme":"dark"}');
+      window.dispatchEvent(new Event("pagehide"));
+      const kept = JSON.parse(sessionStorage.getItem(KEY) ?? "null");
+      expect(kept.files["settings.json"]).toBe('{"theme":"dark"}');
+    });
+
+    it("a reload's hidden-then-pagehide pair keeps every file in the copy", async () => {
+      // Review 2026-10-19: with a flush stuck on one file, pagehide's second flushNow saw only
+      // that file and kept just it, dropping what visibilitychange had kept a moment before.
+      let stuck = true, release = (_: Response) => {};
+      vi.stubGlobal("fetch", vi.fn((_url: string, init: RequestInit = {}) =>
+        init.keepalive || !stuck ? Promise.resolve(new Response(null, { status: 204 })) : new Promise<Response>(r => { release = r; })));
+      const fs = await import("./fs");
+      await fs.writeTextFile("settings.json", '{"theme":"dark"}');
+      await vi.advanceTimersByTimeAsync(600); // stuck on dashboards/preview.json
+      const hidden = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+      document.dispatchEvent(new Event("visibilitychange"));
+      hidden.mockRestore();
+      window.dispatchEvent(new Event("pagehide"));
+      const kept = JSON.parse(sessionStorage.getItem(KEY) ?? "null");
+      expect(Object.keys(kept.files).sort()).toEqual(["dashboards/preview.json", "settings.json"]);
+      stuck = false; // settle the stuck flush so this module's listeners stay quiet later
+      release(new Response(null, { status: 204 }));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    it("after a lapsed session sends the page to sign-in, a hide neither sends nor keeps", async () => {
+      // CI 2026-10-19 (web/browser-smoke.mjs): an edit made once the session had lapsed was
+      // kept on the hide that the redirect to sign-in caused, laid back over the seed after
+      // signing in, and saved -- an edit the server refused came back.
+      const fs = await import("./fs");
+      const http = await import("./http");
+      await fs.writeTextFile("settings.json", '{"theme":"dark"}');
+      vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit = {}) => {
+        calls.push({ method: init.method ?? "GET", url });
+        return new Response(null, { status: 401 });
+      }));
+      await http.fetch("/api/v1/equity/price/quote"); // the widget refetch meets the lapsed session
+      expect(location.assign).toHaveBeenCalledWith("/auth/signin");
+      calls.length = 0;
+      window.dispatchEvent(new Event("pagehide"));
+      expect(calls).toEqual([]);
+      expect(sessionStorage.getItem(KEY)).toBeNull();
+    });
+
+    it("lays a recent copy over a stale seed and saves it again", async () => {
+      sessionStorage.setItem(KEY, JSON.stringify({ at: Date.now(), files: { "settings.json": '{"theme":"dark"}' } }));
+      const fs = await import("./fs");
+      expect(await fs.readTextFile("settings.json")).toBe('{"theme":"dark"}');
+      expect(sessionStorage.getItem(KEY)).toBeNull();
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(calls.find(c => c.url === "/state/settings.json")?.body).toBe('{"theme":"dark"}');
+    });
+
+    it("ignores a copy older than a minute, or one the preview may not save", async () => {
+      sessionStorage.setItem(KEY, JSON.stringify({ at: Date.now() - 61_000, files: { "settings.json": '{"old":true}' } }));
+      let fs = await import("./fs");
+      expect(await fs.readTextFile("settings.json")).toBe("{}");
+      vi.resetModules();
+      delete window.__bdobbPersist;
+      sessionStorage.setItem(KEY, JSON.stringify({ at: Date.now(), files: { "settings.json": '{"old":true}' } }));
+      fs = await import("./fs");
+      expect(await fs.readTextFile("settings.json")).toBe("{}");
+    });
+
+    it("forgets the copy once the page is back, or a later save has gone through", async () => {
+      const fs = await import("./fs");
+      await fs.writeTextFile("settings.json", '{"theme":"dark"}');
+      window.dispatchEvent(new Event("pagehide"));
+      expect(sessionStorage.getItem(KEY)).not.toBeNull();
+      const shown = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+      document.dispatchEvent(new Event("visibilitychange"));
+      shown.mockRestore();
+      expect(sessionStorage.getItem(KEY)).toBeNull();
+      window.dispatchEvent(new Event("pagehide")); // nothing pending: nothing kept
+      await fs.writeTextFile("settings.json", '{"theme":"light"}');
+      window.dispatchEvent(new Event("pagehide"));
+      expect(sessionStorage.getItem(KEY)).not.toBeNull();
+      await fs.writeTextFile("folders.json", "[]");
+      await vi.advanceTimersByTimeAsync(1000); // an ordinary save that goes through
+      expect(sessionStorage.getItem(KEY)).toBeNull();
+    });
+  });
+
   it("says so on the page when something could not be saved, and takes it back when it is", async () => {
     // Review 2026-09-20: a refused save (a file over the store's 256 KiB, a store that is
     // down) was silent, and the bar went on saying "Changes are saved to your account".
@@ -263,7 +482,7 @@ describe("socket shim (web preview tickets)", () => {
     expect(ws.readyState).toBe(0);
     await settle();
     expect(fetchSpy.mock.calls[0][0]).toBe("/socket-ticket?for=" + encodeURIComponent("/news/ws/news"));
-    expect(fetchSpy.mock.calls[0][1]).toEqual({ cache: "no-store" });
+    expect(fetchSpy.mock.calls[0][1]).toEqual({ cache: "no-store", signal: expect.any(AbortSignal) });
     const real = FakeSocket.last!;
     expect(real.url).toBe(gatewayUrl);
     real.open();
@@ -280,6 +499,45 @@ describe("socket shim (web preview tickets)", () => {
     expect(closed).toHaveBeenCalledTimes(1);
     // A caller that compares against the constructor's constant still can.
     expect(globalThis.WebSocket.OPEN).toBe(1);
+  });
+
+  // Ep. 10: the live grid's socket, on the seeded preview-grid backend
+  // (<origin>/grid + wsEndpoint live_grid_ws), asks for its own ticket the same
+  // way; the vendored policy decides whether one is issued.
+  it.each(["live_grid_ws", "chart_stream_ws"])("asks for a fresh ticket over /grid/%s", async (endpoint) => {
+    window.__bdobbSocketTickets = true;
+    const fetchSpy = ticketed();
+    vi.stubGlobal("fetch", fetchSpy);
+    await import("./socket");
+    new globalThis.WebSocket(`wss://preview.example.com/grid/${endpoint}`);
+    await settle();
+    expect(fetchSpy.mock.calls[0][0]).toBe("/socket-ticket?for=" + encodeURIComponent(`/grid/${endpoint}`));
+    new globalThis.WebSocket(`wss://preview.example.com/grid/${endpoint}`);
+    await settle();
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("closes, so the caller retries, when the ticket request never answers", async () => {
+    window.__bdobbSocketTickets = true;
+    const deadline = new AbortController();
+    const timeout = vi.spyOn(AbortSignal, "timeout").mockReturnValue(deadline.signal);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(
+        (_url: string, init: RequestInit) =>
+          new Promise((_resolve, reject) => init.signal!.addEventListener("abort", () => reject(new Error("timeout")))),
+      ),
+    );
+    await import("./socket");
+    const ws = new globalThis.WebSocket("wss://preview.example.com/grid/live_grid_ws");
+    const closed = vi.fn();
+    ws.onclose = closed;
+    expect(timeout).toHaveBeenCalledWith(10_000);
+    deadline.abort();
+    await settle();
+    expect(closed).toHaveBeenCalledTimes(1);
+    expect(ws.readyState).toBe(3);
+    timeout.mockRestore();
   });
 
   it("asks for a fresh ticket for every socket: a ticket is single use", async () => {

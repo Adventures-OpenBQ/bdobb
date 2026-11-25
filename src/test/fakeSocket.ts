@@ -3,8 +3,10 @@
 
 /**
  * A spec-accurate stand-in for `WebSocket` for a test that stubs the global
- * constructor: the web preview's socket shim (`src/browser-shim/shims.test.ts`)
- * and the News wire's ticketed path (`src/hooks/useNewsWire.tickets.test.tsx`).
+ * constructor: the web preview's socket shim (`src/browser-shim/shims.test.ts`),
+ * the News wire's ticketed path (`src/hooks/useNewsWire.tickets.test.tsx`) and,
+ * since v10, the live grid (`LiveGridRenderer.test.tsx`), which drives the real
+ * useReconnectingSocket through it.
  * `useNewsWire.test.tsx` predates it and keeps its own richer fake, whose seed
  * and reply plumbing this one has no use for.
  */

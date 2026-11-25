@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describe, expect, it } from 'vitest';
+import { liveDailyPriceDataset } from '../../../test/fixtures/liveDailyPrices';
 import { buildDrawdown } from './drawdown';
 import { drawdownOptions, priceDataset } from './fixtures';
 
@@ -11,6 +12,51 @@ const row = (day: number, price: number | null, symbol = 'A') => ({
 });
 
 describe('buildDrawdown', () => {
+  it('keeps the observed peak and disconnects line and fill at a live price gap', () => {
+    const symbol = 'AAPL.US';
+    const rows = [row(5, 100, symbol), row(6, 120, symbol), row(8, 90, symbol), row(9, 150, symbol)];
+    const dataset = liveDailyPriceDataset(rows, [symbol], { omissions: [[symbol, '2026-01-07']] });
+    const result = buildDrawdown(dataset, {
+      ...drawdownOptions, symbols: [symbol], fields: { date: 'date', price: 'adjusted_close' },
+    }, context);
+    expect(result).toMatchObject({
+      ok: true,
+      notes: expect.arrayContaining([
+        'Drawdown uses observed adjusted prices in the loaded history; exchange-session completeness and peaks during missing observations are unknown.',
+      ]),
+      figure: { layout: { title: { text: 'Drawdown from peak in loaded history' } }, data: [
+        { fill: 'toself', connectgaps: false, showlegend: false,
+          x: ['2026-01-05', '2026-01-05', '2026-01-06', '2026-01-06', null,
+            '2026-01-08', '2026-01-08', '2026-01-09', '2026-01-09'],
+          y: [0, 0, 0, 0, null, 0, -.25, 0, 0] },
+        { name: symbol, connectgaps: false, y: [0, 0, null, -.25, 0] },
+      ] },
+    });
+  });
+
+  it('reports unavailable live selections and refuses when none survive', () => {
+    const symbols = ['AAPL.US', 'MCD.US'];
+    const dataset = liveDailyPriceDataset([row(5, 100, symbols[0])], symbols);
+    const result = buildDrawdown(dataset, { ...drawdownOptions, symbols }, context);
+    expect(result).toMatchObject({
+      ok: true,
+      notes: expect.arrayContaining(['Omitted 1 selected symbol(s) (MCD.US) with no valid daily prices in the delivered history.']),
+      figure: { data: [{ legendgroup: 'AAPL.US' }, { name: 'AAPL.US', y: [0] }] },
+    });
+    expect(buildDrawdown(dataset, { ...drawdownOptions, symbols: ['MCD.US'] }, context)).toMatchObject({
+      ok: false, refused: true, message: expect.stringMatching(/Omitted 1 selected symbol.*MCD\.US/),
+    });
+  });
+
+  it('allows a selection of more than twelve listings and reports the unavailable one', () => {
+    const symbols = Array.from({ length: 12 }, (_, index) => `A${index}.US`);
+    const dataset = liveDailyPriceDataset(symbols.map(symbol => row(5, 100, symbol)), symbols);
+    const result = buildDrawdown(dataset, { ...drawdownOptions, symbols: [...symbols, 'MCD.US'] }, context);
+    if (!result.ok) throw new Error(result.message);
+    expect(result.figure.data).toHaveLength(24);
+    expect(result.notes).toContain('Omitted 1 selected symbol(s) (MCD.US) with no valid daily prices in the delivered history.');
+  });
+
   it('tracks the loaded peak from unsorted observations', () => {
     const dataset = priceDataset([row(8, 90), row(5, 100), row(7, 120), row(6, 80)]);
     const result = buildDrawdown(dataset, drawdownOptions, context);

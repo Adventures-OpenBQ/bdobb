@@ -6,10 +6,13 @@
  * Requires the web build, Playwright Chromium and openssl; never calls GitHub.
  *
  * It drives what this line's policy admits (web/policy.mjs, vendored from
- * openbq-docker v8.0.0): the `/api` family, the `/news` family and its one
- * socket, `/state`, `/preview-bootstrap.js`, `/socket-ticket` (which issues for
- * `/news/ws/news` and 404s for anything else) and the static bundle. There is
- * no `/ai` and no `/grid` family, so nothing below fakes one.
+ * openbq-docker v10.0.0): the `/api` family, the `/news` family and its socket,
+ * live-grid's `/grid` family and its socket (Ep. 10, donor c183f880), `/state`,
+ * `/preview-bootstrap.js`, `/socket-ticket` (which issues for the policy's
+ * socket targets and 404s for anything else), the static bundle and, with
+ * PREVIEW_RITA, `/ai` (Rita's document and one streamed turn) and with PREVIEW_MCP, `/mcp`. The gateway is faked at the page's edge: it admits a socket only on
+ * a ticket that verifies for exactly its target, once (the gateway's single
+ * use), and re-validates every grid frame as the gateway does.
  */
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
@@ -22,7 +25,7 @@ import { join } from "node:path";
 import { chromium } from "@playwright/test";
 import { encode } from "@auth/core/jwt";
 import { createPreviewServer } from "./server.mjs";
-import { socketTicketValid } from "./policy.mjs";
+import { liveGridSubscription, socketTicketNonce } from "./policy.mjs";
 import { readConfig, SESSION_COOKIE } from "./config.mjs";
 
 /** The one approved feed this run is configured with, and the id it maps to. */
@@ -45,6 +48,8 @@ try {
     BACKEND_GATEWAY_ORIGIN: "https://gateway.example.com",
     BACKEND_GATEWAY_TOKEN: randomBytes(32).toString("base64url"),
     NEWS_APPROVED_FEEDS_JSON: JSON.stringify({ [FEED_URL]: FEED_ID }),
+    PREVIEW_RITA: "true",
+    PREVIEW_MCP: "true",
   });
   /** The subscribe reply and one article, in the shapes src/lib/news.ts parses. */
   const feedRecords = { feeds: [{ id: FEED_ID, url: FEED_URL, title: "Example wire", favicon: null }] };
@@ -67,10 +72,31 @@ try {
       ],
     },
   };
+  // live-grid's quote grid, cut down from its widgets.json (openbq-docker v10.0.0
+  // live-grid/widgets.json `live_grid`): the identity column and the price.
+  const gridCatalogue = {
+    live_grid: {
+      name: "Live quotes", description: "Real-time prices.", category: "Live",
+      type: "live_grid", endpoint: "live_grid", wsEndpoint: "live_grid_ws",
+      gridData: { w: 40, h: 12 },
+      data: { wsRowIdColumn: "symbol", table: { showAll: false, columnsDefs: [
+        { field: "symbol", headerName: "Symbol", pinned: "left" },
+        { field: "price", headerName: "Last" }] } },
+      params: [{ paramName: "symbol", label: "Symbols", type: "text", value: "AAPL" }],
+    },
+  };
   // Every upstream path the relay actually asked for, in order.
   const forwarded = [];
-  // The /news/ws/news targets a verifying ticket was presented for.
+  // The socket targets a verifying ticket was presented for, and the nonces the fake
+  // gateway has admitted (single use, as the gateway's own `admitted` map).
   const ticketed = [];
+  const admitted = new Set();
+  // Every grid frame the fake gateway received, rebuilt as the gateway rebuilds it.
+  const gridFrames = [];
+  // Every JSON-RPC message that reached the door's /mcp, with its session and principal.
+  const mcpMessages = [];
+  // What reached the door's /ai/v1/query: the gateway headers and the body the page sent.
+  const ritaQueries = [];
   // The gateway's per-user state store, in memory: what the page saves, and is seeded from.
   const saved = new Map();
   const app = createPreviewServer({ config, fetchUpstream: async (url, init = {}) => {
@@ -87,6 +113,31 @@ try {
     // The /api manifests are openbq-api's own documents, forwarded as-is.
     if (parsed.pathname === "/api/apps.json") return json([]);
     if (parsed.pathname === "/api/widgets.json") return json(quoteCatalogue);
+    // live-grid's own documents and its snapshot, through the door's /grid family.
+    if (parsed.pathname === "/grid/widgets.json") return json(gridCatalogue);
+    // Rita through the door's /ai: her document, then her streamed answer to the one query.
+    if (parsed.pathname === "/ai/agents.json") {
+      return json({ openbb_agent_rita: { name: "Agent Rita", endpoints: { query: "/v1/query" }, features: { streaming: true } } });
+    }
+    if (parsed.pathname === "/ai/v1/query") {
+      ritaQueries.push({ headers: init.headers, body: JSON.parse(init.body.toString()) });
+      return new Response('event: copilotMessageChunk\ndata: {"delta":"Rita answered through the door."}\n\n',
+        { headers: { "content-type": "text/event-stream" } });
+    }
+    // openbq-mcp through the door's /mcp: a session on initialize, then one read-only tool.
+    if (parsed.pathname === "/mcp") {
+      const message = JSON.parse(init.body.toString());
+      mcpMessages.push({ method: message.method, session: init.headers["Mcp-Session-Id"], principal: init.headers["X-Preview-Principal"] });
+      if (message.id === undefined) return new Response(null, { status: 202 });
+      const result = message.method === "initialize"
+        ? { protocolVersion: "2025-06-18", capabilities: { tools: {} }, serverInfo: { name: "OpenBB MCP", version: "test" } }
+        : message.method === "tools/list" ? { tools: [{ name: "search_tools", description: "Search for tools.", inputSchema: { type: "object", properties: {} } }] } : {};
+      return new Response(`event: message\ndata: ${JSON.stringify({ jsonrpc: "2.0", id: message.id, result })}\n\n`,
+        { headers: { "content-type": "text/event-stream", ...(message.method === "initialize" ? { "mcp-session-id": "smoke-session" } : {}) } });
+    }
+    if (parsed.pathname === "/grid/live_grid") {
+      return json(parsed.searchParams.get("symbol").split(",").map((symbol, i) => ({ symbol, price: 123.45 + i })));
+    }
     return new Response("unrouted", { status: 404 });
   }, connectUpstream: () => {
     // The page's news socket opens on the GATEWAY, on a ticket (the shim), so this
@@ -114,8 +165,21 @@ try {
   await context.routeWebSocket(/^wss:\/\/gateway\.example\.com\//, ws => {
     const cut = ws.url().search(/[?&]ticket=/);
     const target = ws.url().slice("wss://gateway.example.com".length, cut);
-    if (cut < 0 || !socketTicketValid(config.token, target, ws.url().slice(cut + 8))) return ws.close({ code: 1008 });
+    const nonce = cut < 0 ? null : socketTicketNonce(config.token, target, ws.url().slice(cut + 8));
+    if (!nonce || admitted.has(nonce)) return ws.close({ code: 1008 });
+    admitted.add(nonce);
     ticketed.push(target);
+    if (target === "/grid/live_grid_ws") {
+      // Every grid frame is re-validated (policy.mjs liveGridSubscription) and answered
+      // with one tick for the first symbol it names.
+      ws.onMessage(frame => {
+        const rebuilt = liveGridSubscription(frame);
+        if (!rebuilt) return ws.close({ code: 1008 });
+        gridFrames.push(rebuilt);
+        ws.send(JSON.stringify({ symbol: JSON.parse(rebuilt).params.symbol.split(",")[0], price: 234.56 }));
+      });
+      return;
+    }
     ws.onMessage(frame => {
       // The gateway rebuilds the frame from the approved urls (policy.mjs
       // newsSubscription); this checks the page sent exactly one, for the approved feed.
@@ -172,14 +236,57 @@ try {
   await page.getByRole("tab", { name: "News", exact: true }).click();
   await page.getByText("A headline off the wire").first().waitFor();
   assert.deepEqual(ticketed, ["/news/ws/news"], JSON.stringify(ticketed));
+  // The headline can arrive over the socket before the history page is relayed: wait for it, bounded.
+  for (let i = 0; i < 50 && !forwarded.includes("/news/api/news"); i++) await new Promise(r => setTimeout(r, 100));
   assert.ok(forwarded.includes("/news/api/news"), JSON.stringify(forwarded));
-  // /news/ws/news is the ONLY target this line will ticket.
-  const issued = await context.request.get(origin + "/socket-ticket?for=" + encodeURIComponent("/news/ws/news"));
-  assert.equal(issued.status(), 200);
-  assert.ok((await issued.json()).url.startsWith("wss://gateway.example.com/news/ws/news?ticket="));
-  for (const asked of ["/grid/live_grid_ws", "/news/ws/news?x=1", "/ai/v1/query", "/"]) {
+  // The seeded Live quotes tab (the vendored v10.0.0 policy serves the grid socket): the
+  // snapshot over /grid/live_grid, then a tick over a socket the shim opened on the
+  // GATEWAY on a ticket that verified for /grid/live_grid_ws, with a frame the gateway's
+  // own rule accepts.
+  await page.getByRole("tab", { name: "Live quotes", exact: true }).click();
+  await page.getByText("BTC-USD", { exact: true }).first().waitFor();
+  await page.getByText(/234\.56/).first().waitFor();
+  assert.ok(forwarded.includes("/grid/widgets.json"), JSON.stringify(forwarded));
+  assert.ok(forwarded.includes("/grid/live_grid"), JSON.stringify(forwarded));
+  assert.deepEqual(ticketed, ["/news/ws/news", "/grid/live_grid_ws"], JSON.stringify(ticketed));
+  assert.deepEqual(gridFrames, ['{"params":{"symbol":"AAPL,MSFT,NVDA,BTC-USD,EURUSD"}}']);
+  // The ticket route issues for the policy's targets and nothing else.
+  for (const target of ["/news/ws/news", "/grid/live_grid_ws"]) {
+    const issued = await context.request.get(origin + "/socket-ticket?for=" + encodeURIComponent(target));
+    assert.equal(issued.status(), 200, target);
+    assert.ok((await issued.json()).url.startsWith(`wss://gateway.example.com${target}?ticket=`), target);
+  }
+  for (const asked of ["/grid/live_grid_ws?token=x", "/grid/live_grid_ws?symbol=AAPL", "/news/ws/news?x=1", "/ai/v1/query", "/"]) {
     assert.equal((await context.request.get(origin + "/socket-ticket?for=" + encodeURIComponent(asked))).status(), 404, asked);
   }
+  // Rita (PREVIEW_RITA): the seed points the Agents URL at this origin's /ai, so the pane is
+  // there, her document is found through the relay, and a turn streams back from the door.
+  const rita = page.getByRole("complementary", { name: "Rita AI pane" });
+  await rita.hover();
+  // Lock only once the hover has opened it (e2e/rita.spec.ts): locking a closed pane keeps it closed.
+  await page.locator('[aria-label="Rita AI pane"][data-open="true"]').waitFor();
+  await rita.getByRole("button", { name: "Lock", exact: true }).click();
+  await page.getByRole("img", { name: "Rita online" }).waitFor();
+  await page.getByRole("textbox", { name: "Message Rita" }).fill("Are you there?");
+  await page.keyboard.press("Enter");
+  await page.getByText("Rita answered through the door.").waitFor();
+  assert.ok(forwarded.includes("/ai/agents.json"), JSON.stringify(forwarded));
+  assert.equal(ritaQueries.length, 1);
+  assert.equal(ritaQueries[0].headers["X-Rita-Principal"], "github:42");
+  assert.equal(ritaQueries[0].body.messages.at(-1).content, "Are you there?");
+  await rita.getByRole("button", { name: "Lock", exact: true }).click();
+  await page.mouse.move(10, 500);
+  // The AI Library's seeded MCP server (PREVIEW_MCP) at this origin's /mcp: Check runs the
+  // app's own MCP client through the relay -- initialize, its session on the next call, the tools.
+  await page.getByRole("button", { name: "AI Library", exact: true }).click();
+  const library = page.getByRole("dialog", { name: "AI Library" });
+  await library.getByRole("tab", { name: "MCP Servers" }).click();
+  await library.getByRole("button", { name: `Check ${origin}/mcp` }).click();
+  await library.getByText("1 tools", { exact: true }).waitFor();
+  assert.equal(mcpMessages[0].method, "initialize");
+  assert.ok(mcpMessages.some(m => m.method === "tools/list" && m.session === "smoke-session"), JSON.stringify(mcpMessages));
+  assert.ok(mcpMessages.every(m => m.principal === "github:42"), JSON.stringify(mcpMessages));
+  await page.keyboard.press("Escape");
   // Back to Grouping: only the ACTIVE tab's cards are mounted.
   await grouping.click();
   await echoed("MSFT");
@@ -193,16 +300,20 @@ try {
   // pending from the edit above can beat it, and then the page is already
   // leaving while the fill waits on its input. Either way is the behaviour
   // under test, so the edit is best-effort and the sign-in page is the assertion.
+  // AMZN, not NVDA: the seeded Live quotes grid names NVDA in its symbols, so NVDA in the
+  // saved store would no longer say anything about this edit. AMZN is in no seed.
+  assert.ok(!saved.get("dashboards/preview.json").includes("AMZN"));
   const signedOut = page.waitForURL(/\/auth\/signin/);
-  await echoCard.getByRole("textbox", { name: "Ticker" }).fill("NVDA", { timeout: 5000 })
+  await echoCard.getByRole("textbox", { name: "Ticker" }).fill("AMZN", { timeout: 5000 })
     .then(() => echoCard.getByRole("textbox", { name: "Ticker" }).press("Enter", { timeout: 5000 }))
     .catch(() => {});
   await signedOut;
+
   await context.addCookies(session);
   await page.goto(origin);
   await grouping.click();
   await echoed("MSFT");
-  assert.ok(!saved.get("dashboards/preview.json").includes("NVDA"));
+  assert.ok(!saved.get("dashboards/preview.json").includes("AMZN"));
   await page.getByRole("link", { name: "Sign out", exact: true }).click();
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await page.getByRole("link", { name: "Continue with GitHub" }).waitFor();
@@ -217,7 +328,7 @@ try {
   /* eslint-enable no-undef */
   assert.deepEqual(errors, []);
   assert.deepEqual(external, []);
-  console.log("PASS: HTTPS login form, private assets, forwarded /api catalogue, seeded built-ins dashboard, per-user state saved + reseeded on reload, the News card's wire over a ticketed gateway socket plus its /news/api/news seed, the ticket route refusing every other target, lapsed session goes to sign-in, CSRF logout, mobile login; no external requests.");
+  console.log("PASS: HTTPS login form, private assets, forwarded /api catalogue, seeded built-ins dashboard, per-user state saved + reseeded on reload, the News card's wire over a ticketed gateway socket plus its /news/api/news seed, the Live quotes grid's /grid/live_grid snapshot and a tick over a ticketed, single-use gateway socket, the ticket route refusing every other target, a Rita turn streamed through /ai with the session's principal, the AI Library's seeded MCP server checked through /mcp, lapsed session goes to sign-in, CSRF logout, mobile login; no external requests.");
 } finally {
   await browser?.close();
   if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }

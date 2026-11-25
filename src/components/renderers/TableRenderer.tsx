@@ -31,6 +31,7 @@ import { fillRowTemplate } from "../../lib/rowTemplate";
 import { sparklineValues } from "../../lib/sparkline";
 import { HoverCardCell } from "./HoverCardCell";
 import { SparklineCell } from "./SparklineCell";
+import { RangeBar } from "./RangeBar";
 import {
   COLUMN_DRAG_TYPE,
   effectivePinned,
@@ -285,6 +286,19 @@ type ViewColumn = TableColumn & { groupPath?: string[]; source?: string };
 /** Hoisted: an empty column list must not be a new identity on every render. */
 const NO_COLUMNS: TableColumn[] = [];
 
+/**
+ * The key a cell-change flash is tracked under: the row's identity column, or
+ * its data index when there is none or the row lacks it (a live grid's id-less
+ * seed rows, which would otherwise share one "undefined" key and flash each
+ * other). `#` keeps an index apart from an id that happens to be a number.
+ * Used by both the change pass and the render, so the two cannot drift.
+ */
+function flashRowKey(row: Row, index: number, rowIdColumn: string | undefined): string {
+  if (!rowIdColumn) return String(index);
+  const id = Object.hasOwn(row, rowIdColumn) ? row[rowIdColumn] : undefined;
+  return id === undefined || id === null ? `#${index}` : String(id);
+}
+
 export function TableRenderer({
   data,
   columns,
@@ -450,14 +464,49 @@ function TableCell(ctx: CellContext<Row, unknown>) {
   // unpivoted table — fall through untouched.
   const pivotRow = rowMeta?.[ctx.row.index];
   if (pivotRow && pivotRow.kind !== "leaf" && value === undefined) return "";
-  if ((!pivotRow || pivotRow.kind === "leaf") && column.sparkline && Array.isArray(value)) {
+  const leaf = !pivotRow || pivotRow.kind === "leaf";
+  const original = ctx.row.original;
+  if (leaf && column.sparkline && Array.isArray(value)) {
     const nums = sparklineValues(value, column.sparkline);
     if (nums.length > 0) return <SparklineCell values={nums} config={column.sparkline} />;
   }
+  // A range bar and a logo read OTHER keys of a real row (or its own URL), so
+  // a pivot's group or total row -- aggregates, not a row -- draws neither.
+  if (leaf && column.rangeBar) {
+    const { lowKey, highKey, valueKey, palette } = column.rangeBar;
+    // Object.hasOwn, as everywhere a row is read by a computed key: `row` came
+    // back from JSON.parse and inherits Object.prototype.
+    const at = (key: string) => (Object.hasOwn(original, key) ? original[key] : undefined);
+    return <RangeBar low={at(lowKey)} high={at(highKey)} value={at(valueKey)} palette={palette} />;
+  }
+  // A logo column IS the image: no text beside it. A blank value or the
+  // literal "NA" (forex and crypto have no logo) draws nothing rather than a
+  // broken-image glyph or a raw URL; a URL that fails to load hides itself.
+  if (leaf && column.isLogo) {
+    if (typeof value !== "string" || value === "" || value === "NA") return null;
+    return (
+      <img
+        className="cell-logo"
+        src={value}
+        alt=""
+        loading="lazy"
+        onError={(e) => {
+          e.currentTarget.style.visibility = "hidden";
+        }}
+      />
+    );
+  }
   const text = formatCell(value, name, maxDecimalPlaces, undefined, rowFormats?.get(ctx.row.id)?.[column.field] ?? column.format);
-  const shown = column.renderFn.includes("titleCase") ? titleCase(text) : text;
-  if (!column.hoverCard || (pivotRow && pivotRow.kind !== "leaf")) return shown;
-  const original = ctx.row.original;
+  const titled = column.renderFn.includes("titleCase") ? titleCase(text) : text;
+  // A percent companion decorates the value rather than replacing it, so
+  // `change` reads "1.24 (3.40%)" in one cell. The row holds a fraction
+  // (0.034), formatted with the column's own decimalPlaces.
+  const percent = leaf && column.percentKey && Object.hasOwn(original, column.percentKey) ? original[column.percentKey] : undefined;
+  const shown =
+    typeof percent === "number" && Number.isFinite(percent)
+      ? `${titled} (${formatCell(percent * 100, name, maxDecimalPlaces, undefined, { decimalPlaces: column.format?.decimalPlaces })}%)`
+      : titled;
+  if (!column.hoverCard || !leaf) return shown;
   const source = Object.hasOwn(original, column.field) ? original[column.field] : undefined;
   return <HoverCardCell text={shown} card={column.hoverCard} source={source} />;
 }
@@ -844,7 +893,7 @@ function VirtualTable({
     // otherwise read an inherited function.
     const own = (row: Row, field: string) => (Object.hasOwn(row, field) ? row[field] : undefined);
     rows.forEach((row, i) => {
-      const rowKey = rowIdColumn ? String(own(row, rowIdColumn)) : String(i);
+      const rowKey = flashRowKey(row, i, rowIdColumn);
       for (const col of columns) {
         if (!col.cellChange?.enabled) continue;
         const key = `${rowKey}|${col.field}`;
@@ -1408,7 +1457,13 @@ function VirtualTable({
                   <th
                     key={header.id}
                     data-field={header.column.id}
-                    className={side ? `pin-${side}${execution && side === "left" && header.column.id === columnPinning.left?.at(-1) ? " pin-left-last" : ""}` : undefined}
+                    className={
+                      [
+                        side ? `pin-${side}${execution && side === "left" && header.column.id === columnPinning.left?.at(-1) ? " pin-left-last" : ""}` : null,
+                        // columnsDefs `align`: the label tracks its own numbers.
+                        column.align ? `align-${column.align}` : null,
+                      ].filter((c): c is string => c !== null).join(" ") || undefined
+                    }
                     title={column?.tooltip}
                     // "none" included: aria-sort is what tells a screen reader
                     // the header sorts at all, and every accessor column does.
@@ -1590,9 +1645,7 @@ function VirtualTable({
             // row.index is the DATA index, which is what the showCellChange
             // effect keys by; item.index is the position after sort/filter.
             const original = row.original as Row;
-            const rowKey = rowIdColumn
-              ? String(Object.hasOwn(original, rowIdColumn) ? original[rowIdColumn] : undefined)
-              : String(row.index);
+            const rowKey = flashRowKey(original, row.index, rowIdColumn);
             return (
               <tr
                 key={row.id}
@@ -1626,7 +1679,7 @@ function VirtualTable({
                   // of which this codebase has none in product code.
                   const click = column?.cellClick;
                   const agentAction = column?.sendToAgent;
-                  const classes = [execution?.statement && cell.column.id === LABEL_FIELD ? "statement-label" : null, side ? `pin-${side}` : null, execution && side === "left" && cell.column.id === columnPinning.left?.at(-1) ? "pin-left-last" : null, error ? "cell-error" : visual.className ?? null].filter(
+                  const classes = [execution?.statement && cell.column.id === LABEL_FIELD ? "statement-label" : null, side ? `pin-${side}` : null, execution && side === "left" && cell.column.id === columnPinning.left?.at(-1) ? "pin-left-last" : null, error ? "cell-error" : visual.className ?? null, column?.align ? `align-${column.align}` : null].filter(
                     (c): c is string => c !== null,
                   );
                   /* The same pivot-leaf guard the cell-click branch below

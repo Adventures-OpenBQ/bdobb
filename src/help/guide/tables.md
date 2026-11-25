@@ -52,9 +52,27 @@ The `⋯` menu's **Reset table** clears the card's whole saved table state at on
 
 A backend can mark a column so that clicking a cell assigns that value to a named parameter. Such a cell looks exactly like an ordinary cell until you hover or focus it, when it gains an accent underline; it is reachable by Tab and Enter. Clicking commits through the same path as editing the control in the card's header: if the card belongs to a parameter group for that parameter, the group value moves and every card in the group refetches; if not, only this card's own parameter changes. A column can be set up to send a different value than the one it shows — a ticker behind a company name — and to force the source table to refetch as well. Clicking a blank cell does nothing: an empty value must not wipe a shared parameter.
 
+## Live grids
+
+A **live grid** (`live_grid`) is a table card that keeps a websocket open to its backend. It first asks the widget's ordinary endpoint for a snapshot of rows, then streams. Each update is merged into the row whose identity column matches — the widget's `wsRowIdColumn`, `symbol` when it names none — field by field, so a price tick does not erase the fields the snapshot carried and the tick did not; a symbol the snapshot never had is appended. Sorting, filters, pins, column order and every cell treatment below are the same as on any other table, and are saved per card the same way: a live grid *is* a table card, with a feed behind it.
+
+The socket's address is the widget's `wsEndpoint` on the same backend. The subscription is not in that address: on connecting the grid sends `{"params": {"symbol": "…"}}` with the card's **symbol** parameter (its group's value, when the parameter is grouped), and an edit sends the new list over the socket already open rather than reconnecting. An edit also re-fetches the snapshot, and a symbol you remove loses its streamed row instead of freezing on screen at its last price. **Refresh** re-fetches the snapshot; the socket carries on. A snapshot that fails shows the error with **Retry** in place of the grid.
+
+An update may be one row object or a list of row objects — OpenBB's reference backend and the companion stack's live-grid send one row at a time. A frame that is neither, or a row without the identity column, is ignored, so a frame the app cannot read never blanks the grid. A grid with no rows yet reads *No rows.* until the first update arrives.
+
+A dropped socket reconnects by itself after 0.5, 1, 2, 4, 8, 16, 32 and then 60 seconds; a connection that has stayed up for thirty seconds starts that ladder again. The first drop is written to the log once, at INFO, as *websocket dropped:* and the socket's address with its query removed, so a credential the address carries is never written down.
+
+A browser websocket cannot carry a header. A connection whose credential goes in the query (see [[backends-and-connections|Backends and Connections]]) puts it on the socket's address too; a header or cookie credential does not ride the socket at all. With a **Header** credential the app first asks the backend for a single-use socket ticket over HTTP, with that header, and opens the socket on the ticket — a fresh one for every reconnect. The companion stack's gateway (openbq-docker v10) issues them. A backend that issues no ticket and checks a header on the handshake refuses the socket, and the grid holds its snapshot — see [[troubleshooting-using-bdobb|Troubleshooting]].
+
+If the grid's columns read `logo_url`, `week52_high` or `week52_low` — as columns, or as a range bar's ends — the grid also asks the backend's `symbol_meta` (`GET <backend>/symbol_meta?symbol=A,B,…`, beside the widget's own endpoint) for its symbols, and fills each row's logo and 52-week band from the answer. Those columns are there, empty, from the first draw, and the request is repeated only when the set of symbols changes, not on every tick. A backend without `symbol_meta` is not an error: the grid renders complete and logo-free, and the log says *symbol_meta unavailable* once. A grid whose columns read none of the three never asks.
+
+The companion stack's live-grid service (openbq-docker v10's `live` profile) sorts the symbols you type by shape, upper-cased: one containing a dash (`BTC-USD`) is **crypto**; six letters whose two halves are both among the 25 currency codes it knows (`EURUSD`, `USDJPY`) is **forex**; anything else is a **US equity**. A suffix naming the symbol's own feed is dropped (`AAPL.US` is `AAPL`, `BTC-USD.CC` is `BTC-USD`, `EURUSD.FOREX` is `EURUSD`); any other dot, as in `BRK.B` or `VOD.LSE`, is not a feed symbol, and the grid leaves it out rather than let it take that whole feed down. The service holds one EODHD websocket per class, subscribed to the union of what every client wants, and records each trade into its [[kdb-tick-cache|kdb+ tick cache]] when one runs.
+
+That union is capped at **50 symbols** per live-grid service, which means per EODHD key (`LIVE_GRID_MAX_SYMBOLS`, default 50). Everything subscribed counts once: symbols pinned on its **Subscriptions** page, short-lived leases, and every live grid's own list; a symbol already subscribed costs no new slot. The cap is enforced where symbols are added on the Subscriptions page (or leased): one that would pass it is refused with *cap of 50 reached for EODHD; remove a symbol first*. A grid's socket is not refused, so grids can take the count past the cap, and the Subscriptions page then shows more used than the cap.
+
 ## What the backend controls
 
-A widget can describe its columns, and when it does the app honours: which field each column shows, its header text and tooltip, its data type (which picks the filter control), its starting width and resize bounds, whether it starts hidden or pinned, and how its values are formatted.
+A widget can describe its columns, and when it does the app honours: which field each column shows, its header text and tooltip, its data type (which picks the filter control), which edge its content and header sit against (`align`: `left`, `right` or `center`), its starting width and resize bounds, whether it starts hidden or pinned, and how its values are formatted.
 
 Formatting covers integers, percentages, normalised values, years pulled out of ISO dates, and `none`. A per-column decimal-places setting overrides **Settings ▸ Widget ▸ Maximum decimal places** — except on an integer column, where zero decimals is what `int` means. A null or absent cell renders as an em dash.
 
@@ -63,6 +81,14 @@ One formatting rule is the app's own: a text value that starts with a `YYYY-MM-D
 Cell treatments honoured: `greenRed`, which colours numbers by sign (zero is neither); `titleCase`; and colour rules, which set a cell's text or background from conditions like *greater than*, *between* or *contains* — the first matching rule wins, and colour rules override `greenRed` entirely. `cellOnClick` is honoured too, as a click target rather than an appearance — see above.
 
 A `columnColor` column is coloured by its `colorRules`, like any other column; when its `renderFnParams` names a `colorValueKey`, the rules are tested against that field of the same row instead of the cell's own value, and a row without that field is left uncoloured. A `sparkline` column draws its array as an inline sparkline — an array of numbers, or of points whose value is read from the key the column's options name as `yKey` (`y` when they name none) — a line, area or bar chart inside the cell, with the high and low points marked and a hover tooltip. A `showCellChange` column flashes a cell green or red the moment its value changes, which is how the live grid shows movement as it streams.
+
+Three declarations draw something other than text:
+
+- `logo` — the cell's own value is an image URL and the cell shows the image alone. The URL is used as given, never built from the symbol. A blank value, or the literal `NA` (forex and crypto have no logo), draws nothing; an image that fails to load is hidden rather than drawn broken.
+- `rangeBar` — a gradient track with a value marked on it, between the row's `lowKey` and `highKey` fields (both required, or the column renders plainly). The marked value is the row's `valueKey` field, or its `price` when the column names none. Two palettes, so a day range and a 52-week range side by side do not read as one column repeated: `week52`, red to yellow to green (the default), and `day`, blue to white to orange. A value outside the band is pinned to the end of the bar, and a band whose ends are equal or inverted draws no bar. The column needs no field of its own, and the ends are not labelled on the bar: they are their own columns beside it, which is what `align` is for.
+- `percentKey` (in `renderFnParams`) — a second field shown in brackets after the column's own value, read as a fraction and shown as a percentage with the column's decimal places: a `change` of 1.24 with 0.034 reads `1.24 (3.4%)`.
+
+Table cells use tabular digits, so a number that changes keeps its digits in place.
 
 A `hoverCard` column holds an object in each cell. The cell shows the one field the column names. Pointing at the cell, or focusing it, opens a small card filled in from the column's markdown template. When the column is also a click target, a click sends the value the cell shows.
 
@@ -116,7 +142,7 @@ A report with categories only in Columns displays aggregate cells in its pinned 
 
 
 ---
-*Source: BDOBB v3.3.0 in-app manual, "Tables"; `BDOBB` `TableRenderer`, `columnRender`, `SparklineCell` and `dotFont` at `v3.3.0`; `BDOBB` `src/lib/tableColumns.ts` and `src/components/renderers/HoverCardCell.tsx` at `v3.0.5`; `BDOBB` `src/lib/sparkline.ts` at `v3.2.2`.*
+*Source: BDOBB v3.3.0 in-app manual, "Tables"; `BDOBB` `TableRenderer`, `columnRender`, `SparklineCell` and `dotFont` at `v3.3.0`; `BDOBB` `src/lib/tableColumns.ts` and `src/components/renderers/HoverCardCell.tsx` at `v3.0.5`; `BDOBB` `src/lib/sparkline.ts` at `v3.2.2`; at 10.0.0, `src/components/renderers/LiveGridRenderer.tsx`, `RangeBar.tsx`, `TableRenderer.tsx`, `src/lib/tableColumns.ts`, `src/lib/dataClient.ts` and `src/hooks/useReconnectingSocket.ts`, and the development line's v10 Tables help (bdobb-v2 7876c86a), checked against this line.*
 *See also: [[widget-cards|Widget Cards]] · [[card-parameters|Card Parameters]] · [[import-and-export|Import and Export]]*
 
 ## Statement models
@@ -188,4 +214,4 @@ A backend table's columns can carry a data provider's aggregation hint (EODHD's 
 
 ---
 
-Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

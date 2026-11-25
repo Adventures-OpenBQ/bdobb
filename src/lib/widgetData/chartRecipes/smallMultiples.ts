@@ -5,7 +5,7 @@ import { themedLayout } from '../../chartShapes';
 import { color, escape } from '../figureHelpers';
 import type { WidgetDataset } from '../types';
 import type { PriceSeries } from './input';
-import { calendarDate, observationSymbol, symbolList } from './priceEvidence';
+import { calendarDate, observationSymbol } from './priceEvidence';
 import { prepareSelectedPrices } from './priceSamples';
 import { decodeRecipeOptions } from './settings';
 import type { PriceBindings, RecipeContext, RecipeOptions, RecipeResult } from './types';
@@ -18,7 +18,7 @@ const MAX_DISPLAYABLE_INDEX = Number.MAX_VALUE * 1e-4;
 
 function commonEndDate(dataset: WidgetDataset, fields: PriceBindings, symbols: string[]): string {
   const latest = new Map(symbols.map(symbol => [symbol, '']));
-  const single = fields.symbol ? undefined : symbolList(dataset.provenance)?.[0];
+  const single = fields.symbol ? undefined : symbols[0];
   // Preparation has validated these rows. The cutoff uses delivered dates, including
   // rows with null prices. Separately evidenced omissions break the corresponding paths.
   for (const { values } of dataset.rows) {
@@ -50,7 +50,7 @@ export function buildSmallMultiples(
   if (!decoded.ok) return { ok: false, refused: true, message: decoded.message };
 
   const { fields, symbols } = options;
-  const prepared = prepareSelectedPrices(dataset, fields, symbols);
+  const prepared = prepareSelectedPrices(dataset, fields, symbols, options.kind);
   if (!prepared.ok) return prepared;
 
   const { series, scope } = prepared;
@@ -63,7 +63,9 @@ export function buildSmallMultiples(
   notes.push(`Shared baseline ${BASE} on ${baseline}. All panels end on ${end}.`);
   notes.push(`Acquisition window ${scope.start} to ${scope.end}.${baseline > scope.start || end < scope.end
     ? ' Dates outside the shared interval are excluded.' : ''}`);
-  notes.push('Unreported provider gaps cannot always be distinguished from market holidays.');
+  notes.push(prepared.sourceMode === 'live'
+    ? 'Indexed observed adjusted prices; exchange-session completeness unknown.'
+    : 'Unreported provider gaps cannot always be distinguished from market holidays.');
 
   const data = [];
   let low = BASE, high = BASE;

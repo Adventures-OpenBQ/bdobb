@@ -19,6 +19,8 @@ A card that failed carries a **Retry** button in its body, and the header keeps 
 
 Cards on tabs you are not looking at are not mounted, and are not refreshed.
 
+A **live grid** streams, so for it Refresh, `⌘R` and `↻` mean something narrower: they re-fetch its snapshot, and its socket carries on untouched. The automatic refresh below does not re-fetch a live grid at all. See [[tables|Tables]] (Live grids).
+
 ## Automatic refresh
 
 A widget's `refetchInterval` may also be a five-field cron expression, such as `*/5 * * * *` or `0 8 * * 1-5`, in local time. Such a card refetches on each minute boundary the expression matches, for as long as it is on screen, and your app-wide setting does not apply to it. An expression the app cannot read is ignored, and shows only as the backend's widgets count in Connections when Validate widgets is on. Supported: `*`, numbers, lists, ranges and steps; day-of-week 0–7 with both 0 and 7 meaning Sunday.
@@ -48,9 +50,9 @@ When the live parameters differ from the ones last run, a small accent `•` app
 **Run** adopts the current parameters and fetches. **⌘-click** (or Ctrl-click) on **Run** is a hard refresh of the parameters that were last run — it re-issues the last request without adopting your un-run edits. `refetchInterval`, your app-wide interval, `⌘R` and `↻` all still refresh a run-button card, always with the parameters that were last run, never un-run edits. There is no keyboard shortcut for Run, and no way to turn a run button on or off per card.
 
 ---
-*Source: BDOBB v3.1.0 in-app manual, "Running and refreshing."; `BDOBB` `src/lib/widgetsJson.ts` at `v3.0.7`.*
+*Source: BDOBB v3.1.0 in-app manual, "Running and refreshing."; `BDOBB` `src/lib/widgetsJson.ts` at `v3.0.7`; at 10.0.0, `src/components/WidgetCard.tsx` and `src/hooks/useWidgetData.ts`.*
 *See also: [[card-parameters|Card Parameters]] · [[dashboard-tabs|Dashboard Tabs]] · [[settings-and-logs|Settings and Logs]] · [[troubleshooting-using-bdobb|Using BDOBB]]*
 
 ---
 
-Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

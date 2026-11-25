@@ -22,6 +22,7 @@ import type { ViewState } from '../../stores/tableExecutionStore';
 import type { LocalWorkerExecutor, ChartResult, Revision } from '../../lib/tableExecution/types';
 import type { DualAxisOverlayOptions, EstimateRevisionsOptions, EtfSunburstOptions, MarketMapOptions, NewsCalendarOptions, OwnershipSnapshotOptions, RecipeContext, RecipeOptions, RecipeResult, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
 import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipeType } from '../../lib/widgetData/chartRecipes/settings';
+import { acceptsLiveDailyPriceRecipe } from '../../lib/widgetData/chartRecipes/input';
 import { bubblePriceDates, isIncomePeriodColumn, ownershipInputFields, savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
 import { acquiredColumnOrigin, qualifiedSymbol, readFinancialEvidence } from '../../lib/widgetData/chartRecipes/financialEvidence';
 import { admitDividendWindow, admitIncomeUnits, cohortIssue, screenerIssue } from '../../lib/widgetData/chartRecipes/financialAdmission';
@@ -45,10 +46,10 @@ function revisionKey({ widgetId, input, model, output }: Revision) {
 
 function recipeInputFields(options: RecipeOptions, ready: NonNullable<ViewState['ready']>) {
     let fields = requiredRecipeFields(options);
-    if ((options.kind === 'dividend-steps' || options.kind === 'news-sentiment-calendar') && ready.topLevelCount === 0)
+    // Live-capable recipes check unavailable bindings and counted-empty acquisitions in the worker.
+    if (acceptsLiveDailyPriceRecipe(options.kind) ||
+        ((options.kind === 'dividend-steps' || options.kind === 'news-sentiment-calendar') && ready.topLevelCount === 0))
         fields = fields.filter(field => ready.columns.some(column => column.id === field));
-    if (options.kind === 'return-summary' && ready.topLevelCount === 0 && !ready.columns.length)
-        fields = []; // The recipe verifies counted-empty live evidence without demanding absent bindings.
     if (options.kind === 'ownership-snapshot') {
         // Let the recipe prioritize source or partition repair before checking unavailable bindings.
         fields = fields.filter(field => ready.columns.some(column => column.id === field));
@@ -219,7 +220,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, hints 
         chartChoicesInput(ready => recipeInputFields(options, ready), signal), [chartChoicesInput]);
     const loadReturnDraft = useCallback((options: ReturnSummaryOptions, signal: AbortSignal) =>
         chartChoicesInput(ready => recipeInputFields(options, ready), signal), [chartChoicesInput]);
-    const loadReturnInput = useCallback((signal: AbortSignal) => chartChoicesInput(ready => ready.columns
+    const loadPriceInput = useCallback((signal: AbortSignal) => chartChoicesInput(ready => ready.columns
         .filter(column => ['date', 'adjusted_close', 'symbol'].some(origin => origin === acquiredColumnOrigin(column)))
         .map(column => column.id), signal), [chartChoicesInput]);
     const loadOwnershipInput = useCallback((signal: AbortSignal) =>
@@ -446,13 +447,13 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, hints 
     }, [built, carried, source]);
     const notes = built?.ok ? built.notes : [];
     const lagging = delivered && (delivered.revision !== active || JSON.stringify(delivered.settings) !== mapping || view.status === 'updating' || view.stale || Boolean(error));
-    async function commit(next: LinkedChartSettings, guard?: () => boolean) {
+    async function commit(next: LinkedChartSettings, guard?: () => boolean, staleDraftMessage?: string) {
         if (viewer || saving) return;
         setSaving(true); try {
         const validated = decodeLinkedChartRecipe(next, next.type);
         if (validated && !validated.ok) throw new Error(validated.message);
         const sourceLabel = next.type === 'market-map' ? 'market-map' : next.type === 'estimate-revisions' ? 'estimate history' : next.type === 'dual-axis-overlay' ? 'prepared overlay' : next.type === 'etf-sunburst' ? 'ETF holdings' : 'chart';
-        const sourceChanged = `The ${sourceLabel} source or drawing size changed. Review the settings and try again.`;
+        const sourceChanged = staleDraftMessage ?? `The ${sourceLabel} source or drawing size changed. Review the settings and try again.`;
         if (guard && !guard()) throw new Error(sourceChanged);
         const committed = guard ? await onSettingsChange(next, guard) : await onSettingsChange(next);
         if (!committed) throw new Error(guard ? sourceChanged : 'Chart settings could not be saved.');
@@ -484,16 +485,25 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, hints 
     const valueSelect = (key: 'height' | 'spaceRowsBy' | 'spaceColumnsBy', name: string, lead: string) => <label>{name}<select aria-label={name} disabled={saving} value={settings[key] ?? ''} onChange={e => { const next = { ...settings, [key]: e.target.value }; if (key === 'height') next.measures = []; if (!e.target.value)
         delete next[key]; void commit(next); }}><option value="">{lead}</option>{settings[key] && !values.some(v => v.id === settings[key]) ? <option value={settings[key]}>{settings[key]} (unavailable)</option> : null}{values.map(v => <option key={v.id} value={v.id}>{v.label}</option>)}</select></label>;
     const quarters = quarterChoices?.scope === quarterScope ? quarterChoices.values : [];
-    function applyAcquired(options: OwnershipSnapshotOptions | ReturnSummaryOptions | NewsCalendarOptions, matchesDrawing?: () => boolean) {
-        const stillCurrent = () => {
-            const current = readAcquiredSource();
-            return matchesDrawing?.() === true && !!source && current.sourceCurrent
-                && current.executor === executor && current.view.ready === view.ready
-                && !!current.view.sourceRevision && !!view.sourceRevision
-                && revisionKey(current.view.sourceRevision) === revisionKey(view.sourceRevision)
-                && JSON.stringify(current.card?.linkedChart) === JSON.stringify(settings);
-        };
-        void commit({ ...withRecipeType(settings, options.kind), recipe: options }, stillCurrent);
+    function draftSourceIsCurrent() {
+        const current = readAcquiredSource();
+        return !!source && current.sourceCurrent && current.card?.linkedSource?.sourceWidgetId === source
+            && current.executor === executor && current.view.ready === view.ready
+            && !!current.view.sourceRevision && !!view.sourceRevision
+            && revisionKey(current.view.sourceRevision) === revisionKey(view.sourceRevision)
+            && JSON.stringify(current.card.linkedChart) === JSON.stringify(settings);
+    }
+    function applyRecipe(options: RecipeOptions, matchesDrawing?: () => boolean) {
+        const next = { ...withRecipeType(settings, options.kind), recipe: options };
+        if (options.kind === 'ownership-snapshot' || options.kind === 'news-sentiment-calendar' || options.kind === 'return-summary') {
+            void commit(next, () => matchesDrawing?.() === true && draftSourceIsCurrent());
+            return;
+        }
+        if (acceptsLiveDailyPriceRecipe(options.kind)) {
+            void commit(next, draftSourceIsCurrent, 'The chart source or settings changed. Review the settings and try again.');
+            return;
+        }
+        void commit(next);
     }
     function applyEtf(options: EtfSunburstOptions, current: () => boolean) {
         const canSave = () => current() && JSON.stringify(readAcquiredSource().card?.linkedChart) === JSON.stringify(settings);
@@ -507,8 +517,10 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, hints 
     const ownershipChart = settings.type === 'ownership-snapshot';
     const returnForm = editing === 'return-summary';
     const returnChart = settings.type === 'return-summary';
-    const basicAcquiredChart = ownershipChart || returnChart || settings.type === 'news-sentiment-calendar';
-    const basicAcquiredForm = ownershipForm || returnForm || editing === 'news-sentiment-calendar';
+    const priceChart = isRecipeType(settings.type) && acceptsLiveDailyPriceRecipe(settings.type);
+    const priceForm = financial && acceptsLiveDailyPriceRecipe(editing);
+    const basicAcquiredChart = ownershipChart || priceChart || settings.type === 'news-sentiment-calendar';
+    const basicAcquiredForm = ownershipForm || priceForm || editing === 'news-sentiment-calendar';
     const awaitingSync = (basicAcquiredChart || basicAcquiredForm) && (view.status === 'ready' || view.status === 'empty')
         && !readAcquiredSource().sourceCurrent;
     // Draft probes measure this drawing body even while their settings are hidden.
@@ -517,6 +529,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, hints 
     const needsFieldRepair = legacy && (error || refused || noMatches
         || (!figure && !(carried && view.error) && view.status !== 'pending' && view.status !== 'updating'));
     return <div ref={setProbeTarget} data-delivered-revision={delivered?.revision} className={'linked-chart-renderer'
+      + (priceChart && !returnChart ? ' linked-chart-renderer--price-views' : '')
       + (editing === 'news-sentiment-calendar' ? ' linked-chart-renderer--news' : '')
       + (returnForm || returnChart ? ' linked-chart-renderer--return' : '')
       + (ownershipForm || ownershipChart ? ' linked-chart-renderer--ownership' : '')
@@ -552,13 +565,12 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, hints 
         onApply={applyEtf}/> : ownershipForm ? <OwnershipRecipeControls probeTarget={probeTarget} key={acquiredScope} columns={presented}
         loadInput={loadOwnershipInput} loadDraft={loadOwnershipDraft} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
-        onApply={applyAcquired}/> : financial ? <LinkedChartRecipeControls probeTarget={probeTarget} key={JSON.stringify([editing === 'news-sentiment-calendar' || returnForm ? acquiredScope : editScope, editing])} kind={editing}
+        onApply={applyRecipe}/> : financial ? <LinkedChartRecipeControls probeTarget={probeTarget} key={JSON.stringify([basicAcquiredForm ? acquiredScope : editScope, editing])} kind={editing}
         columns={presented} verifiedEmpty={verifiedEmpty} loadSymbols={loadSymbols} loadSourceChoices={loadSourceChoices} loadNewsInput={loadNewsInput}
         loadNewsDraft={loadNewsDraft} newsDraftContext={newsDraftContext} matchesNewsDraftWidth={matchesNewsDraftWidth}
-        loadReturnInput={loadReturnInput} loadReturnListings={loadReturnListings} loadReturnDraft={loadReturnDraft} returnDraftContext={measuredDraftContext}
+        loadPriceInput={loadPriceInput} loadReturnListings={loadReturnListings} loadReturnDraft={loadReturnDraft} returnDraftContext={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
-        onApply={(options, matchesDrawing) => options.kind === 'news-sentiment-calendar' || options.kind === 'return-summary'
-          ? applyAcquired(options, matchesDrawing) : void commit({ ...withRecipeType(settings, options.kind), recipe: options })}/> : <>
+        onApply={applyRecipe}/> : <>
       {pivoted ? <>{valueSelect('height', 'Height', 'Choose height')}{valueSelect('spaceRowsBy', 'Space rows by', 'Default')}{valueSelect('spaceColumnsBy', 'Space columns by', 'Default')}</> : <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? noCategory} onChange={e => void commit({ ...settings, category: e.target.value === noCategory ? undefined : e.target.value })}><option value={noCategory}>Choose category</option>{settings.category !== undefined && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>}
       <MeasuresPicker disabled={saving} emptyMeansAll={pivoted} selected={settings.measures} onChange={measures => void commit({ ...settings, measures })} options={[...new Set([...(pivoted ? expiryColumns(fields, settings.height ?? '') : fields.filter(c => (!c.dtype || c.dtype === 'number') && (settings.type !== 'bullet' || c.id.endsWith('_actual')))).map(c => c.id), ...settings.measures])].map(id => { const field = fields.find(c => c.id === id); return field ? { id, label: pivoted && field.splitPath?.length ? field.splitPath.map(m => m.label ?? String(m.value)).join(' — ') : measureName(field) } : { id, label: `${id} (unavailable)`, unavailable: true }; })}/>
       {settings.type === 'bullet' ? <label>Quarter<select aria-label="Quarter" disabled={saving} value={settings.period ?? ''} onChange={e => { const { period: _drop, ...rest } = settings; void commit(e.target.value ? { ...rest, period: e.target.value } : rest); }}><option value="">Latest</option>{settings.period && !quarters.includes(settings.period) ? <option value={settings.period}>{settings.period} (unavailable)</option> : null}{quarters.map(q => <option key={q} value={q}>{q}</option>)}</select></label> : null}
@@ -623,13 +635,12 @@ function FinancialChart(props: FinancialProps) {
     return <p role="status">{source ? `Loading source ${source}…` : 'Select an available source table.'}</p>;
   }
   const emptyAllowed = (options.kind === 'dividend-steps' || options.kind === 'news-sentiment-calendar') && view.ready.topLevelCount === 0;
-  // The return worker checks saved bindings against the acquisition, including live aliases.
-  const issue = emptyAllowed || options.kind === 'return-summary' ? undefined : savedBindingIssue(options, view.ready.columns);
+  // The price worker checks bindings and completeness against the acquired evidence.
+  const issue = emptyAllowed || acceptsLiveDailyPriceRecipe(options.kind) ? undefined : savedBindingIssue(options, view.ready.columns);
   if (issue) return <><p role="alert">{issue}</p><OpenLinkedParameters onOpen={props.onOpenParameters}/></>;
   const completeness = view.ready.completeness.kind;
   switch (options.kind) {
-    case 'drawdown': case 'yield-curve': case 'monthly-returns': case 'correlation':
-    case 'return-distribution': case 'small-multiples':
+    case 'yield-curve': case 'monthly-returns': case 'correlation':
       if (completeness !== 'complete' && completeness !== 'bounded')
         return <><p role="status">The source must be fully loaded. Acquisition is {completeness}.</p><OpenLinkedParameters onOpen={props.onOpenParameters}/></>;
   }

@@ -8,8 +8,12 @@ import {
   effectivePinned,
   hiddenFields,
   hoverCardOf,
+  isLogoOf,
   moveColumn,
   orderFields,
+  percentKeyOf,
+  RANGE_BAR_DEFAULT_VALUE_KEY,
+  rangeBarOf,
   sendToAgentOf,
   setPinned,
   tableColumns,
@@ -700,5 +704,52 @@ describe("colorValueKey", () => {
       ],
     });
     expect(cols.map((c) => c.colorValueKey)).toEqual(["b", undefined, undefined]);
+  });
+});
+
+// v10: the live grid's column declarations (donor e580d195, 8dd46d36,
+// 8ae5a24d, 1c8084ff), resolved once per column.
+describe("logo, rangeBar, percentKey and align", () => {
+  it("isLogoOf: only a renderFn that names logo", () => {
+    expect(isLogoOf({ field: "logo_url", renderFn: ["logo"] })).toBe(true);
+    expect(isLogoOf({ field: "logo_url" })).toBe(false);
+  });
+
+  it("rangeBarOf: both ends required, palette falls back, valueKey defaults to the row's price (V10-P2)", () => {
+    const params = { lowKey: "day_low", highKey: "day_high", palette: "day" };
+    expect(rangeBarOf({ field: "day_range", renderFn: ["rangeBar"], renderFnParams: params })).toEqual({
+      lowKey: "day_low",
+      highKey: "day_high",
+      valueKey: RANGE_BAR_DEFAULT_VALUE_KEY,
+      palette: "day",
+    });
+    expect(RANGE_BAR_DEFAULT_VALUE_KEY).toBe("price");
+    expect(
+      rangeBarOf({ field: "r", renderFn: ["rangeBar"], renderFnParams: { lowKey: "l", highKey: "h", valueKey: "last", palette: "x" } }),
+    ).toEqual({ lowKey: "l", highKey: "h", valueKey: "last", palette: "week52" });
+    expect(rangeBarOf({ field: "r", renderFn: ["rangeBar"], renderFnParams: { lowKey: "l" } })).toBeUndefined();
+    expect(rangeBarOf({ field: "r", renderFnParams: { lowKey: "l", highKey: "h" } })).toBeUndefined();
+  });
+
+  it("percentKeyOf: a non-empty string, with or without a renderFn", () => {
+    expect(percentKeyOf({ field: "change", renderFn: ["greenRed"], renderFnParams: { percentKey: "change_pct" } })).toBe("change_pct");
+    expect(percentKeyOf({ field: "change", renderFnParams: { percentKey: "" } })).toBeUndefined();
+  });
+
+  it("carries them onto the declared column, and keeps a rangeBar column no row carries", () => {
+    const spec: TableSpec = {
+      columns: [
+        { field: "logo_url", renderFn: ["logo"] },
+        { field: "symbol", align: "left" },
+        { field: "day_range", renderFn: ["rangeBar"], renderFnParams: { lowKey: "day_low", highKey: "day_high" } },
+        { field: "missing" },
+      ],
+    };
+    const cols = tableColumns([{ logo_url: "u", symbol: "A", day_low: 1, day_high: 2, price: 1.5 }], spec);
+    expect(fields(cols).slice(0, 3)).toEqual(["logo_url", "symbol", "day_range"]);
+    expect(fields(cols)).not.toContain("missing");
+    expect(cols[0].isLogo).toBe(true);
+    expect(cols[1].align).toBe("left");
+    expect(cols[2].rangeBar?.valueKey).toBe("price");
   });
 });

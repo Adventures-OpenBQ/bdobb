@@ -953,3 +953,12 @@ describe("PDF cards in get_widget_data", () => {
     expect(await fetcher({ widget_uuid: PDF_CARD.id, origin: "reference" }, signal)).toMatchObject({ pdf: true, name: "Annual Report" });
   });
 });
+it("carries engine-rendered local table results before transport capping", async () => {
+  const result = { status: "applied", card_id: "w", undo: "available", preview: { columns: [{ id: "region", label: "Region" }, { id: "amount", label: "Amount" }], rows: [{ values: { region: "East", amount: 360 } }, { values: { region: "West", amount: 615 } }] }, warnings: [], detail: "x".repeat(MAX_RESULT_CHARS + 1000) };
+  const msg = await executeFunction({ function: "execute_agent_tool", input_arguments: { server_id: "bdobb-local", tool_name: "arrange_table", parameters: { card_id: "w" } } }, { fetchWidget: vi.fn(), runAgentTool: vi.fn(async () => result) }, new AbortController().signal);
+  const client = (msg as unknown as { clientTableResult?: { text: string; ending: string } }).clientTableResult;
+  expect(client?.text).toContain("360");
+  expect(client?.text).toContain("615");
+  expect(client?.text).not.toContain("975");
+  expect(client?.ending).toBe("Undo is available.");
+});

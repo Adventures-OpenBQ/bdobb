@@ -176,8 +176,12 @@ instructions.
 - "Profit margin by FY" is an aggregate ratio: `formula.set` with scope
   `aggregate` over summed profit and summed revenue measures, not a mean of row
   margins.
-- FY/FQ are fiscal and need a `fiscal_binding` from listed fields; Y/Q/M are
-  calendar. Never invent a fiscal year end.
+- Choose the requested grouping: calendar year uses `"Y"`, calendar quarter
+  uses `"Q"`, and calendar month uses `"M"`. The source field name does not
+  choose the grouping: "calendar year of Quarter end" uses `"Y"`, not `"Q"`.
+  Before applying, check the category transform against the user’s requested
+  unit. FY/FQ are fiscal and need a `fiscal_binding` from listed fields.
+  Never invent a fiscal year end.
 - `checklist.set` is the source-stage filter: the complete set of members to
   KEEP; it changes every calculation. `result_filter.add` is the result stage:
   it hides calculated groups. Say which you used when it changes the meaning.
@@ -185,6 +189,11 @@ instructions.
   plausible meanings. Do not ask to confirm an unambiguous request.
 
 ## 3. Arrange once
+
+For an unambiguous request to change the table, send the complete arrangement
+directly with `"mode": "apply"`. The apply transaction already validates and
+calculates a preview before committing; do not precede it with a separate
+preview call.
 
 One `arrange_table` call with every edit; it is all-or-nothing. (For a
 read-only ask, the same call with `"mode": "preview"`; see section 0.)

@@ -1,38 +1,15 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { readFileSync } from 'node:fs';
 import { expect } from '@playwright/test';
 import { startMockServer } from '../src/test/mockServer';
-import type { ReturnSummaryDetails } from '../src/lib/widgetData/chartRecipes/returnSummary';
-import type { RecipeReply } from '../src/lib/widgetData/chartRecipes/workerClient';
-import { dashboardSeed, seedApp } from './fixtures';
-import { card, openParameters, plot } from './fixtures/chart-recipes';
+import type { SeedCard } from './fixtures';
+import { card, openParameters, plot, recordRecipeReplies } from './fixtures/chart-recipes';
+import { readCapture, replayInstalledPrices, seedInstalledPrices, sourceId, table } from './fixtures/installed-prices';
 import { dailyPriceCorsHeaders, liveRecipe, test } from './fixtures/return-summary';
 
-type Sample = { date: string; value: number };
-type InstalledCapture = {
-  routes: Record<string, {
-    method: string;
-    query: Record<string, string>;
-    status: number;
-    selector: string;
-    widgetId: string;
-    widget: { data: { dataKey: string } };
-    body: object;
-    expected: Record<string, { returns: Sample[] }>;
-  }>;
-};
-
-const origin = 'http://127.0.0.1:17926';
-const table = 'Captured EODHD prices';
 const chart = 'Captured return summaries';
-const sourceId = 'aaaaaaaa-2222-4333-8444-555555555555';
 const scope = 'Observed quote-to-quote returns; exchange-session completeness unknown.';
-const readCapture = (name: string) => JSON.parse(readFileSync(
-  new URL(`./fixtures/installed-observed-returns/75a9026/${name}.json`, import.meta.url), 'utf8',
-)) as InstalledCapture;
-
 const equity = '/equity/price/historical', etf = '/etf/historical';
 const captures = [
   ['canonical-standards', ['/api/v1' + equity, '/api/v1' + etf]],
@@ -40,63 +17,30 @@ const captures = [
   ['public-demo', ['/api/v1/eodhd' + equity]],
 ] as const;
 
-function installedSourceSeed(capture: InstalledCapture['routes'][string], baseUrl: string) {
-  const seed = dashboardSeed([
-    { id: 'returns', widgetId: 'linked_chart', backendId: 'builtin', title: chart, params: {},
-      linkedSource: { kind: 'widget', sourceWidgetId: sourceId },
-      linkedChart: { type: 'return-summary', recipe: liveRecipe, measures: [], display: 'grouped' },
-      layout: { x: 0, y: 0, w: 40, h: 29 } },
-    { id: sourceId, widgetId: capture.widgetId, backendId: 'captured-eodhd', title: table, params: capture.query,
-      layout: { x: 0, y: 29, w: 40, h: 14 } },
-  ]);
-  seed['backends.json'] = JSON.stringify([
-    { id: 'captured-eodhd', name: 'Captured EODHD', baseUrl, authLocation: 'header', validateWidgets: false },
-  ]);
-  return seed;
-}
+const returnCards: SeedCard[] = [{
+  id: 'returns', widgetId: 'linked_chart', backendId: 'builtin', title: chart, params: {},
+  linkedSource: { kind: 'widget', sourceWidgetId: sourceId },
+  linkedChart: { type: 'return-summary', recipe: liveRecipe, measures: [], display: 'grouped' },
+  layout: { x: 0, y: 0, w: 40, h: 29 },
+}];
 
 for (const [name, endpoints] of captures) {
   for (const endpoint of endpoints) {
     test(`replays installed ${name} GET ${endpoint} through the table and recipe worker`, async ({ page, browser, engineEvidence }, info) => {
       const capture = readCapture(name).routes[endpoint];
       expect(capture.widget.data.dataKey).toBe(capture.selector);
-      await page.addInitScript(() => {
-        const observedReturns: ReturnSummaryDetails[] = [];
-        Object.defineProperty(window, 'observedReturns', { value: observedReturns });
-        window.Worker = class extends Worker {
-          constructor(...args: ConstructorParameters<typeof Worker>) {
-            super(...args);
-            if (String(args[0]).includes('/recipe.worker')) {
-              this.addEventListener('message', (event: MessageEvent<RecipeReply>) => {
-                if ('result' in event.data && event.data.result.ok && event.data.result.returnSummary) {
-                  observedReturns.push(event.data.result.returnSummary);
-                }
-              });
-            }
-          }
-        };
-      });
-      const requests: { method: string; query: Record<string, string> }[] = [];
-      await page.route(`${origin}/**`, async route => {
-        const request = route.request(), url = new URL(request.url());
-        const source = url.pathname === endpoint && request.method() === 'GET';
-        if (source) requests.push({ method: request.method(), query: Object.fromEntries(url.searchParams) });
-        const body = source ? capture.body : url.pathname === '/widgets.json'
-          ? { [capture.widgetId]: capture.widget } : {};
-        await route.fulfill({
-          json: body, status: source ? capture.status : 200, headers: { 'Access-Control-Allow-Origin': '*', ...dailyPriceCorsHeaders },
-        });
-      });
-      await seedApp(page, installedSourceSeed(capture, origin));
+      const readReplies = await recordRecipeReplies(page);
+      const requests = await replayInstalledPrices(page, endpoint, capture, returnCards, 29);
 
       const widget = card(page, chart), graph = plot(page, chart);
       const expected = liveRecipe.symbols.map(symbol => ({ symbol, samples: capture.expected[symbol].returns }));
       const assertSamples = async (view: 'box' | 'violin') => {
-        const series = () => page.evaluate(view => {
-          const replies = (window as Window & { observedReturns?: ReturnSummaryDetails[] }).observedReturns;
-          return replies?.slice().reverse().find(reply => reply.view === view)
-            ?.series.map(({ symbol, samples }) => ({ symbol, samples }));
-        }, view);
+        const series = async () => {
+          const latest = (await readReplies()).reverse().find(({ reply }) =>
+            'result' in reply && reply.result.ok && reply.result.returnSummary?.view === view)?.reply;
+          return latest && 'result' in latest && latest.result.ok
+            ? latest.result.returnSummary?.series.map(({ symbol, samples }) => ({ symbol, samples })) : undefined;
+        };
         await expect.poll(series).toEqual(expected);
         await info.attach(`${view}-worker-samples`, {
           body: JSON.stringify(await series()), contentType: 'application/json',
@@ -158,7 +102,7 @@ for (const { name, status, headers, rejected, checkHiddenHeaders } of transportC
       [endpoint]: { __status: status, __body: capture.body, __headers: headers },
     });
     try {
-      await seedApp(page, installedSourceSeed(capture, server.url));
+      await seedInstalledPrices(page, capture, returnCards, 29, server.url);
       expect(new URL(page.url()).origin).not.toBe(server.url);
       if (checkHiddenHeaders) {
         const head = await page.evaluate(async (url) => {

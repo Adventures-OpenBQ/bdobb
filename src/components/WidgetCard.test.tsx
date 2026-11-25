@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { act, cleanup, createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -173,6 +173,58 @@ vi.mock("./renderers/TradingViewRenderer", () => ({
   ),
 }));
 
+// REPLACED, for the same reason as RssRenderer: the real one fetches its own
+// snapshot and opens a socket (both have their own test file). What is under
+// test is what the CARD hands it.
+vi.mock("./renderers/LiveGridRenderer", () => ({
+  LiveGridRenderer: (props: Record<string, unknown>) => <LiveGridStub {...props} />,
+}));
+// The Live Chart (V10-P4) reports through the same onLive/onStatus pair, so
+// the same stand-in serves it; LiveChartRenderer.test.tsx pins the real one.
+vi.mock("./renderers/LiveChartRenderer", () => ({
+  LiveChartRenderer: (props: Record<string, unknown>) => <LiveGridStub {...props} />,
+}));
+vi.mock("./renderers/DayChartRenderer", () => ({
+  DayChartRenderer: ({onSnapshot,onSelectSymbol,onReorder,selectionError,footerControls}: {onReorder?:(symbols:string)=>void;footerControls?:ReactNode;onSnapshot?: (at:number|null)=>void;onSelectSymbol?:(symbol:string)=>void;selectionError?:string}) => <>
+    <div data-testid="day-footer-controls">{footerControls}</div>
+    <button type="button" onClick={()=>onSelectSymbol?.("MSFT")}>select-day-symbol</button>
+    <button type="button" onClick={()=>onReorder?.("MSFT,AAPL")}>reorder-day-symbols</button>
+    {selectionError ? <span>{selectionError}</span>:null}
+    <button type="button" onClick={()=>onSnapshot?.(Date.now())}>snapshot-complete</button>
+    <button type="button" onClick={()=>onSnapshot?.(null)}>snapshot-clear</button>
+  </>,
+}));
+// The stand-in keeps the real renderer's one lifecycle contract the card relies
+// on: it reports "idle" as it unmounts (LiveGridRenderer.test.tsx pins the real one).
+function LiveGridStub(props: Record<string, unknown>) {
+  const onStatus = props.onStatus as ((s: string) => void) | undefined;
+  useEffect(() => () => onStatus?.("idle"), [onStatus]);
+  return (
+    <>
+      <span data-testid="live-grid-props">
+        {JSON.stringify({
+          params: props.params,
+          refreshKey: props.refreshKey,
+          state: props.state,
+          tableState: typeof props.onStateChange,
+          filterRow: props.filterRow,
+          sendToAgent: typeof props.onSendToAgent,
+        })}
+      </span>
+      {/* Stands in for a snapshot or a streamed row reaching the grid. */}
+      <button type="button" onClick={() => (props.onLive as ((at: number) => void) | undefined)?.(Date.now())}>
+        live-tick
+      </button>
+      <button type="button" onClick={() => (props.onStatus as ((s: string) => void) | undefined)?.("reconnecting")}>
+        socket-drop
+      </button>
+      <button type="button" onClick={() => (props.onStatus as ((s: string) => void) | undefined)?.("live")}>
+        socket-open
+      </button>
+    </>
+  );
+}
+
 /**
  * Replaced outright, not wrapped: the real one reads the filesystem through
  * SheetJS, which this file stubs for the Export menu. What WidgetCard owes it
@@ -247,6 +299,7 @@ import { WidgetCard } from "./WidgetCard";
 // vi.restoreAllMocks() does not undo a setState-installed mock, so real actions are
 // captured once at module load and reinstated before every test.
 const REAL_ACTIONS = {
+  applyCardParams: useDashboardStore.getState().applyCardParams,
   setCardMinimized: useDashboardStore.getState().setCardMinimized,
   setMaximized: useDashboardStore.getState().setMaximized,
   duplicateCard: useDashboardStore.getState().duplicateCard,
@@ -4941,6 +4994,181 @@ describe("advanced_charting", () => {
   });
 });
 
+describe("live_chart (v10, V10-P4)", () => {
+  function seed(over: Partial<WidgetDef> = {}) {
+    register({ type: "live_chart", endpoint: "series", wsEndpoint: "live_grid_ws", ...over });
+    useBackendsStore.setState({ backends: [backend()] });
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn(), attempt: 2, completedAt: null });
+  }
+  const refresh = () => screen.getByRole("button", { name: "Refresh" });
+
+  it("hands the params and the Refresh key to the Live Chart renderer, not to raw JSON", () => {
+    seed();
+    render(<WidgetCard card={{ ...card, params: { symbol: "AAPL", interval: "1m" } }} onRemove={vi.fn()} />);
+    expect(JSON.parse(screen.getByTestId("live-grid-props").textContent ?? "")).toMatchObject({
+      params: { symbol: "AAPL", interval: "1m" },
+      refreshKey: 2,
+    });
+    expect(screen.queryByTestId("raw-json")).toBeNull();
+    expect(screen.queryByText("No data for these parameters.")).toBeNull();
+    useBackendsStore.setState({ backends: [] });
+  });
+
+  it("tones the Refresh control as the live grid does, stale while the socket is down", async () => {
+    seed();
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(refresh()).toHaveAttribute("title", "Waiting for the feed");
+    await userEvent.click(screen.getByRole("button", { name: "live-tick" }));
+    expect(refresh()).toHaveAttribute("data-tone", "stale");
+    await userEvent.click(screen.getByRole("button", { name: "socket-open" }));
+    expect(refresh()).toHaveAttribute("data-tone", "fresh");
+    useBackendsStore.setState({ backends: [] });
+  });
+
+  it("without a wsEndpoint is a seeded chart: fresh once seeded, with no socket to wait for", async () => {
+    seed({ wsEndpoint: undefined });
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(refresh()).toHaveAttribute("title", "Not fetched yet");
+    await userEvent.click(screen.getByRole("button", { name: "live-tick" }));
+    expect(refresh()).toHaveAttribute("data-tone", "fresh");
+    // Review F14: no feed, so no "Live" -- the ordinary card's words.
+    expect(refresh().getAttribute("title")).toMatch(/^Last refresh /);
+    useBackendsStore.setState({ backends: [] });
+  });
+});
+
+describe("live_grid (v10)", () => {
+  const symbolParam = [{ paramName: "symbol", label: "Symbols", type: "text" }] as WidgetDef["params"];
+  function seed(over: Partial<DashboardCard> = {}, groups?: Dashboard["groups"]) {
+    const c = { ...card, ...over };
+    register({ type: "live_grid", endpoint: "live_grid", wsEndpoint: "live_grid_ws", params: symbolParam });
+    useBackendsStore.setState({ backends: [backend()] });
+    useDashboardStore.setState({
+      dashboards: [{ id: "d1", name: "D", tabs: [{ id: "t1", name: "Main", cards: [c] }], groups }],
+      activeId: "d1",
+      activeTabId: "t1",
+    });
+    return c;
+  }
+  const props = () => JSON.parse(screen.getByTestId("live-grid-props").textContent ?? "") as Record<string, unknown>;
+
+  it("subscribes by the group-bound effective params, not the card's stored copy (donor b3d7ac4c)", () => {
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn(), attempt: 0 });
+    const c = seed(
+      { params: { symbol: "AAPL" }, bindings: [{ groupId: "g1", paramName: "symbol" }] },
+      [{ id: "g1", name: "T", paramName: "symbol", groupType: "symbol", value: "MSFT,TSLA" }],
+    );
+    render(<WidgetCard card={c} onRemove={vi.fn()} />);
+    expect(props().params).toEqual({ symbol: "MSFT,TSLA" });
+    // fetchesData is false, so the data===null gate must not claim the card.
+    expect(screen.queryByText("No data for these parameters.")).toBeNull();
+    useBackendsStore.setState({ backends: [] });
+  });
+
+  it("is a table card: it gets the card's table state and its owner, and the filter row", () => {
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn(), attempt: 0 });
+    const c = seed({ params: { symbol: "AAPL" }, table: { sorting: [{ id: "price", desc: true }] } });
+    render(<WidgetCard card={c} onRemove={vi.fn()} />);
+    expect(props()).toMatchObject({ state: { sorting: [{ id: "price", desc: true }] }, tableState: "function", filterRow: false });
+    useBackendsStore.setState({ backends: [] });
+  });
+
+  // Review B2: a sendToAgent row on a live grid is card data, gated by
+  // Context sharing and off-limits exactly as the table case is (canShare).
+  it("offers Send to Rita only while Context sharing is on", () => {
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn(), attempt: 0 });
+    const c = seed({ params: { symbol: "AAPL" } });
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example", contextSharing: false } });
+    const { unmount } = render(<WidgetCard card={c} onRemove={vi.fn()} />);
+    expect(props().sendToAgent).toBe("undefined");
+    unmount();
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example", contextSharing: true } });
+    render(<WidgetCard card={c} onRemove={vi.fn()} />);
+    expect(props().sendToAgent).toBe("function");
+    useBackendsStore.setState({ backends: [] });
+  });
+
+  // Review R6: the other two halves of canShare, each with sharing on.
+  it("offers no Send to Rita on a backend that serves key-maint (off limits)", () => {
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn(), attempt: 0 });
+    const c = seed({ params: { symbol: "AAPL" } });
+    useWidgetRegistryStore.setState((s) => ({ widgets: [...s.widgets, makeWidget({ id: "provider_api_keys_panel", type: "keys" })] }));
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example", contextSharing: true } });
+    render(<WidgetCard card={c} onRemove={vi.fn()} />);
+    expect(props().sendToAgent).toBe("undefined");
+    useBackendsStore.setState({ backends: [] });
+  });
+
+  it("offers no Send to Rita in a viewer window", () => {
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn(), attempt: 0 });
+    const c = seed({ params: { symbol: "AAPL" } });
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example", contextSharing: true } });
+    render(<WidgetCard card={c} onRemove={vi.fn()} viewer />);
+    expect(props().sendToAgent).toBe("undefined");
+    useBackendsStore.setState({ backends: [] });
+  });
+
+  it("reads Waiting for the feed, then Live with the last update, never Not fetched yet", async () => {
+    // fetchesData is false for live_grid, so the card's own completedAt stays
+    // null while rows tick (web test, 2026-10-12); the renderer reports instead.
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn(), attempt: 0, completedAt: null });
+    const c = seed({ params: { symbol: "AAPL" } });
+    render(<WidgetCard card={c} onRemove={vi.fn()} />);
+    const refresh = () => screen.getByRole("button", { name: "Refresh" });
+    expect(refresh()).toHaveAttribute("title", "Waiting for the feed");
+    await userEvent.click(screen.getByRole("button", { name: "live-tick" }));
+    expect(refresh().getAttribute("title")).toMatch(/^Live · last update /);
+    expect(refresh().getAttribute("title")).not.toContain("Not fetched yet");
+    useBackendsStore.setState({ backends: [] });
+  });
+
+  // Review B13: a feed that has dropped is not fresh, however recent its last row.
+  it("tones the Refresh control stale while the socket is reconnecting", async () => {
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn(), attempt: 0, completedAt: null });
+    const c = seed({ params: { symbol: "AAPL" } });
+    render(<WidgetCard card={c} onRemove={vi.fn()} />);
+    const refresh = () => screen.getByRole("button", { name: "Refresh" });
+    await userEvent.click(screen.getByRole("button", { name: "live-tick" }));
+    await userEvent.click(screen.getByRole("button", { name: "socket-open" }));
+    expect(refresh()).toHaveAttribute("data-tone", "fresh");
+    await userEvent.click(screen.getByRole("button", { name: "socket-drop" }));
+    expect(refresh()).toHaveAttribute("data-tone", "stale");
+    useBackendsStore.setState({ backends: [] });
+  });
+
+  // Review R1: data from the snapshot alone, with the socket not (yet) open --
+  // a first connect still waiting, or a minimised card's closed socket -- is
+  // not a fresh feed.
+  it("does not tone the Refresh control fresh until the socket is live", async () => {
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn(), attempt: 0, completedAt: null });
+    const c = seed({ params: { symbol: "AAPL" } });
+    const { rerender } = render(<WidgetCard card={c} onRemove={vi.fn()} />);
+    const refresh = () => screen.getByRole("button", { name: "Refresh" });
+    await userEvent.click(screen.getByRole("button", { name: "live-tick" }));
+    expect(refresh()).toHaveAttribute("data-tone", "stale");
+    await userEvent.click(screen.getByRole("button", { name: "socket-open" }));
+    expect(refresh()).toHaveAttribute("data-tone", "fresh");
+    // Minimised: the grid unmounts, and the real renderer reports idle as it goes.
+    rerender(<WidgetCard card={{ ...c, minimized: true }} onRemove={vi.fn()} />);
+    expect(screen.queryByTestId("live-grid-props")).toBeNull();
+    expect(refresh()).toHaveAttribute("data-tone", "stale");
+    useBackendsStore.setState({ backends: [] });
+  });
+
+  it("draws Refresh, and Refresh bumps the refreshKey that re-fetches the snapshot", async () => {
+    useWidgetData.mockImplementation(() => {
+      const [attempt, setAttempt] = useState(0);
+      return { status: "ready", data: null, retry: () => setAttempt((n) => n + 1), attempt };
+    });
+    const c = seed({ params: { symbol: "AAPL" } });
+    render(<WidgetCard card={c} onRemove={vi.fn()} />);
+    expect(props().refreshKey).toBe(0);
+    await userEvent.click(screen.getByRole("button", { name: "Refresh" }));
+    expect(props().refreshKey).toBe(1);
+    useBackendsStore.setState({ backends: [] });
+  });
+});
+
 describe("WidgetCard pin widget (v8)", () => {
   function seed(over: Partial<DashboardCard> = {}) {
     register();
@@ -5874,4 +6102,73 @@ describe('title scrollbar overflow lifecycle', () => {
       expect(f.observers.every(o => o.targets.size === 0)).toBe(true);
     } finally {f.dispose();}
   });
+});
+
+describe("Day Chart snapshot refresh status",()=>{
+  it("reports actual snapshot completion and clear without claiming a live feed",async()=>{
+    register({type:"day_chart",endpoint:"day_charts"});
+    useBackendsStore.setState({backends:[backend()]});
+    useWidgetData.mockReturnValue({status:"ready",data:null,retry:vi.fn(),attempt:0,completedAt:null});
+    render(<WidgetCard card={{...card,params:{symbol:"AAPL"}}} onRemove={vi.fn()}/>);
+    const refresh=()=>screen.getByRole("button",{name:"Refresh"});
+    expect(refresh()).toHaveAttribute("title","Not fetched yet");
+    await userEvent.click(screen.getByRole("button",{name:"snapshot-complete"}));
+    expect(refresh().getAttribute("title")).toMatch(/^Last snapshot just now · /);
+    expect(refresh().getAttribute("title")).not.toContain("Live");
+    expect(refresh()).toHaveAttribute("data-tone","fresh");
+    await userEvent.click(screen.getByRole("button",{name:"snapshot-clear"}));
+    expect(refresh()).toHaveAttribute("title","Not fetched yet");
+    expect(refresh()).toHaveAttribute("data-tone","idle");
+    useBackendsStore.setState({backends:[]});
+  });
+});
+
+
+describe("Day Chart selection output",()=>{
+ function seed(shared=false){
+  register({type:"day_chart",endpoint:"day_charts",params:[{paramName:"symbol",type:"text",groupType:"symbol"},{paramName:"selected_symbol",type:"text",groupType:"symbol"}]});
+  useWidgetRegistryStore.setState({widgets:[...useWidgetRegistryStore.getState().widgets,makeWidget({id:"detail-widget",type:"live_chart",endpoint:"series",params:[{paramName:"symbol",type:"text",groupType:"symbol"}]})]});
+  useBackendsStore.setState({backends:[backend()]});
+  useWidgetData.mockReturnValue({status:"ready",data:null,retry:vi.fn(),attempt:0});
+  const source={...card,params:{symbol:"AAPL,MSFT"},bindings:[{paramName:"symbol",groupId:"watch"},{paramName:"selected_symbol",groupId:shared?"watch":"selected"}]};
+  const detail={...card,id:"detail-card",widgetId:"detail-widget",params:{symbol:"AAPL"},bindings:[{paramName:"symbol",groupId:"selected"}]};
+  useDashboardStore.setState({dashboards:[{id:"d1",name:"D",groups:[{id:"watch",name:"Watchlist",paramName:"symbol",groupType:"symbol",value:"AAPL,MSFT"},{id:"selected",name:"Detail",paramName:"symbol",groupType:"symbol",value:"AAPL"}],tabs:[{id:"t1",name:"Main",cards:[source,detail]}]}],activeId:"d1",activeTabId:"t1"});
+  render(<><WidgetCard card={source} onRemove={vi.fn()}/><WidgetCard card={detail} onRemove={vi.fn()}/></>);
+ }
+ it("updates only the selection group, preserving the input watchlist",async()=>{
+  seed();expect(JSON.parse(screen.getByTestId("live-grid-props").textContent!).params.symbol).toBe("AAPL");await userEvent.click(screen.getByRole("button",{name:"select-day-symbol"}));
+  await waitFor(()=>expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="selected")?.value).toBe("MSFT"));
+  expect(JSON.parse(screen.getByTestId("live-grid-props").textContent!).params.symbol).toBe("MSFT");
+  expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="watch")?.value).toBe("AAPL,MSFT");
+  useBackendsStore.setState({backends:[]});
+ });
+ it("reorders the shared watchlist while preserving the selected symbol",async()=>{
+  seed();await userEvent.click(screen.getByRole("button",{name:"reorder-day-symbols"}));
+  await waitFor(()=>expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="watch")?.value).toBe("MSFT,AAPL"));
+  expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="selected")?.value).toBe("AAPL");
+  useBackendsStore.setState({backends:[]});
+ });
+ it("refuses to publish into the input group and explains the conflict",async()=>{
+  seed(true);await userEvent.click(screen.getByRole("button",{name:"select-day-symbol"}));
+  expect(screen.getByText(/Choose a different group for Selected symbol/)).toBeInTheDocument();
+  expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="watch")?.value).toBe("AAPL,MSFT");
+  useBackendsStore.setState({backends:[]});
+ });
+});
+
+it("shows Day Chart row1 controls only in the expanded parameters panel",async()=>{
+ register({type:"day_chart",endpoint:"day_charts",params:[{paramName:"symbol",type:"text",label:"Symbols"},{paramName:"rows",type:"text",label:"Rows",row:1}]});
+ useBackendsStore.setState({backends:[backend()]});
+ const source={...card,params:{symbol:"AAPL",rows:"1"}};
+ useDashboardStore.setState({dashboards:[{id:"d1",name:"D",tabs:[{id:"t1",name:"Main",cards:[source]}]}],activeId:"d1",activeTabId:"t1"});
+ render(<WidgetCard card={source} onRemove={vi.fn()}/>);
+ expect(screen.queryByRole("textbox",{name:"Rows"})).not.toBeInTheDocument();
+ await userEvent.click(screen.getByRole("button",{name:"Show parameters"}));
+ expect(within(screen.getByRole("region",{name:"Parameters"})).getByRole("textbox",{name:"Rows"})).toBeInTheDocument();
+ expect(within(screen.getByTestId("day-footer-controls")).queryByRole("textbox",{name:"Rows"})).not.toBeInTheDocument();
+ await userEvent.click(screen.getByRole("button",{name:"Hide parameters"}));
+ expect(screen.queryByRole("textbox",{name:"Rows"})).not.toBeInTheDocument();
+ expect(within(screen.getByTestId("day-footer-controls")).queryByRole("textbox",{name:"Symbols"})).not.toBeInTheDocument();
+ expect(screen.getByRole("textbox",{name:"Symbols"}).closest("header")).not.toBeNull();
+ useBackendsStore.setState({backends:[]});
 });

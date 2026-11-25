@@ -46,6 +46,10 @@ waterfall, Sankey and box traces. A
 ready-made figure asking for anything else says so and names the trace type it
 wanted.
 
+The bundled Plotly draws scatter, candlestick, bar, heatmap and treemap
+traces. A ready-made
+figure asking for anything else says so and names the trace type it wanted.
+
 ## Linked charts
 
 A chart created from a table's card menu draws that table's output. Open **Parameters** with the card’s **Show parameters** chevron. The panel holds **Choose source** and the linked chart or KPI controls. Its basic chart controls include **Chart type** (Columns, Bars or Lines), a **Category**, the
@@ -93,7 +97,25 @@ line when the feed supplies only closes. The chart uses the widget's default
 symbol, with optional volume bars underneath, a *Rendered by TradingView* credit, and the light/dark theme.
 The mouse wheel scrolls the card rather than zooming the chart.
 
+## TradingView and Live Chart cards
+
+Two chart widgets are drawn with TradingView's lightweight-charts library
+instead of Plotly, as candles with volume bars under them and a
+*Rendered by TradingView* line. The reference backend's **TradingView Chart**
+(`advanced_charting`) shows daily candles for its default symbol. live-grid's
+**Live Chart** (`live_chart`) fetches bars for its symbol at its interval, then
+extends the newest bar from the live grid's socket as trades arrive. It charts
+the first symbol only, and with no interval, or one it cannot read, it shows
+the fetched bars with a note and stays off the socket.
+
 **Market map** uses a verified local snapshot with a completed close-to-close price session. Areas show delivered capitalization in one currency or acquired weights for a named index. Both live modes are unavailable. **Latest acquired** follows the selected snapshot. To keep one session, select its date and apply. If a pin is missing, relink or select an acquired session explicitly. Hover or tap for original values, drill a sector by clicking or tapping it again, and use the breadcrumb or **Home** to reset. **Market map details** lists original areas and return fractions, including tiny tiles.
+
+With the backend's chart stream capability, Live Chart instead receives an atomic
+snapshot and complete server candle replacements. Late trades can revise older
+closed candles. It retains up to 2,000 candles, resumes from its applied progress
+after reconnecting, and requests a fresh snapshot when a gap cannot be recovered.
+Quiet-market status changes do not add trades or volume. Refresh requests a new
+snapshot. This view currently displays candles for the first symbol.
 
 ## Zoom, pan and reset
 
@@ -122,4 +144,13 @@ unzoomable and therefore unresettable.
 
 ---
 
-Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
+
+
+**Day Chart** (`day_chart`) accepts a symbol CSV or group on parameter row 0. Row 1 controls rows, columns, price/% scale and 1–5 trading days. Rows alone scroll horizontally, columns alone vertically, and both create a grid with overflow below. US session dividers skip overnight gaps; crypto such as BTC-USD uses continuous UTC days, including weekends. Prices/changes share the live-grid 250ms feed; historical chart bars refresh every 15s. Session dates, source and update status live in the bottom bar. Missing logos use initials and unavailable data fails per tile. See the Day Chart watchlist section in [[charts|Charts]].
+
+## Observed live price views
+
+**Return distribution**, **Drawdown** and **Small multiples** can use the same verified live daily-price acquisition as the observed-return box and violin views. Each view requires the acquired adjusted-price and trading-date fields, preserves provider and table-filter gaps, and refuses an unverified or changed source. Live returns describe observed quote-to-quote pairs; exchange-session completeness remains unknown. Monthly returns and correlation still require their own supported snapshot evidence.

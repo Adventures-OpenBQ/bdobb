@@ -16,6 +16,7 @@ import {
 } from "./workspaceAccount";
 import { DEFAULT_SETTINGS } from "./settingsFile";
 import { backend } from "../test/fixtures";
+import { startMockServer } from "../test/mockServer";
 import type { AuthLocation, Settings } from "./types";
 vi.mock("@tauri-apps/plugin-http", () => ({ fetch: vi.fn() }));
 const userId = "11111111-1111-4111-8111-111111111111";
@@ -395,3 +396,14 @@ describe("probeSettingsApi", () => {
     expect(await probeSettingsApi(viaBackend("Authorization"))).toBe("authorization-header");
   });
 });
+
+it("recognises a settings server whose cold response exceeds five seconds", async () => {
+  const server = await startMockServer({ "/pro/user": { __delayMs: 6_000, __status: 200, __body: { pro_display_settings: {} } } });
+  vi.mocked(fetch).mockImplementation((url, init) => globalThis.fetch(url, init));
+  try {
+    expect(await probeSettingsApi({ id: "cold", name: "Cold server", baseUrl: server.url })).toBe("key");
+  } finally {
+    vi.mocked(fetch).mockReset();
+    await server.close();
+  }
+}, 20_000);

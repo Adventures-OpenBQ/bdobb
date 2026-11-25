@@ -55,6 +55,10 @@ describe("REGISTERED_TRACE_TYPES", () => {
   it("registers surface so the linked chart's Surface type renders", () => {
     expect(REGISTERED_TRACE_TYPES.has("surface")).toBe(true);
   });
+
+  it("registers treemap so the live-grid sector map renders", () => {
+    expect(REGISTERED_TRACE_TYPES.has("treemap")).toBe(true);
+  });
 });
 
 describe("renderPlot's config", () => {

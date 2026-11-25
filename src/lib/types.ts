@@ -217,6 +217,12 @@ export type ColumnSpec = {
   prefix?: string;
   suffix?: string;
   pinned?: "left" | "right";
+  /**
+   * Which edge this column's content sits against; absent leaves the table's
+   * own default. Declared for a range bar's flanking low/high columns: the low
+   * right-aligned and the high left-aligned put both numbers against the bar.
+   */
+  align?: "left" | "right" | "center";
   hide?: boolean;
   width?: number;
   minWidth?: number;
@@ -298,6 +304,10 @@ export type WidgetDef = {
   endpoint: string;
   /** A live_grid widget's WebSocket path; absent means "not a live grid". */
   wsEndpoint?: string;
+  /** Explicit backend capability; legacy quote folding stays separate. */
+  chartStreamV1?: boolean;
+  /** Bounded, explicitly labelled provider history for a completed US session. */
+  closedSessionHistory?: boolean;
   /** The column that identifies a row for a live_grid's streamed updates. */
   wsRowIdColumn?: string;
   gridData: { w: number; h: number };

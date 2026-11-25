@@ -8,12 +8,20 @@
  * vendored stack contract, verbatim from openbq-docker's funnel-gateway --
  * this file is never vendored, and nothing here changes what a route admits.
  *
- * At this line (paired stack: openbq-docker v8.0.0) the policy serves /api,
- * /ref, /state and the /news family, with /ref/live_grid_ws and /news/ws/news
- * as socket targets, so the ticket flag is set (when a gateway is configured)
- * and the reference backend is seeded. The seed is the built-ins dashboard,
- * which needs no backend, no key and no sign-up, plus a News tab whenever the
+ * From 8.0.0 (paired stack: openbq-docker v8.0.0) the policy serves /api,
+ * /state and the /news family, with /news/ws/news a socket target beside the
+ * reference's /ref/live_grid_ws (v3), so the ticket flag is set (when a
+ * gateway is configured; src/browser-shim/socket.ts) and the reference backend
+ * is seeded. The seed is the built-ins dashboard, which
+ * needs no backend, no key and no sign-up, plus a News tab whenever the
  * preview has approved feeds to show and a gateway to relay them.
+ *
+ * Episode 10 adds live-grid's /grid family: a `preview-grid` backend on
+ * <origin>/grid and a Live quotes tab with one live_grid card, seeded only
+ * with a gateway AND a vendored policy that serves the grid socket
+ * (server.mjs gridSocketServed). The vendored openbq-docker v10.0.0 policy
+ * serves it; under a policy without the grid rules (v8.0.0's) the tab is never
+ * seeded, so nothing names a backend the door refuses (donor c183f880).
  */
 
 /**
@@ -22,9 +30,13 @@
  * is off or could not be read -- in which case the page must NOT save, because its
  * first save would replace whatever is really in the store with these defaults.
  */
-export function bootstrap(config, saved) {
+export function bootstrap(config, saved, { grid = false } = {}) {
+  const liveGrid = Boolean(grid && config.backend);
+  // The AI Library's defaults: Rita on the door's /ai (PREVIEW_RITA) and the stack's MCP server
+  // on its /mcp (PREVIEW_MCP), at this origin.
+  const services = aiDefaults(config);
   const seed = {
-    "settings.json": "{}",
+    "settings.json": JSON.stringify(services),
     "backends.json": JSON.stringify([
       {
         id: "preview-api", name: "OpenBB API (preview)", baseUrl: config.origin + "/api",
@@ -37,6 +49,10 @@ export function bootstrap(config, saved) {
       // Only with a gateway: /ref is relayed through it, so without one the backend would just 404.
       ...(config.backend ? [{
         id: "preview-ref", name: "OpenBQ Reference (preview)", baseUrl: config.origin + "/ref",
+        authLocation: "header", validateWidgets: false,
+      }] : []),
+      ...(liveGrid ? [{
+        id: "preview-grid", name: "Live grid (preview)", baseUrl: config.origin + "/grid",
         authLocation: "header", validateWidgets: false,
       }] : []),
     ]),
@@ -95,6 +111,21 @@ export function bootstrap(config, saved) {
               ],
             }]
           : []),
+        ...(liveGrid
+          ? [{
+              id: "live", name: "Live quotes", cards: [
+                {
+                  // live-grid's own widget id, from its widgets.json (relayed as
+                  // /grid/widgets.json), not one this process invents. The card
+                  // fetches /grid/live_grid for its snapshot and opens
+                  // /grid/live_grid_ws on a ticket (src/browser-shim/socket.ts).
+                  id: "preview-live-grid", widgetId: "live_grid", backendId: "preview-grid",
+                  params: { symbol: "AAPL,MSFT,NVDA,BTC-USD,EURUSD" },
+                  layout: { x: 0, y: 0, w: 40, h: 14 },
+                },
+              ],
+            }]
+          : []),
         {
           id: "grouping", name: "Grouping", cards: [
             { id: "preview-grouping-note", widgetId: "note", backendId: "builtin",
@@ -112,8 +143,9 @@ export function bootstrap(config, saved) {
       groups: [{ id: "g1", name: "Ticker", paramName: "ticker", groupType: "ticker", value: "AAPL" }],
     }),
   };
-  // Read by src/browser-shim/socket.ts: same-origin sockets fetch a ticket and open
-  // on the gateway instead of here. Without a gateway there is no socket to ticket.
+  // Read by src/browser-shim/socket.ts: same-origin sockets (the wire's, and the
+  // grid's once the policy serves it) fetch a ticket and open on the gateway
+  // instead of here. Without a gateway there is no socket to ticket.
   const tickets = config.backend ? "window.__bdobbSocketTickets=true;\n" : "";
   // Read by src/browser-shim/fs.ts: writes to the app's JSON stores are mirrored to /state.
   const persist = saved ? "window.__bdobbPersist=true;\n" : "";
@@ -121,7 +153,7 @@ export function bootstrap(config, saved) {
   // Feeds and a gateway both, like the News tab: without the gateway /news only answers 503.
   const news = config.backend && Object.keys(config.feeds).length ? `window.__bdobbNewsServer=${JSON.stringify(config.origin + "/news")};\n` : "";
   // Saved state REPLACES the default seed: merged, a dashboard the user deleted would return.
-  const files = saved && Object.keys(saved).length ? saved : seed;
+  const files = saved && Object.keys(saved).length ? withServices(saved, services) : seed;
   const notice = saved ? "Changes are saved to your account" : "Changes reset on reload";
   return `${tickets}${persist}${news}window.__bdobbSeed=${JSON.stringify(files).replaceAll("<", "\\u003c")};
 document.addEventListener("DOMContentLoaded",()=>{
@@ -131,4 +163,47 @@ document.addEventListener("DOMContentLoaded",()=>{
  const link=document.createElement("a"); link.href="/auth/signout"; link.textContent="Sign out";
  bar.append(link); document.body.prepend(bar);
 });`;
+}
+
+/**
+ * What the AI Library starts with on the preview: the door's Rita and its MCP server -- what
+ * VITE_DEFAULT_RITA_URL / VITE_DEFAULT_MCP_URL give a desktop build, MCP's writing tools off.
+ */
+function aiDefaults(config) {
+  const out = {};
+  if (config.rita && config.backend) out.ritaUrl = config.origin + "/ai";
+  if (config.mcp && config.backend) {
+    const url = config.origin + "/mcp";
+    out.mcpServers = [{ id: "openbq-mcp", name: "OpenBQ MCP", url, enabled: true }];
+    out.mcpDisabledTools = { [url]: ["install_skill", "run_pipeline"] };
+  }
+  return out;
+}
+
+/**
+ * Saved state gains each default only where it names nothing of its own: no settings file, no
+ * key, or the app's own empty default ("" for ritaUrl, [] for mcpServers -- DEFAULT_SETTINGS,
+ * which every save writes, so "cleared" and "never set" look the same). On the preview these are
+ * the only Rita and MCP it can reach, so empty is read as unset. An unreadable file is left as it is.
+ */
+function withServices(saved, services) {
+  if (!Object.keys(services).length) return saved;
+  const text = saved["settings.json"];
+  let settings = {};
+  if (text !== undefined) {
+    try { settings = JSON.parse(text); } catch { return saved; }
+    if (typeof settings !== "object" || settings === null || Array.isArray(settings)) return saved;
+  }
+  const out = { ...settings };
+  const needsRita = services.ritaUrl && !(typeof settings.ritaUrl === "string" && settings.ritaUrl !== "");
+  const needsMcp = services.mcpServers && !(Array.isArray(settings.mcpServers) && settings.mcpServers.length);
+  // Nothing to add: the user's own bytes, not a re-serialisation of them.
+  if (!needsRita && !needsMcp) return saved;
+  if (needsRita) out.ritaUrl = services.ritaUrl;
+  if (needsMcp) {
+    out.mcpServers = services.mcpServers;
+    const kept = typeof settings.mcpDisabledTools === "object" && settings.mcpDisabledTools !== null && !Array.isArray(settings.mcpDisabledTools) ? settings.mcpDisabledTools : {};
+    out.mcpDisabledTools = { ...kept, ...services.mcpDisabledTools };
+  }
+  return { ...saved, "settings.json": JSON.stringify(out) };
 }

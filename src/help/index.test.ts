@@ -204,3 +204,23 @@ describe("v9 topics", () => {
     expect(topic("calendar-view")).toContain("See EODHD data.");
   });
 });
+
+// v10: the live grid is a table card with a socket behind it, so Quick Help
+// covers it in Tables (donor 7876c86a did the same) and in Troubleshooting --
+// written for this line: one row per frame IS read here, and a header
+// credential does not ride the socket.
+describe("v10 topics", () => {
+  const topic = (slug: string) => TOPICS.find((t) => t.slug === slug)?.body ?? "";
+  it("Tables covers the live grid and the logo, rangeBar and percentKey declarations", () => {
+    for (const s of ["## Live grids", "`live_grid`", "`symbol_meta`", "**Refresh** re-fetches the snapshot", "one row at a time or as a list of rows",
+      "`logo`", "`NA`", "`rangeBar`", "`lowKey`", "`highKey`", "`valueKey`", "`price`", "`week52`", "`day`", "`percentKey`", "`1.24 (3.4%)`", "`align`",
+      "`enableCellChangeWs: false`"]) {
+      expect(topic("tables")).toContain(s);
+    }
+  });
+  it("Troubleshooting says why a live grid holds its snapshot", () => {
+    expect(topic("troubleshooting")).toContain("## A live grid shows its first snapshot and never ticks");
+    expect(topic("troubleshooting")).toContain("A browser websocket cannot carry a header.");
+    expect(topic("troubleshooting")).toContain("single-use socket ticket before every connect");
+  });
+});
