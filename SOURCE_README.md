@@ -1,6 +1,7 @@
 # Source for the v7.0.0 AGPL edition
 
 Base repository: Adventures-OpenBQ/bdobb
+Base commit: 6188c56a9380d923dff0fa1c632771ec978dbb48
 Application licensing: AGPL-3.0-only, with retained third-party and earlier Apache grants.
 
 This source tree includes the AGPL edition, revision-specific Help
