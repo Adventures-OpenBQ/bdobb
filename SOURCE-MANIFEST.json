@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v8.0.0",
-  "baseCommit": "3e157ae2aafcc74bcb1c0dfbc931daf70f1a648b",
-  "sourceId": "61a10d64969f8baa23b19fb7e92f1b4390d75b8f609dd6aacf5d41876377eb86",
+  "baseCommit": "a4d7b652e4c258c6786736f7c3d868e690c901c9",
+  "sourceId": "e23042da4143ea85d3ac983c8f2be437be239fe52419a28480f56b3f4f9a966a",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -3626,7 +3626,7 @@
       "type": "file",
       "mode": 420,
       "size": 5004,
-      "sha256": "46efc5ec96e2f1d6047e38278848c8978e8c7c032d79135739720cc73febd526"
+      "sha256": "639915276ab5e7deb1e34ad07271dcba4b383c76adb008a07020b70bf427d777"
     },
     {
       "path": "SUPPLEMENTAL_THIRD_PARTY_NOTICES.md",
@@ -22014,8 +22014,8 @@
       "path": "security/privacy-exceptions.json",
       "type": "file",
       "mode": 420,
-      "size": 10548,
-      "sha256": "08b1edd468769d4e2b91b6a54bc33e116aa3da7bc0b4c484cfc8bfb9699a575e"
+      "size": 12782,
+      "sha256": "55729dd83bbf1244d5630e470c13121efee3f15ae9fccf7ec71962419d7a04e0"
     },
     {
       "path": "security/privacy-history-exceptions.json",
@@ -22155,7 +22155,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "8eee05546c9c580ddc945fc79e8907ca6ac5e9be7ac9e4ce9f008551fa7be90b"
+      "sha256": "9c16382ae7fc99ff9c31dee34cc74f590e88fea6eb6f29086ee85cf105112764"
     },
     {
       "path": "source_bundle.py",
@@ -23764,8 +23764,8 @@
       "path": "src/components/renderers/PdfView.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 38235,
-      "sha256": "a8fc26a0cdaa5aa8016ce3753652841a9fc2634fea99de5ce575a9e3dbc5f279"
+      "size": 38506,
+      "sha256": "7f1093b21b73aa3f13d1f818bd6313b7b51f6a459ebde02e9959ccde6182b37e"
     },
     {
       "path": "src/components/renderers/PdfView.tsx",
