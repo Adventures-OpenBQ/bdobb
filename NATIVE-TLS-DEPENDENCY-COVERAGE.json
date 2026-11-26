@@ -2,8 +2,8 @@
   "schema": 1,
   "scope": "Exact four changed native TLS Cargo distributions; old shared dependency/source packs remain unchanged.",
   "base_dependency_sources_sha256": "3e9445312a6028f803a66422c2d38f74c1e0571d08d1356db51498d8d5d1bda9",
-  "base_dependency_coverage_sha256": "8a2235724c45b81e1f0531ba8d72c3ae2459714dc731e0a3115eabe706df0407",
-  "native_cargo_lock_sha256": "f6980085beb0bb1176af41a040001c369249351c3ef65b0f72844fad14d93428",
+  "base_dependency_coverage_sha256": "9ba00c84207a95daa3764b342a5365f91e4fa20ed5ce42ed3992d3ff107c9695",
+  "native_cargo_lock_sha256": "60a82dd283340215589530df979794f5e15a20df5801e48be840e36c752d0bef",
   "supplement_manifest_sha256": "1121714ec7b0c0b0e2cedcb3f2b53cc9332959d0010babb899a616466f18d20d",
   "supplement_archive_sha256": "877fb7e2f9b54c6c879f3a9c2e6c756ae07d5bac53c435a8b9d308a8a06f93c6",
   "packages": [

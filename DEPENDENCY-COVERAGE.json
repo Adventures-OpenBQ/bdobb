@@ -183,7 +183,7 @@
     },
     {
       "path": "src-tauri/Cargo.lock",
-      "sha256": "8e35900cd7f4da7dc47b81dcff23788c21d1cdd183cc041dadf924c856bd9118",
+      "sha256": "60a82dd283340215589530df979794f5e15a20df5801e48be840e36c752d0bef",
       "registryPackages": [
         "rust:adler2@2.0.1",
         "rust:aho-corasick@1.1.5",
@@ -338,7 +338,7 @@
         "rust:gtk-sys@0.18.2",
         "rust:gtk3-macros@0.18.2",
         "rust:gtk@0.18.2",
-        "rust:h2@0.4.15",
+        "rust:h2@0.4.16",
         "rust:hashbrown@0.12.3",
         "rust:hashbrown@0.17.1",
         "rust:heck@0.4.1",
@@ -523,8 +523,8 @@
         "rust:rustc_version@0.4.1",
         "rust:rustix@1.1.4",
         "rust:rustls-pki-types@1.15.1",
-        "rust:rustls-webpki@0.103.14",
-        "rust:rustls@0.23.43",
+        "rust:rustls-webpki@0.103.16",
+        "rust:rustls@0.23.45",
         "rust:rustversion@1.0.23",
         "rust:ryu@1.0.23",
         "rust:same-file@1.0.6",
@@ -670,7 +670,7 @@
         "rust:web_atoms@0.3.0",
         "rust:webkit2gtk-sys@2.0.2",
         "rust:webkit2gtk@2.0.2",
-        "rust:webpki-roots@1.0.9",
+        "rust:webpki-roots@1.0.10",
         "rust:webview2-com-macros@0.8.1",
         "rust:webview2-com-sys@0.39.1",
         "rust:webview2-com@0.39.1",
@@ -764,8 +764,8 @@
     }
   ],
   "pnpmLockSha256": "db30b5e254683e1debf114c4e1b2eb46f0011c205b94be6f3ae4d4d85b13f27a",
-  "pnpmRecordedCoverage": "v5.0.0-current",
-  "sourceCheckpoint": "8135864932aef969d6754be8ba8757711574d0d9",
+  "pnpmRecordedCoverage": "v10.0.0-current",
+  "sourceCheckpoint": "171ab74527d4bdfb091593d81045e09510d7c962",
   "pnpmRegistryPackages": [
     "npm:@adobe/css-tools@4.5.0",
     "npm:@asamuzakjp/css-color@3.2.0",
@@ -1726,5 +1726,55 @@
     "npm:zustand@5.0.15",
     "npm:zwitch@2.0.4"
   ],
-  "uniqueDistributionsVerified": 1553
+  "uniqueDistributionsVerified": 1553,
+  "completeCargoLockInventory": [
+    {
+      "path": "crates/pivot-core/Cargo.lock",
+      "sha256": "fea4432e1d4409c9faaf662bdf49f6615dcc60a6eea2cc61cc340cb5ee9031f0",
+      "scope": "active-build-lock",
+      "external_dependency_rows_equal_baseline": true
+    },
+    {
+      "path": "crates/pivot-native-worker/Cargo.lock",
+      "sha256": "e635fde38bd2f5fc63237a15d66394feca8323251e606fd42326db0eaff467bc",
+      "scope": "active-build-lock",
+      "external_dependency_rows_equal_baseline": true
+    },
+    {
+      "path": "crates/pivot-native/Cargo.lock",
+      "sha256": "8fb34a7f59fda63db43e60ae4a46a8b96bd2dafcaad35f22f6beceda8dc35efe",
+      "scope": "active-build-lock",
+      "external_dependency_rows_equal_baseline": true
+    },
+    {
+      "path": "crates/pivot-wasm/Cargo.lock",
+      "sha256": "225abdcaabfb879d4fdc6c2ffa027975ab3bb66f10a8b76fd65a393662c1ec6f",
+      "scope": "active-build-lock",
+      "external_dependency_rows_equal_baseline": true
+    },
+    {
+      "path": "crates/pivot-wire/Cargo.lock",
+      "sha256": "a8ea33ba68e38b04f1a90680cff1302aa7b7c55a073c4d76deb43210e00a74a0",
+      "scope": "active-build-lock",
+      "external_dependency_rows_equal_baseline": true
+    },
+    {
+      "path": "crates/table-service/Cargo.lock",
+      "sha256": "278f82c6c7d8e885cabe6142b877c1789243bbb64d03ec66264320885d4006b0",
+      "scope": "active-build-lock",
+      "external_dependency_rows_equal_baseline": true
+    },
+    {
+      "path": "src-tauri/Cargo.lock",
+      "sha256": "60a82dd283340215589530df979794f5e15a20df5801e48be840e36c752d0bef",
+      "scope": "active-build-lock",
+      "external_dependency_rows_equal_baseline": true
+    },
+    {
+      "path": "src-tauri/vendor/tao/Cargo.lock",
+      "sha256": "52221bfc870a4ee696916dabd3ea87c5182180e491378ff672f046b4b8177275",
+      "scope": "inherited-vendored-upstream-reference-lock-not-used-for-root-build",
+      "external_dependency_rows_equal_baseline": true
+    }
+  ]
 }

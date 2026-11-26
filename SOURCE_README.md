@@ -1,7 +1,7 @@
-# Source for the proposed v9.0.0 AGPL edition
+# Source for the proposed v10.0.0 AGPL edition
 
 Base repository: Adventures-OpenBQ/bdobb
-Base commit: 719d377a818470c75499000f5b5834822745e43b
+Base commit: 171ab74527d4bdfb091593d81045e09510d7c962
 Application licensing: AGPL-3.0-only, with retained third-party and earlier Apache grants.
 
 This source tree includes the proposed AGPL migration, revision-specific Help
@@ -33,6 +33,14 @@ packages contain src/, and the Rust crates contain their source. The pack's
 copyleft-source report records source-member checks. Do not replace upstream
 licenses with AGPL. Recovered evidence and standard terms are reproduced in
 SUPPLEMENTAL_THIRD_PARTY_NOTICES.md and LICENSES/dependency-evidence/.
+
+## Native TLS dependency supplement
+
+The additional native TLS source distributions and retained licenses are identified by
+`NATIVE-TLS-DEPENDENCY-SOURCES.json` and `NATIVE-TLS-DEPENDENCY-COVERAGE.json`.
+Download `dependency-pack-native-tls-1121714ec7b0c0b0e2ce.tar.gz`.
+SHA-256: `877fb7e2f9b54c6c879f3a9c2e6c756ae07d5bac53c435a8b9d308a8a06f93c6`.
+Prepared public URL: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-native-tls-1121714ec7b0/dependency-pack-native-tls-1121714ec7b0c0b0e2ce.tar.gz
 
 ## Build the application
 
@@ -74,4 +82,4 @@ Exact paired provider commit: d81131133fbdf850db8f854ae5c08d1c496d0dd7
 
 The catalogue contains all 71 calendars. Coverage/disagreement limits in docs/calendars/release-v4-evidence.md remain applicable. These sources supersede earlier archive offers for this changed edition; original Apache tags stay intact.
 
-Documentation copyright patch v9.0.0, based on published source commit 6dbb02cceac4a22168fc0516a194da3c0b6edcc0. The software remains AGPL-3.0-only; DOCUMENTATION_TERMS.md preserves existing permissions and Corresponding Source rights.
+Documentation copyright patch v10.0.0, based on published source commit 6dbb02cceac4a22168fc0516a194da3c0b6edcc0. The software remains AGPL-3.0-only; DOCUMENTATION_TERMS.md preserves existing permissions and Corresponding Source rights.
