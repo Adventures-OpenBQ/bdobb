@@ -6,7 +6,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { configDefaults } from "vitest/config";
 import { ensurePivotWasm } from "./scripts/build-pivot-wasm.mjs";
@@ -115,6 +115,20 @@ const browserShims = {
   "@tauri-apps/api/webviewWindow": here("./src/browser-shim/webviewWindow.ts"),
 };
 
+/** Keep the effective seed visible in the decoded HTML and consumed by the app. */
+function buildDefaults(mode: string): Plugin {
+  const env = loadEnv(mode, here("."));
+  const names = ["VITE_OPENBB_API_URL", "VITE_RITA_URL", "VITE_MCP_SERVERS", "VITE_SHARE_FOLDERS",
+    "VITE_DEFAULT_BACKEND_URL", "VITE_DEFAULT_BACKEND_AUTH", "VITE_DEFAULT_RITA_URL", "VITE_DEFAULT_MCP_URL"];
+  const values = Object.fromEntries(names.map((name) => [name, env[name] ?? ""]));
+  return {
+    name: "bdobb:build-defaults",
+    transformIndexHtml() {
+      return [{ tag: "meta", attrs: { name: "bdobb-build-defaults", content: JSON.stringify(values) }, injectTo: "head" }];
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => ({
   // Exposes TAURI_ENV_PLATFORM to the bundle: "ios" in an iOS build, so the
   // iOS-only paths (saveTextFile, the rail's Save…, screenFit's monitor
@@ -134,7 +148,7 @@ export default defineConfig(({ mode }) => ({
    */
   define: { global: "globalThis" },
 
-  plugins: [portablePivotWasm(), react(), pdfStandardFonts()],
+  plugins: [portablePivotWasm(), react(), pdfStandardFonts(), buildDefaults(mode)],
   clearScreen: false,
   /**
    * A widget frame with a real `src` is granted `allow-same-origin` so it can
