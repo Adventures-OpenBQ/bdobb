@@ -39,6 +39,6 @@
     "path": "deploy/table-service/examples/temporal-backends.example.json",
     "rule": "generic-api-key",
     "content_sha256": "16924315448333bb1f69afef689c8947dbebcb93a2645e700d37e749b4624c82",
-    "reason": "Historical example contains only the documented internal Docker DNS service URL with no userinfo, query, credential headers, or private host. JSON parsing and every URL independently verified; exact normalized complete historical file bytes bound."
+    "reason": "Historical example uses an internal Docker DNS service URL with no userinfo or query, plus an explicitly literal Bearer REPLACE_... uppercase placeholder in principalHeaders. Parsed JSON and replacement-marker grammar verified; no claim that the header field is absent. Exact complete normalized historical file bytes are bound."
   }
 ]
