@@ -4,6 +4,7 @@
 import { useMemo } from "react";
 import { correctStatementRows, isStatementPeriodParam } from "../lib/statementFiscal";
 import { tableRows } from "../lib/tableColumns";
+import { isTableSnapshotEnvelope } from "../lib/tableRowValues";
 import type { BackendConfig, WidgetDef } from "../lib/types";
 import { statementSymbolsOf, useStatementYearEnds } from "./useStatementYearEnds";
 
@@ -27,10 +28,12 @@ export function useStatementRows(
   const statementSymbols = statement ? statementSymbolsOf(query) : [];
   const yearEnds = useStatementYearEnds(statement ? backend : undefined, statementSymbols);
   return useMemo(() => {
-    const rows = statement ? tableRows(rawData) : null;
+    const envelope = isTableSnapshotEnvelope(rawData);
+    const rows = statement ? tableRows(envelope ? rawData.rows : rawData) : null;
     if (rows === null || yearEnds.pending) return { data: rawData, asReported: false };
     const out = correctStatementRows(rows, query.period ?? "", yearEnds.months, statementSymbols);
-    return { data: out.rows, asReported: out.asReported };
+    const data = out.rows === rows ? rawData : envelope ? { ...rawData, rows: out.rows } : out.rows;
+    return { data, asReported: out.asReported };
     // yearEnds.months / .pending, not `yearEnds` (a new object every render);
     // statementSymbols is rebuilt every render, so its joined text stands in.
     // eslint-disable-next-line react-hooks/exhaustive-deps

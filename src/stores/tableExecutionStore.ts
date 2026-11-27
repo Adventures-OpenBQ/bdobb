@@ -134,11 +134,12 @@ export function backendTableSource(card: DashboardCard): SourceAdapter {
     if (request !== entry.request) throw new DOMException("Backend question changed", "AbortError");
     // The card's own fetch failed: its children must not keep the previous rows.
     if (entry.data instanceof Error) throw entry.data;
-    if (!fitsTableWorker(entry.data)) throw new Error('This table is too large for the table engine');
     const spec = useWidgetRegistryStore.getState().find(card.backendId, card.widgetId)?.table;
-    // Copied: datasetFromRows fills absent keys, and these rows are also on screen.
     const parsed = parseTableSnapshot(entry.data);
-    const rows = (tableRows(parsed.data, spec) ?? []).map(row => ({ ...row }));
+    const sourceRows = tableRows(parsed.data, spec) ?? [];
+    if (!fitsTableWorker(sourceRows)) throw new Error('This table is too large for the table engine');
+    // Copied only after admission: datasetFromRows fills absent keys, and these rows are also on screen.
+    const rows = sourceRows.map(row => ({ ...row }));
     // The provider's aggregation hint rides as column metadata, so a linked table's input keeps it for Rita's describe_table (V9-P2).
     const columns = spec ? tableColumns(rows, spec).map(c => ({ id: c.field, label: c.header, ...(c.cellDataType ? { dtype: c.cellDataType } : {}), ...(c.format ? { format: c.format } : {}), ...(c.hint ? { metadata: { aggregationHint: c.hint } } : {}) })) : [];
     return { kind: 'dataset', dataset: datasetFromRows(rows, card.id, 0, 'backend', undefined, columns, parsed.snapshot, entry.acquisition) };

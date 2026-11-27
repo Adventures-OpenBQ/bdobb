@@ -24,4 +24,13 @@ describe("dataBounds (v5.3.0 data_bounds)", () => {
     expect(dataBounds([{ symbol: "AAPL", price: 1 }])).toBeUndefined();
     expect(dataBounds("not rows")).toBeUndefined();
   });
+
+  it("reads retained snapshot observation dates without consuming its acquisition metadata", () => {
+    const snapshot = { rows: [{ period_ending: "2025-12-27" }, { period_ending: "2024-12-28" }],
+      completeness: "partial", receipt: { symbol: "AAPL" }, chart_evidence: { origin: "acquired" } };
+    const before = structuredClone(snapshot);
+    expect(dataBounds(snapshot)).toEqual({ min: new Date(2024, 11, 28, 12), max: new Date(2025, 11, 27, 12) });
+    expect(snapshot).toEqual(before);
+    expect(dataBounds({ rows: [], completeness: "partial" })).toBeUndefined();
+  });
 });

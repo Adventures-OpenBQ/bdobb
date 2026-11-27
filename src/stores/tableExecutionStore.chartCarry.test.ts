@@ -6,6 +6,18 @@ import {createWorkerExecutor} from '../lib/tableExecution/workerClient';
 import {Boundary} from '../test/tableWorkerBoundary';
 import {useWidgetRegistryStore} from './widgetRegistryStore';
 import {card,widget} from '../test/fixtures';
+it.each(['rows','snapshot'] as const)('rejects an oversized backend %s payload before dataset materialization',async shape=>{
+ const source=card({id:`oversized-${shape}`,widgetId:'oversized-table'});
+ const values=Object.fromEntries(Array.from({length:2001},(_,i)=>[`field${i}`,i]));
+ const rows=Array.from({length:1000},()=>values);
+ const store=createTableExecutionStore({source:backendTableSource});
+ useWidgetRegistryStore.setState({widgets:[widget({id:'oversized-table',type:'table'})]});
+ store.setBackendRows('oversized-dashboard',source.id,shape==='rows'?rows:{rows,completeness:'partial'});
+ const outcome=await backendTableSource(source).acquire(new AbortController().signal)
+  .then(()=> 'accepted oversized input',error=>error.message);
+ expect(outcome).toBe('This table is too large for the table engine');
+});
+
 it('rejects a late rows-and-receipt handover owned by an obsolete authenticated question',async()=>{
  const source=card({id:'question-source',widgetId:'question-table',params:{symbol:'AAPL'}});
  useWidgetRegistryStore.setState({widgets:[widget({id:'question-table',type:'table',table:{columns:[{field:'price'}]}})]});

@@ -397,12 +397,14 @@ describe("useWidgetData", () => {
 
   // v5.3.0 §2/§3/§5: `earliest` comes from `data_bounds.min`; "if the widget hasn't yet
   // reported bounds, the resolver defers". Specified in v5.3 and never shipped.
-  it("defers `earliest` on the first request, then asks for exactly what the data reported -- and settles", async () => {
-    const server = await serve({ "/equity/price": [
+  it.each([false, true])("defers `earliest`, resolves reported bounds, and settles with retained snapshot=%s", async (snapshot) => {
+    const rows = [
       { date: "2024-03-01", close: 2 }, { date: "2019-01-02", close: 1 }, { date: "2026-09-17", close: 3 },
-    ] });
+    ];
+    const payload = snapshot ? { rows, completeness: 'partial' } : rows;
+    const server = await serve({ "/equity/price": payload });
     useWidgetRegistryStore.setState({
-      widgets: [makeWidget({ id: "w1", name: "History", endpoint: "equity/price",
+      widgets: [makeWidget({ id: "w1", name: "History", endpoint: "equity/price", type: "table", dataKey: snapshot ? 'rows' : undefined,
         params: [{ paramName: "start_date", type: "date" }, { paramName: "end_date", type: "date" }] })],
     });
     const { result } = renderHook(() => useWidgetData(card, { start_date: "earliest + 1y", end_date: "latest" }));
@@ -419,6 +421,7 @@ describe("useWidgetData", () => {
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 150)); });
     // The same rows came back, so the same bounds: no third request, no loop.
     expect(asked()).toHaveLength(2);
+    expect(result.current.data).toEqual(payload);
   });
 
   it("an offset bound against a provider that honours it settles after one bounded request", async () => {
