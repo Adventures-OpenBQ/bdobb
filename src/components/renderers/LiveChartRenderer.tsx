@@ -4,9 +4,10 @@
 import { ChartStreamRenderer } from "./ChartStreamRenderer";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildWidgetWsUrl, fetchWidgetData, stripQuery, ticketedWsUrl, wantsSocketTicket } from "../../lib/dataClient";
+import { useBackendScope } from "../../hooks/useBackendScope";
 import { useReconnectingSocket, type SocketStatus } from "../../hooks/useReconnectingSocket";
 import { useResolvedTheme } from "../../hooks/useResolvedTheme";
-import { foldTick, intervalSeconds, rowTick, seriesBars, volumeStep, type VolumeCounter } from "../../lib/liveChart";
+import { foldTick, intervalSeconds, rowTick, seriesBars, mergeLegacySeed, volumeStep, type VolumeCounter } from "../../lib/liveChart";
 import { logOnce } from "../../lib/logger";
 import { mountCandleChart, TRADINGVIEW_CREDIT_LABEL, TRADINGVIEW_CREDIT_URL, type CandleChartHandle } from "../../lib/lwChart";
 import type { BackendConfig, WidgetDef } from "../../lib/types";
@@ -44,7 +45,8 @@ import { openCredit } from "./TradingViewRenderer";
  * gets the same tooltip and the same stale tone while the socket is down.
  */
 export function LiveChartRenderer(props: LiveChartProps) {
-  return props.widget.chartStreamV1 ? <ChartStreamRenderer {...props} /> : <LegacyLiveChartRenderer {...props} />;
+  const scope = useBackendScope(props.backend);
+  return props.widget.chartStreamV1 ? <ChartStreamRenderer key={scope} {...props} /> : <LegacyLiveChartRenderer key={scope} {...props} />;
 }
 
 type LiveChartProps = {widget: WidgetDef; backend: BackendConfig; params: Record<string,string>; refreshKey?: number; onLive?: (at:number)=>void; onStatus?: (status:SocketStatus)=>void};
@@ -69,7 +71,8 @@ function LegacyLiveChartRenderer({
   const symbol = symbols[0] ?? "";
   const interval = params.interval ?? "";
   const bucket = intervalSeconds(interval);
-  const [bars, setBars] = useState<UdfBar[] | null>(null);
+  const [seed, setSeed] = useState<{bars: UdfBar[]; after: number} | null>(null);
+  const bars = seed?.bars ?? null;
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [plotEl, setPlotEl] = useState<HTMLDivElement | null>(null);
@@ -79,6 +82,8 @@ function LegacyLiveChartRenderer({
   const chartRef = useRef<CandleChartHandle | null>(null);
   /** The newest bar on screen: what the next tick folds into. */
   const last = useRef<UdfBar | undefined>(undefined);
+  const acceptedSerial = useRef(0);
+  const acceptedBars = useRef(new Map<number, {serial: number; bar: UdfBar}>());
   /** The previous tick's volume counter (volumeStep); none until the first after a seed or a reconnect. */
   const volumeBase = useRef<VolumeCounter | undefined>(undefined);
   /**
@@ -111,7 +116,9 @@ function LegacyLiveChartRenderer({
   // before the plot unmounts -- and drop the old one's error, which is not the
   // new one's (review F7).
   useEffect(() => {
-    setBars(null);
+    setSeed(null);
+    acceptedSerial.current = 0;
+    acceptedBars.current.clear();
     setError(null);
     setTicked(false);
     hasBars.current = false;
@@ -121,17 +128,19 @@ function LegacyLiveChartRenderer({
 
   useEffect(() => {
     if (symbol === "") return;
-    let cancelled = false;
+    const controller = new AbortController();
+    const { signal } = controller;
+    const after = acceptedSerial.current;
     void (async () => {
       try {
-        const next = seriesBars(await fetchWidgetData(backend, widget, { ...params, symbol }));
-        if (cancelled) return;
-        hasBars.current = next.length > 0;
-        setBars(next);
+        const next = seriesBars(await fetchWidgetData(backend, widget, { ...params, symbol }, undefined, signal));
+        if (signal.aborted) return;
+        hasBars.current = next.length > 0 || acceptedSerial.current > after;
+        setSeed({bars: next, after});
         setError(null);
         reportLive(true);
       } catch (err) {
-        if (cancelled) return;
+        if (signal.aborted) return;
         const message = err instanceof Error ? err.message : String(err);
         // A Refresh that fails with bars on screen keeps them (the TradingView rule).
         if (hasBars.current) void logOnce(`live-chart-refetch:${widget.id}`, `Live Chart ${symbol}: refetch failed, keeping the last bars: ${message}`);
@@ -139,7 +148,7 @@ function LegacyLiveChartRenderer({
       }
     })();
     return () => {
-      cancelled = true;
+      controller.abort();
     };
     // Keyed on symbol and interval, not `params` (a fresh object each render),
     // as the live grid keys its snapshot.
@@ -183,13 +192,17 @@ function LegacyLiveChartRenderer({
 
   // The seed is the only full redraw; every tick after it is updateBar.
   useEffect(() => {
-    if (!chart || !bars) return;
-    chart.setBars(bars);
-    last.current = bars.at(-1);
-    volumeBase.current = undefined;
+    if (!chart || !seed) return;
+    const accepted = [...acceptedBars.current.values()].filter(entry => entry.serial > seed.after);
+    const next = mergeLegacySeed(seed.bars, accepted.map(entry => entry.bar));
+    chart.setBars(next);
+    last.current = next.at(-1);
+    hasBars.current = next.length > 0;
+    if (!accepted.length) volumeBase.current = undefined;
+    for (const [time, entry] of acceptedBars.current) if (entry.serial <= seed.after) acceptedBars.current.delete(time);
     chartRef.current = chart;
-    setTicked(false);
-  }, [chart, bars]);
+    setTicked(accepted.length > 0);
+  }, [chart, seed]);
 
   // No symbol, or an interval this chart cannot bucket, means no socket: every
   // tick would be dropped, and opening it would still spend a frame and the
@@ -220,6 +233,7 @@ function LegacyLiveChartRenderer({
         if (!bar) continue;
         drawn.updateBar(bar);
         last.current = bar;
+        acceptedBars.current.set(bar.time, {serial: ++acceptedSerial.current, bar});
         moved = true;
       }
       if (!moved) return;

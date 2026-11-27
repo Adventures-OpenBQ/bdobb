@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { buildWidgetWsUrl, fetchWidgetData, fetchWidgetPath, stripQuery, ticketedWsUrl, wantsSocketTicket } from "../../lib/dataClient";
+import { useBackendScope } from "../../hooks/useBackendScope";
 import { useReconnectingSocket, type SocketStatus } from "../../hooks/useReconnectingSocket";
 import { isRecord } from "../../lib/isRecord";
 import { logOnce } from "../../lib/logger";
@@ -97,7 +98,12 @@ function symbolSet(raw: string | undefined): Set<string> {
  * live_grid to it), so a failed snapshot is this renderer's to show, with a
  * Retry; the header's Refresh reaches it as `refreshKey`.
  */
-export function LiveGridRenderer({
+export function LiveGridRenderer(props: Parameters<typeof ScopedLiveGridRenderer>[0]) {
+  const scope = useBackendScope(props.backend);
+  return <ScopedLiveGridRenderer key={scope} {...props} />;
+}
+
+function ScopedLiveGridRenderer({
   widget,
   backend,
   params,
@@ -150,11 +156,12 @@ export function LiveGridRenderer({
 
   // Snapshot, re-fetched when the symbol selection changes, on Retry and on Refresh.
   useEffect(() => {
-    let current = true;
+    const controller = new AbortController();
+    const { signal } = controller;
     const asked = arrivals.current;
-    void fetchWidgetData(backend, widget, params).then(
+    void fetchWidgetData(backend, widget, params, undefined, signal).then(
       (data) => {
-        if (!current) return;
+        if (signal.aborted) return;
         setError(null);
         reportLive(true);
         if (Array.isArray(data)) {
@@ -174,11 +181,11 @@ export function LiveGridRenderer({
         // The card does not fetch a live_grid (builtins.ts leaves it to this
         // renderer), so nothing else would show the failure: without this the
         // card reads "No rows." as if the snapshot were empty.
-        if (current) setError(err instanceof Error ? err.message : String(err));
+        if (!signal.aborted) setError(err instanceof Error ? err.message : String(err));
       },
     );
     return () => {
-      current = false;
+      controller.abort();
     };
     // Keyed on the symbol only (and Retry's and Refresh's counts): params is a
     // fresh object each render, and the backend/widget identities do not

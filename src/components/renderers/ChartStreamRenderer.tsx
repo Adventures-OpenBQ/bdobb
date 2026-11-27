@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import { useEffect, useMemo, useRef, useState } from 'react';
+import {chartBounds} from '../../lib/chartBounds';
 import {mergeLiveHistory} from '../../lib/liveHistory';
 import {useClosedSession} from '../../hooks/useClosedSession';
 import { useChartStream } from '../../hooks/useChartStream';
@@ -19,10 +20,12 @@ export function ChartStreamRenderer({widget,backend,params,refreshKey=0,onLive,o
   const closed=useClosedSession(backend,symbol,interval,widget.closedSessionHistory===true && !params.start && !params.end,refreshKey);
   // An omitted start is a stable bounded lookback for this mounted view, never a changing subscription per render.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const start = useMemo(() => params.start || (symbol==='BTC-USD'?(closed.date??new Date().toISOString().slice(0,10))+'T00:00:00.000Z':new Date(Date.now()-86400000).toISOString()), [params.start,symbol,interval,closed.date]);
-  const view = {symbol,mode:'candles',interval,start,max_items:2000,...(params.end ? {end:params.end}: {})};
+  const defaultStart = useMemo(() => (symbol==='BTC-USD'?(closed.date??new Date().toISOString().slice(0,10))+'T00:00:00.000Z':new Date(Date.now()-86400000).toISOString()), [symbol,interval,closed.date]);
+  const bounds = chartBounds(params.start, params.end, defaultStart);
+  const start = bounds.ok ? bounds.start : defaultStart;
+  const view = {symbol,mode:'candles',interval,start,max_items:2000,...(bounds.ok && bounds.end ? {end:bounds.end}: {})};
   const streaming=closed.mode==='stream'||closed.mode==='error';
-  const {state,status} = useChartStream(backend,widget,{...view,symbol:streaming?symbol:''},refreshKey);
+  const {state,status} = useChartStream(backend,widget,{...view,symbol:streaming && bounds.ok ? symbol : ''},refreshKey);
   const [element,setElement] = useState<HTMLDivElement|null>(null);
   const [chart,setChart] = useState<CandleChartHandle|null>(null);
   const [error,setError] = useState<string|null>(null);
@@ -50,6 +53,7 @@ export function ChartStreamRenderer({widget,backend,params,refreshKey=0,onLive,o
   },[chart,bars,state.cursor,onLive,streaming]);
   useEffect(()=>{onStatus?.(streaming?status:'idle');},[status,onStatus,streaming]);
   useEffect(()=>()=>onStatus?.('idle'),[onStatus]);
+  if (!bounds.ok) return <p role="alert">{bounds.message}</p>;
   if (!symbol) return <p className="empty-state">Choose a symbol to chart.</p>;
   if (error) return <ErrorState message={error} onRetry={()=>setError(null)} />;
   return <div className="tv-chart" data-status={status}>
