@@ -242,6 +242,30 @@ it('an unreadable docks member is skipped: the app comes in as a dashboard, and 
     expect(result.v8Skipped).toEqual([{ dashboardId: result.dashboards[0].id, all: false, cards: 0, docks: true }]);
   }
 });
+it('carries a see-through band in the docks member both ways, and writes no seeThrough while both are off', () => {
+  const off = docksApp();
+  expect(off.extensions.bdobb.docks).toEqual({ rows: { top: 4, bottom: 10 } });
+  expect(importApps([off], []).docks).not.toHaveProperty('dockSeeThrough');
+  const seeThrough: Dashboard = { ...lockedDocks(), dockSeeThrough: { bottom: true } };
+  const result = exportCompatibleApp(seeThrough);
+  if (!result.ok) throw new Error(result.issue.message);
+  const app = JSON.parse(JSON.stringify(result.value));
+  expect(app.extensions.bdobb.docks).toEqual({ rows: { top: 4, bottom: 10 }, seeThrough: { bottom: true } });
+  expect(JSON.stringify(exportApp(seeThrough))).not.toMatch(/"dock|hidden|seeThrough/);
+  expect(importApps([app], []).docks).toMatchObject({ id: DOCKS_ID, dockRows: { top: 4, bottom: 10 }, dockSeeThrough: { bottom: true } });
+  app.extensions.bdobb.docks.seeThrough = {};
+  expect(importApps([app], []).docks).not.toHaveProperty('dockSeeThrough');
+});
+it('an unreadable see-through member skips the docks, as an unreadable rows does', () => {
+  for (const seeThrough of ['yes', { top: 1 }, { middle: true }, { bottom: false }, null]) {
+    const app = docksApp();
+    app.extensions.bdobb.docks = { rows: { top: 4, bottom: 10 }, seeThrough };
+    const result = importApps([app], []);
+    expect(result).not.toHaveProperty('docks');
+    expect(result.dashboards.map(d => d.name)).toEqual(['Locked widgets']);
+    expect(result.v8Skipped).toEqual([{ dashboardId: result.dashboards[0].id, all: false, cards: 0, docks: true }]);
+  }
+});
 it('v3-v5 never see the docks: a v7 import stops at the v3 decoder', () => {
   const decoded = decodeV3AppExtension(docksApp().extensions.bdobb, '$.extensions.bdobb');
   expect(decoded.ok).toBe(false);
@@ -264,4 +288,17 @@ it('Export all refuses, naming the dashboard, when one cannot be exported', () =
   const all = exportAll([newsDashboard(), bad], makeDefaultDocks());
   expect(all.ok).toBe(false);
   if (!all.ok) expect(all.name).toBe('Pinned');
+});
+
+it('round-trips client video playback preferences without putting them in backend params',()=>{
+  const video={display:'pip' as const,autoplay:true,muted:true};
+  const d:Dashboard={id:'video-d',name:'Video',tabs:[{id:'t',name:'TV',cards:[card({id:'tv',widgetId:'live_tv',params:{channel:'bloomberg-tv'},video})]}]};
+  const result=exportCompatibleApp(d);
+  expect(result.ok).toBe(true);
+  if(!result.ok)throw Error(result.issue.message);
+  expect(result.value.extensions?.bdobb).toMatchObject({profile:'v8',cards:[{tab:'t',index:0,video}]});
+  const imported=importApps(JSON.parse(JSON.stringify([result.value])),[]).dashboards[0].tabs[0].cards[0];
+  expect(imported.video).toEqual(video);
+  expect(imported.params).toEqual({channel:'bloomberg-tv'});
+  expect(JSON.stringify(result.value.tabs)).not.toContain('autoplay');
 });

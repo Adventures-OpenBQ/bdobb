@@ -287,3 +287,14 @@ describe("DockEditor", () => {
     });
   });
 });
+
+it("persists a see-through band switch and Cancel restores the prior value", async () => {
+  useDashboardStore.getState().beginDockEdit("bottom");
+  render(<DockEditor onOpenLibrary={() => {}} />);
+  const toggle = screen.getByRole("switch", { name: "See-through where empty" });
+  await userEvent.click(toggle);
+  await waitFor(() => expect(useDashboardStore.getState().docks.dockSeeThrough).toEqual({ bottom: true }));
+  await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  await waitFor(() => expect(useDashboardStore.getState().dockEdit).toBeNull());
+  expect(useDashboardStore.getState().docks).not.toHaveProperty("dockSeeThrough");
+});

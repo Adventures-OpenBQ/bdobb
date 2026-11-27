@@ -5,7 +5,7 @@ import type { ChartOptions, DeepPartial, UTCTimestamp } from "lightweight-charts
 import { CandleWicks } from "./candleWicks";
 import { CARD_BG, GRID, TEXT } from "./chartShapes";
 import type { CandleColors } from "./types";
-import type { UdfBar } from "./udf";
+import {hasOhlc,type UdfBar} from "./udf";
 
 /**
  * The one module that touches lightweight-charts (TradingView's open-source
@@ -57,6 +57,7 @@ export async function mountCandleChart(
     colors,
     showVolume,
     barSeconds,
+    closeOnly = false,
     wickWidth = 1,
   }: {
     theme: "dark" | "light";
@@ -66,6 +67,7 @@ export async function mountCandleChart(
     barSeconds?: number | null;
     /** CSS pixels; native one-pixel wicks remain the default. */
     wickWidth?: number;
+    closeOnly?: boolean;
   },
 ): Promise<CandleChartHandle> {
   const lw = await import("lightweight-charts");
@@ -117,15 +119,16 @@ export async function mountCandleChart(
   // The volume colours are not candlestick options; everything else in
   // CandleColors is, under the same names the widget's chartConfig uses.
   const { volumeUpColor = UP, volumeDownColor = DOWN, ...candleColors } = colors;
-  const candles = chart.addSeries(lw.CandlestickSeries, candleColors);
-  const wicks = wickWidth > 1 ? new CandleWicks(wickWidth) : null;
-  if (wicks) candles.attachPrimitive(wicks);
+  const candles = closeOnly ? null : chart.addSeries(lw.CandlestickSeries, candleColors);
+  const line = closeOnly ? chart.addSeries(lw.LineSeries, {color:"#4d9de0"}) : null;
+  const wicks = candles && wickWidth > 1 ? new CandleWicks(wickWidth) : null;
+  if (wicks) candles!.attachPrimitive(wicks);
   const volume = showVolume
     ? chart.addSeries(lw.HistogramSeries, { priceFormat: { type: "volume" }, priceScaleId: "right", title: "Volume" }, 1)
     : null;
   if (volume) {
     volume.priceScale().applyOptions({ visible: true, scaleMargins: { top: 0.1, bottom: 0 } });
-    candles.priceScale().applyOptions({ scaleMargins: { top: 0.1, bottom: 0.05 } });
+    (candles ?? line)!.priceScale().applyOptions({ scaleMargins: { top: 0.1, bottom: 0.05 } });
     chart.panes()[0].setStretchFactor(4);
     chart.panes()[1].setStretchFactor(1);
   }
@@ -133,14 +136,15 @@ export async function mountCandleChart(
   let fitted = false;
   return {
     setBars(bars) {
-      candles.setData(
-        bars.map((b) => ({ time: b.time as UTCTimestamp, open: b.open, high: b.high, low: b.low, close: b.close })),
+      line?.setData(bars.map(b => ({time:b.time as UTCTimestamp,value:b.close})));
+      candles?.setData(
+        bars.filter(hasOhlc).map((b) => ({ time: b.time as UTCTimestamp, open: b.open, high: b.high, low: b.low, close: b.close })),
       );
       volume?.setData(
-        bars.map((b) => ({
+        bars.map((b,index) => ({
           time: b.time as UTCTimestamp,
           value: b.volume,
-          color: b.close >= b.open ? volumeUpColor : volumeDownColor,
+          color: b.close >= (b.open ?? bars[Math.max(0,index-1)].close) ? volumeUpColor : volumeDownColor,
         })),
       );
       wicks?.setBars(bars);
@@ -150,19 +154,20 @@ export async function mountCandleChart(
       }
     },
     updateBar(b) {
-      wicks?.updateBar(b);
-      candles.update({ time: b.time as UTCTimestamp, open: b.open, high: b.high, low: b.low, close: b.close });
+      if (hasOhlc(b)) wicks?.updateBar(b);
+      line?.update({time:b.time as UTCTimestamp,value:b.close});
+      if (hasOhlc(b)) candles?.update({ time: b.time as UTCTimestamp, open: b.open, high: b.high, low: b.low, close: b.close });
       volume?.update({
         time: b.time as UTCTimestamp,
         value: b.volume,
-        color: b.close >= b.open ? volumeUpColor : volumeDownColor,
+        color: b.close >= (b.open ?? b.close) ? volumeUpColor : volumeDownColor,
       });
     },
     applyTheme(t) {
       chart.applyOptions(themed(t));
     },
     dispose() {
-      if (wicks) candles.detachPrimitive(wicks);
+      if (wicks) candles?.detachPrimitive(wicks);
       chart.remove();
     },
   };

@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { IPrimitivePaneRenderer, IPrimitivePaneView, ISeriesApi, ISeriesPrimitive, Logical, SeriesAttachedParameter } from 'lightweight-charts';
-import type { UdfBar } from './udf';
+import { hasOhlc, type UdfBar } from './udf';
 
 /** Supported series primitive: wider wick segments under the native candle bodies.
  * mountCandleChart's candle and volume series share the same ordered timestamps,
@@ -42,6 +42,7 @@ export class CandleWicks implements ISeriesPrimitive, IPrimitivePaneRenderer {
       try {
         for (let i=from;i<=to;i++) {
           const bar = this.bars[i];
+          if (!hasOhlc(bar)) continue;
           const x = scale.logicalToCoordinate(i as Logical);
           if (x === null) continue;
           const high = series.priceToCoordinate(bar.high);

@@ -362,7 +362,11 @@ function renderReadyTableCardWithParams() {
     activeId: "d1",
     activeTabId: "t1",
   });
-  render(<WidgetCard card={withParams} onRemove={vi.fn()} />);
+  function CurrentCard() {
+    const current = useDashboardStore(state => state.dashboards[0].tabs[0].cards[0]);
+    return <WidgetCard card={current} onRemove={vi.fn()} />;
+  }
+  render(<CurrentCard />);
 }
 
 // Back-port of dev 30ceb877d (v5.7.0): the widget's data.table.pivot preset
@@ -4527,12 +4531,14 @@ describe("the ⋯ menu, v5.5.0 items", () => {
     ]);
   });
 
-  it("Parameters opens the full control row in a docked panel with visible labels; Escape leaves it open", async () => {
+  it("Parameters offers title controls when hidden from the title; Escape leaves it open", async () => {
     renderReadyTableCardWithParams();
     await userEvent.click(screen.getByRole("button", { name: "Card menu" }));
     await userEvent.click(screen.getByRole("menuitem", { name: "Parameters" }));
 
     const dialog = screen.getByRole("region", { name: "Parameters" });
+    expect(within(dialog).queryByText("Symbol")).toBeNull();
+    await userEvent.click(within(dialog).getByRole("checkbox", { name: "Display on title bar" }));
     expect(within(dialog).getByText("Symbol")).toBeVisible();
 
     // v5.5.1: docked and saved, so only its own toggles close it.
@@ -4566,10 +4572,10 @@ describe("the ⋯ menu, v5.5.0 items", () => {
     renderReadyTableCardWithParams();
     expect(screen.queryByRole("region", { name: "Parameters" })).not.toBeInTheDocument();
     const show = screen.getByRole("button", { name: "Show parameters" });
-    expect(show).toHaveTextContent("▸");
+    expect(show.querySelector("svg")).not.toBeNull();
     await userEvent.click(show);
     expect(screen.getByRole("region", { name: "Parameters" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Hide parameters" })).toHaveTextContent("▾");
+    expect(screen.getByRole("button", { name: "Hide parameters" })).toHaveAttribute("aria-expanded", "true");
     await waitFor(() => expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[0].paramsOpen).toBe(true));
     await userEvent.click(screen.getByRole("button", { name: "Hide parameters" }));
     expect(screen.queryByRole("region", { name: "Parameters" })).not.toBeInTheDocument();
@@ -4616,6 +4622,9 @@ describe("the ⋯ menu, v5.5.0 items", () => {
 
     const dialog = screen.getByRole("region", { name: "Parameters" });
     expect(document.querySelectorAll(`[id="${CARD_ID}-symbol"]`)).toHaveLength(1);
+    expect(document.getElementById(`params-${CARD_ID}-symbol`)).toBeNull();
+    await userEvent.click(within(dialog).getByRole("checkbox", { name: "Display on title bar" }));
+    expect(document.getElementById(`${CARD_ID}-symbol`)).toBeNull();
     const popoverField = document.getElementById(`params-${CARD_ID}-symbol`);
     expect(popoverField).not.toBeNull();
     expect(dialog.contains(popoverField)).toBe(true);
@@ -5778,4 +5787,11 @@ it('a viewer Day Chart cannot reorder its configured watchlist', async () => {
   render(<WidgetCard card={{...card,params:{symbol:'AAPL,MSFT'}}} onRemove={vi.fn()} viewer />);
   expect(screen.getByRole('button',{name:'reorder-day-symbols'})).toBeDisabled();
   useBackendsStore.setState({backends:[]});
+});
+
+it("offers table controls for explicit snapshot rows without displaying the envelope as one row", () => {
+  register({ type: "table" });
+  useWidgetData.mockReturnValue({ status: "ready", data: { rows: [{ symbol: "ALDER", close: 101 }], completeness: "complete" }, retry: vi.fn() });
+  render(<WidgetCard card={card} onRemove={vi.fn()} />);
+  expect(screen.getByRole("button", { name: "Filter rows" })).toBeVisible();
 });

@@ -56,6 +56,16 @@ afterEach(() => {
 });
 
 describe("TradingViewRenderer", () => {
+  it("cancels an in-flight chart history read on unmount", async () => {
+    fetchMock.mockReturnValueOnce(new Promise(() => {}));
+    const view = show();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const signal = fetchMock.mock.calls[0][4];
+
+    view.unmount();
+    expect(signal?.aborted).toBe(true);
+  });
+
   it("asks the history route through the data client for a year of daily bars", async () => {
     fetchMock.mockResolvedValue(ok);
     show();
@@ -72,6 +82,14 @@ describe("TradingViewRenderer", () => {
     show();
     await waitFor(() => expect(handle.setBars).toHaveBeenCalledWith([bar]));
     expect(mountCandleChart.mock.calls[0][1]).toEqual({ theme: "dark", colors: { upColor: "#0a0" }, showVolume: true });
+  });
+
+  it("selects line rendering for actual close-only data and names the missing OHLC", async () => {
+    fetchMock.mockResolvedValue({ s: "ok", t: [10], c: [101.5] });
+    show();
+    await waitFor(() => expect(handle.setBars).toHaveBeenCalledWith([{ time: 10, close: 101.5, volume: 0 }]));
+    expect(mountCandleChart.mock.calls[0][1]).toMatchObject({ closeOnly: true });
+    expect(screen.getByText("Close prices (OHLC not supplied).")).toBeInTheDocument();
   });
 
   it("honours showVolume: false", async () => {

@@ -6,7 +6,7 @@ import { fetchesData } from "../lib/builtins";
 import { peekWidgetCalendars } from "../lib/calendars/bundles";
 import {tableExecutionStore,type BackendRowsRequest} from "../stores/tableExecutionStore";
 import type { BackendAcquisition } from "../lib/widgetData/chartRecipes/financialEvidence";
-import { fetchWidgetData, THEMED_TYPES } from "../lib/dataClient";
+import { fetchWidgetData, retryAfterSeconds, THEMED_TYPES } from "../lib/dataClient";
 import { cronMatches, cronNext, parseCron, type Cron } from "../lib/cron";
 import { logError } from "../lib/logger";
 import { paramsKey, wireParams } from "../lib/params";
@@ -149,6 +149,10 @@ export function useWidgetData(
   const [warnings, setWarnings] = useState<string[]>([]);
   const [error, setError] = useState<string | undefined>(undefined);
   const [attempt, setAttempt] = useState(0);
+  const [retryNotBefore, setRetryNotBefore] = useState<number | null>(null);
+  const [retryIn, setRetryIn] = useState<number | undefined>();
+  const pressedRef = useRef(false);
+  const sentQuestionRef = useRef<string | null>(null);
   /** Date.now() of the last successful fetch; null until there is one. */
   const [fetchedAt, setFetchedAt] = useState<number | null>(null);
   /** The widget's staleTime has passed since fetchedAt. Always false without one. */
@@ -283,6 +287,7 @@ export function useWidgetData(
   }
 
   const retry = useCallback(() => {
+    pressedRef.current = true;
     // An unresolved widget cannot be fixed by re-running the same fetch —
     // there is no fetch to re-run. Kick a discovery sweep so a backend the
     // user just brought back online has a chance to populate the registry;
@@ -384,6 +389,7 @@ export function useWidgetData(
    * nothing: only Run adopts a new resolution.
    */
   const run = useCallback(() => {
+    pressedRef.current = true;
     if (stale) {
       // Forget the armed wire so the next effect run records what Run sends,
       // and bump `attempt` too: when only the CLOCK moved, the params key is
@@ -535,6 +541,7 @@ export function useWidgetData(
     }
 
     let cancelled = false;
+    const controller = new AbortController();
     /** The one timer this card ever has in flight. */
     let timer: ReturnType<typeof setTimeout> | null = null;
     /** Date.now() of the last COMPLETED request; 0 while the first is in flight. */
@@ -578,9 +585,8 @@ export function useWidgetData(
     // The guarantee is deliberately that narrow. A manual Refresh, a ⌘R
     // refresh-all, or a change to the resolved interval re-runs the effect
     // immediately, and an older request may still be in flight when it does.
-    // That request is not aborted — its `cancelled` flag is set by the
-    // cleanup below, so its result is discarded and it can never overwrite
-    // the newer answer.
+    // Cleanup aborts queued and active transport and also marks the result
+    // cancelled, so noncooperative transports cannot replace the new answer.
     function armAfterCompletion() {
       completedAt = Date.now();
       if (!cancelled) setCompletedAt(completedAt);
@@ -611,7 +617,28 @@ export function useWidgetData(
       else arm(intervalMs - elapsed);
     }
 
+    function stop() {
+      cancelled = true;
+      controller.abort();
+      clearTimer();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    }
     document.addEventListener("visibilitychange", onVisibilityChange);
+    // The refusal belongs to the authenticated question, kept private here.
+    const question = JSON.stringify([backend, widget.endpoint, widget.dataKey, key, fiscalKey]);
+    const pressed = pressedRef.current;
+    pressedRef.current = false;
+    if (retryNotBefore !== null && Date.now() < retryNotBefore && !pressed &&
+        sentQuestionRef.current === question && status === "error" &&
+        error !== undefined && retryAfterSeconds(error) !== undefined) {
+      completedAt = Date.now();
+      if (!document.hidden) {
+        if (cron) armCron(cron);
+        else if (intervalMs !== undefined) arm(intervalMs);
+      }
+      return stop;
+    }
+    sentQuestionRef.current = question;
     setStatus("loading");
 
     void (async () => {
@@ -636,7 +663,7 @@ export function useWidgetData(
           calendars: sendMap,
           exchange,
           bounds,
-        }, undefined, (w) => { received = w; }, next => { acquisition = next; });
+        }, controller.signal, (w) => { received = w; }, next => { acquisition = next; });
         if (cancelled) return;
         setWarnings(received);
         setPublication({data:result, acquisition, request});
@@ -644,6 +671,7 @@ export function useWidgetData(
         setFetchedAt(Date.now());
         setError(undefined);
         setStatus("ready");
+        setRetryNotBefore(null);
         armAfterCompletion();
       } catch (err) {
         if (cancelled) return;
@@ -651,6 +679,8 @@ export function useWidgetData(
         setError(message);
         setWarnings([]);
         setStatus("error");
+        const wait = retryAfterSeconds(message);
+        setRetryNotBefore(wait === undefined ? null : Date.now() + wait * 1000);
         // Before the await, so a slow log write cannot delay the next arm.
         armAfterCompletion();
         // Name, id and backend: the id alone cannot tell two backends'
@@ -661,11 +691,7 @@ export function useWidgetData(
       }
     })();
 
-    return () => {
-      cancelled = true;
-      clearTimer();
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
+    return stop;
     // Fetch on mount, on param change, on explicit retry, when the resolved
     // auto-refresh interval changes, and on a refreshAll bump. `key`, not
     // `params`, is the dependency: see the comment above `key`. With a run
@@ -774,6 +800,25 @@ export function useWidgetData(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [calendarsPending]);
 
+  // The retry wait's countdown. It only counts and, at the end, clears the
+  // wait: nothing is sent when a wait ends, so a board of refused cards does
+  // not fire as one the moment the limit lifts. The next ordinary trigger,
+  // or a press, sends.
+  useEffect(() => {
+    if (retryNotBefore === null) {
+      setRetryIn(undefined);
+      return;
+    }
+    const tick = () => {
+      const left = Math.ceil((retryNotBefore - Date.now()) / 1000);
+      if (left > 0) setRetryIn(left);
+      else setRetryNotBefore(null);
+    };
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [retryNotBefore]);
+
   // The stale tint (stale-time.md): set once staleTime has passed since the
   // last successful fetch, cleared by the next one.
   useEffect(() => {
@@ -816,5 +861,6 @@ export function useWidgetData(
     completedAt,
     stalePastInterval,
     dataStale,
+    retryIn,
   };
 }

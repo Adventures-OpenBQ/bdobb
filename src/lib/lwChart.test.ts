@@ -25,6 +25,7 @@ vi.mock("lightweight-charts", () => ({
   ColorType: { Solid: "solid" },
   CandlestickSeries: { type: "Candlestick" },
   HistogramSeries: { type: "Histogram" },
+  LineSeries: { type: "Line" },
   TickMarkType: { Year: 0, Month: 1, DayOfMonth: 2, Time: 3, TimeWithSeconds: 4 },
   createChart: (el: HTMLElement, opts: unknown) => createChart(el, opts),
 }));
@@ -177,4 +178,14 @@ it("keeps wider-wick geometry synchronized with replacements and detaches it bef
   expect(candles.detachPrimitive).toHaveBeenCalledWith(primitive);
   rectangles.length=0;primitive.draw(target);
   expect(rectangles).toEqual([]);
+});
+
+it('draws close-only prices as a line while preserving the separate volume pane',async()=>{
+ const handle=await mountCandleChart(document.createElement('div'),{theme:'dark',colors:{},showVolume:true,closeOnly:true});
+ expect(chart.addSeries.mock.calls[0][0]).toEqual({type:'Line'});
+ handle.setBars([{time:10,close:100,volume:2},{time:20,close:101.5,volume:3}]);
+ expect(chart.addSeries.mock.results[0].value.setData).toHaveBeenCalledWith([{time:10,value:100},{time:20,value:101.5}]);
+ expect(chart.addSeries.mock.calls[1]).toEqual([{type:'Histogram'},{priceFormat:{type:'volume'},priceScaleId:'right',title:'Volume'},1]);
+ expect(panes[0].setStretchFactor).toHaveBeenCalledWith(4);
+ expect(panes[1].setStretchFactor).toHaveBeenCalledWith(1);
 });

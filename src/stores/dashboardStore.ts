@@ -27,6 +27,7 @@ import {
   makeDefaultDocks,
   saveDashboard,
 } from "../lib/dashboardsFile";
+import { withDockSeeThrough } from "../lib/dockSeeThrough";
 import { firstFreeSpot } from "../lib/dockLayout";
 import { IMPORT_MAX_DASHBOARDS } from "../lib/importLimits";
 import { deleteLocalFile } from "../lib/localFiles";
@@ -36,6 +37,7 @@ import { fiscalChain } from "../lib/fiscalChain";
 import { isFiscalType, parseFyEndMonth, relabel } from "../lib/periods";
 import { bindableKeys, seedParams } from "../lib/params";
 import { cardSourceIdentity } from "../lib/cardSourceIdentity";
+import {PIP_GRAB_CHANNEL} from "../lib/youtubePlayback";
 import { withOptional } from "../lib/collections";
 import type {
   ParamGroup,
@@ -98,6 +100,7 @@ type DashboardState = {
   commitDockEdit: () => Promise<void>;
   /** The rows `edge` reserves, clamped. */
   setDockRows: (edge: PinEdge, rows: number) => Promise<void>;
+  setDockSeeThrough: (edge: PinEdge, on: boolean) => Promise<void>;
   /**
    * The docks sync's own write (R6): the server's copy, taken whole, at the
    * server's revision -- no bump, these ARE the synced state. Refused in the
@@ -314,6 +317,7 @@ type DashboardState = {
 // v5.4.0: a fourth, `fiscalYearEnd` — the card's FY ends override (spec §1.5).
 // v5.5.1: a fifth, `hideTitleParams` — the Parameters popover's title-bar checkbox.
 type CardFieldPatch = {
+  video: import("../lib/youtubePlayback").YoutubePlayback;
   managedSource: import("../lib/types").ManagedSourceReference;
   queryBinding: import("../lib/temporal/bindings").QueryBinding;
   view: CardView;
@@ -1291,6 +1295,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
         ? firstFreeSpot(tab.cards.map((c) => c.layout), widget.gridData.w, widget.gridData.h, GRID_COLS, (dashboard.dockRows ?? DEFAULT_DOCK_ROWS)[edge])
         : { x: 0, y: nextY(tab.cards), w: widget.gridData.w, h: widget.gridData.h };
 
+      const seededParams={...seedParams(widget),...paramsOverride};
+      // A local Chrome capture requires an explicit authoring choice, never a backend default.
+      if(widget.type==='youtube'&&seededParams.channel===PIP_GRAB_CHANNEL&&paramsOverride?.channel!==PIP_GRAB_CHANNEL)seededParams.channel='bloomberg-tv';
       const cardId = crypto.randomUUID();
       const updated = await mutateDashboard(dashboardId, (d) => ({
         ...d,
@@ -1304,7 +1311,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
                     id: cardId,
                     widgetId: widget.id,
                     backendId: widget.backendId,
-                    params: { ...seedParams(widget), ...paramsOverride },
+                    params: seededParams,
                     layout,
                     // chartView.enabled opens a NEW card on its chart; an
                     // imported or existing card keeps the view it saved.
@@ -1663,6 +1670,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
           }),
         };
       });
+    },
+
+    setDockSeeThrough: async (edge, on) => {
+      await mutateDashboard(DOCKS_ID, d => withDockSeeThrough(d, edge, on));
     },
 
     importDocks: async (incoming) => {

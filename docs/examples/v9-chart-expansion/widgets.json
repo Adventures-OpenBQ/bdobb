@@ -1,0 +1,48 @@
+{
+  "chart_demo_prices": {
+    "name": "Daily adjusted prices",
+    "description": "Fictional chart example.",
+    "type": "table",
+    "endpoint": "prices.json",
+    "params": [],
+    "refetchInterval": false
+  },
+  "chart_demo_curves": {
+    "name": "Treasury observations",
+    "description": "Fictional chart example.",
+    "type": "table",
+    "endpoint": "curves.json",
+    "params": [],
+    "refetchInterval": false
+  },
+  "chart_demo_estimates": {
+    "name": "Guarded estimates",
+    "description": "Fictional chart example.",
+    "type": "table",
+    "endpoint": "estimates.json",
+    "params": [],
+    "refetchInterval": false,
+    "data": {
+      "table": {
+        "columnsDefs": [
+          {
+            "field": "eps_actual",
+            "headerName": "EPS actual"
+          },
+          {
+            "field": "revenue_actual",
+            "headerName": "Revenue actual"
+          }
+        ]
+      }
+    }
+  },
+  "chart_demo_income": {
+    "name": "Income statement inputs",
+    "description": "Fictional chart example.",
+    "type": "table",
+    "endpoint": "income.json",
+    "params": [],
+    "refetchInterval": false
+  }
+}

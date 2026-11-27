@@ -56,3 +56,11 @@ describe('candle wick primitive',()=>{
     expect(requestUpdate).not.toHaveBeenCalled();
   });
 });
+
+it('leaves close-only history without invented candle wicks',()=>{
+  const {primitive,target,fills,series}=fixture();
+  primitive.setBars([{time:1,close:20,volume:1}]);
+  primitive.paneViews()[0].renderer()!.draw(target);
+  expect(fills).toEqual([]);
+  expect(series.priceToCoordinate).not.toHaveBeenCalled();
+});

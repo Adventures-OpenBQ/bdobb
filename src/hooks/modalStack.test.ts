@@ -17,4 +17,22 @@ describe("modalStack", () => {
     modalStack.remove(a);
     expect(modalStack.top()).toBeUndefined();
   });
+
+  it("tells subscribers when a dialog opens or closes, and says whether any is open", () => {
+    const seen: boolean[] = [];
+    const stop = modalStack.subscribe(() => seen.push(modalStack.isOpen()));
+    const a = { close: () => {} };
+    const b = { close: () => {} };
+    expect(modalStack.isOpen()).toBe(false);
+    modalStack.push(a);
+    modalStack.push(b);
+    modalStack.remove(b);
+    // Removing an entry that is not on the stack changes nothing and says nothing.
+    modalStack.remove(b);
+    modalStack.remove(a);
+    expect(seen).toEqual([true, true, true, false]);
+    stop();
+    modalStack.push(a);
+    expect(seen).toHaveLength(4);
+  });
 });

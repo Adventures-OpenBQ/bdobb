@@ -3,7 +3,7 @@
 
 import { isRecord } from "./isRecord";
 import { barTimeSeconds as isoSeconds } from "./marketTime";
-import type { UdfBar } from "./udf";
+import {hasOhlc,type UdfBar} from "./udf";
 
 /**
  * The pure half of the Live Chart (`type: "live_chart"`, live-grid's widget):
@@ -164,6 +164,7 @@ export function volumeStep(prev: VolumeCounter | undefined, tick: Tick): { add: 
  */
 export function foldTick(last: UdfBar | undefined, tick: Pick<Tick, "time" | "price" | "size">, intervalS: number): UdfBar | null {
   const { time, price, size } = tick;
+  if (last !== undefined && !hasOhlc(last)) return null;
   if (last !== undefined && time < last.time) return null;
   if (last !== undefined && time < last.time + intervalS) {
     return { ...last, high: Math.max(last.high, price), low: Math.min(last.low, price), close: price, volume: last.volume + size };
@@ -177,7 +178,7 @@ export function mergeLegacySeed(seed: UdfBar[], accepted: UdfBar[]): UdfBar[] {
   const merged = new Map(seed.map(bar => [bar.time, bar]));
   for (const bar of accepted) {
     const old = merged.get(bar.time);
-    merged.set(bar.time, old ? {
+    merged.set(bar.time, old && hasOhlc(old) && hasOhlc(bar) ? {
       ...bar, open: old.open, high: Math.max(old.high, bar.high), low: Math.min(old.low, bar.low),
       volume: Math.max(old.volume, bar.volume),
     } : bar);

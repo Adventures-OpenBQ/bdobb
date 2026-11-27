@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { readDockSeeThrough } from "./dockSeeThrough";
 import { persistedCard } from "./widgetData/persistence";
 import { loadJsonDir, removeJson, saveJson } from "./jsonStore";
 import { parseExchange } from "./calendar";
@@ -94,6 +95,7 @@ type StoredDashboard = {
   extensions?: Dashboard["extensions"];
   hidden?: unknown;
   dockRows?: unknown;
+  dockSeeThrough?: unknown;
 } & ({ cards: StoredCard[] } | { tabs: StoredTab[] });
 
 /**
@@ -136,6 +138,7 @@ function withBindings(card: StoredCard, groups: ParamGroup[]): DashboardCard {
 }
 
 function withDefaults(stored: StoredDashboard): Dashboard {
+  const seeThrough = readDockSeeThrough(stored.dockSeeThrough);
   // Every field is named explicitly rather than spread, which is why a new
   // one has to be added here too: without this line groupsDisabled would be
   // written correctly and then silently dropped on the very next read.
@@ -159,6 +162,7 @@ function withDefaults(stored: StoredDashboard): Dashboard {
     revision: typeof stored.revision === "number" ? stored.revision : undefined,
     extensions: stored.extensions,
     // v8 locked widgets: only `true` hides, and the rows are read leniently.
+    ...(seeThrough ? { dockSeeThrough: seeThrough } : {}),
     ...(stored.hidden === true ? { hidden: true } : {}),
     ...(stored.dockRows !== undefined ? { dockRows: clampDockRows(stored.dockRows) } : {}),
   };

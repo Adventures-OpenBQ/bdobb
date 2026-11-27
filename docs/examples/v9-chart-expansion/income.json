@@ -1,0 +1,26 @@
+[
+  {
+    "symbol": "ALDER",
+    "period": "FY",
+    "date": "2024-12-31",
+    "year": 2024,
+    "start": "2024-01-01",
+    "end": "2024-12-31",
+    "revenue": 100,
+    "cost_of_revenue": 42,
+    "gross_profit": 61,
+    "net_income": 46
+  },
+  {
+    "symbol": "ALDER",
+    "period": "FY",
+    "date": "2025-12-31",
+    "year": 2025,
+    "start": "2025-01-01",
+    "end": "2025-12-31",
+    "revenue": 115,
+    "cost_of_revenue": 47,
+    "gross_profit": 72,
+    "net_income": 55
+  }
+]

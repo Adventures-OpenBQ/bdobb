@@ -934,7 +934,7 @@ describe("App: locked widget bands", () => {
     expect(screen.getByRole("region", { name: "Locked at Bottom" })).toBe(band);
   });
 
-  it("measures --dashboard-top to the tab bar's bottom, below a mounted top band", async () => {
+  it("keeps tabs above the top band and maximized cards below both", async () => {
     // jsdom lays nothing out: stubbing the bar's rect is what makes the old
     // formula (area top + bar height, both 0 here) and the new one differ.
     __seed("dashboards/z.json", JSON.stringify({ id: "z", name: "Zeta", tabs: [{ id: "t1", name: "Main", cards: [] }] }));
@@ -945,12 +945,13 @@ describe("App: locked widget bands", () => {
     await waitFor(() => expect(main.querySelector(".tab-bar")).not.toBeNull());
     const bar = main.querySelector<HTMLElement>(".tab-bar");
     expect(bar).not.toBeNull();
-    expect(band.compareDocumentPosition(bar as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(band.compareDocumentPosition(bar as Node) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    band.getBoundingClientRect = () => ({ bottom: 250 }) as DOMRect;
     (bar as HTMLElement).getBoundingClientRect = () => ({ bottom: 132 }) as DOMRect;
     act(() => {
       useDashboardStore.setState((s) => ({ docks: { ...s.docks, dockRows: { top: 7, bottom: 8 } } }));
     });
-    expect(main.style.getPropertyValue("--dashboard-top")).toBe("132px");
+    expect(main.style.getPropertyValue("--dashboard-top")).toBe("250px");
   });
 
   it("aims ⌘K at the dock being edited, and at the active dashboard otherwise", async () => {

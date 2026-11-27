@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describe, expect, it } from "vitest";
-import { foldTick, intervalSeconds, rowTick, seriesBars, volumeStep, type Tick, type VolumeCounter } from "./liveChart";
+import { foldTick, intervalSeconds, rowTick, seriesBars, mergeLegacySeed, volumeStep, type Tick, type VolumeCounter } from "./liveChart";
 
 const bar = (time: number, close = 10, volume = 100) => ({ time, open: 10, high: 10, low: 10, close, volume });
 
@@ -198,4 +198,13 @@ describe('market timestamp interchange', () => {
   it.each(['2026-02-30', '2026-04-31T09:30:00Z', '2026-01-15T24:00:00Z'])('rejects invalid calendar/time input %s instead of rolling it over', (date) => {
     expect(seriesBars([{date, open:1, high:1, low:1, close:1}])).toEqual([]);
   });
+});
+
+it('does not manufacture a live candle from a close-only history bar',()=>{
+  expect(foldTick({time:60,close:10,volume:1},{time:61,price:12,size:1},60)).toBeNull();
+});
+
+it('merges a real accepted candle over close-only seed data without NaN prices',()=>{
+ const accepted={time:60,open:11,high:12,low:11,close:12,volume:3};
+ expect(mergeLegacySeed([{time:60,close:10,volume:1}],[accepted])).toEqual([accepted]);
 });
