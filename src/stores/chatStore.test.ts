@@ -376,10 +376,13 @@ describe("chatStore.send", () => {
       resumed.unmount();
       expect(await ask()).toMatchObject(received("TSLA"));
       expect(symbols()).toEqual(["AAPL", "AAPL", "AAPL", "NVDA", "AAPL", "TSLA", "TSLA"]);
-      // A backend can change while Rita is deciding which card to read.
+      // A backend can change while Rita is deciding which card to read. The
+      // replacement credential must still read TSLA's last Run; MSFT is a draft.
       useDashboardStore.setState({ dashboards: [dash("MSFT")] });
       beforeCall = () => useBackendsStore.setState({ backends: [{ ...be, headerName: "X-Fixture", headerValue: "replacement" }] });
-      expect(await ask()).toMatchObject(received("MSFT"));
+      expect(await ask()).toMatchObject(received("TSLA"));
+      expect(symbols()).not.toContain("MSFT");
+      expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[0].params.symbol).toBe("MSFT");
       expect(server.requests.filter(r => r.path === "/prices").at(-1)?.headers["x-fixture"]).toBe("replacement");
     } finally {
       tableExecutionStore.disposeDashboard("rita-run");
