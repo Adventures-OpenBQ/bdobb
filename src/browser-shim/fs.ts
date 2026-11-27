@@ -55,6 +55,32 @@ function state(): NonNullable<typeof writeState> {
   }
   return writeState;
 }
+let ownsWriter = !window.__bdobbPersist;
+/** A persisted writer belongs to one live document, not to every tab that cloned its storage. */
+async function ownWriter(): Promise<void> {
+  const locks = navigator.locks;
+  if (!locks) throw new Error('Account saves require browser Web Locks support.');
+  const claim = (writer: string) => new Promise<boolean>((resolve, reject) => {
+    // This promise intentionally stays pending while the document lives. The
+    // browser releases its locks on document destruction, including a reload.
+    void locks.request(`bdobb-state-writer:${writer}`, {ifAvailable: true}, lock => {
+      if (!lock) { resolve(false); return; }
+      resolve(true);
+      return new Promise<void>(() => {});
+    }).catch(() => reject(new Error('Account saves could not acquire writer ownership.')));
+  });
+  while (!await claim(state().writer)) writeState = {writer: crypto.randomUUID(), sequences: {}};
+  ownsWriter = true;
+  // Publish the replacement identity before another window can clone this tab.
+  try { sessionStorage.setItem(WRITE_STATE, JSON.stringify(state())); } catch { /* Current-document ownership still holds. */ }
+}
+let ownershipFailed = false;
+const writerReady = window.__bdobbPersist ? ownWriter() : Promise.resolve();
+void writerReady.catch(() => { ownershipFailed = true; notice(); });
+async function ready(path: string): Promise<void> {
+  if (window.__bdobbPersist && STATE_FILE_RE.test(path.replace(/^\/+/, ''))) await writerReady;
+}
+
 function revision(name: string, changed = false): number {
   const saved = state();
   let n = saved.sequences[name] ?? 0;
@@ -69,7 +95,7 @@ function revision(name: string, changed = false): number {
   return n;
 }
 function forgetIfSaved(): void {
-  if (!pending.size && !dirty.size && !failed.size) forget();
+  if (ownsWriter && !pending.size && !dirty.size && !failed.size) forget();
 }
 function completed(name: string, result: {saved: boolean; version: number}, hide: boolean): void {
   if (result.saved) landed = true; // Any accepted version makes the initial mirror partial.
@@ -132,7 +158,7 @@ async function flush(): Promise<void> {
 function notice(): void {
   const text = document.querySelector(".web-preview-notice")?.firstChild;
   if (text) {
-    text.textContent = `Private web preview · ${dirty.size ? "Some changes could NOT be saved" : pending.size ? "Saving changes to your account" : "Changes are saved to your account"} · `;
+    text.textContent = `Private web preview · ${ownershipFailed || dirty.size ? "Some changes could NOT be saved" : pending.size ? "Saving changes to your account" : "Changes are saved to your account"} · `;
   }
 }
 
@@ -225,15 +251,19 @@ document.addEventListener("visibilitychange", () => {
 });
 
 export const writeTextFile: typeof mem.writeTextFile = async (path, ...rest) => {
+  await ready(path);
   await mem.writeTextFile(path, ...rest);
   touched(path);
 };
 export const rename: typeof mem.rename = async (oldPath, newPath) => {
+  await ready(oldPath);
+  await ready(newPath);
   await mem.rename(oldPath, newPath);
   touched(oldPath);
   touched(newPath);
 };
 export const remove: typeof mem.remove = async path => {
+  await ready(path);
   await mem.remove(path);
   touched(path);
 };
@@ -257,15 +287,16 @@ for (const path of window.__bdobbFail ?? []) {
 // between; per-file revisions in the store if two devices editing at once ever matters.
 try {
   const kept = JSON.parse(sessionStorage.getItem(UNSAVED) ?? "null") as { at: number; files: Record<string, string | null> } | null;
-  forget();
   if (window.__bdobbPersist && kept && Date.now() - kept.at < UNSAVED_MS) {
+    // Do not discard the recovery copy unless this document can safely save it.
+    void writerReady.then(forget, () => {});
     for (const [name, text] of Object.entries(kept.files)) {
       if (!STATE_FILE_RE.test(name)) continue;
       if (typeof text === "string") __seed(name, text);
       else void mem.remove(name).catch(() => {});
-      touched(name);
+      void writerReady.then(() => touched(name), () => {});
     }
-  }
+  } else forget();
 } catch { /* no usable copy: the seed stands */ }
 
 Object.assign(bdobb(), { read: __read, list: __list });

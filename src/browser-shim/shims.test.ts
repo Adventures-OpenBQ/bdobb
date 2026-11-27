@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {webLocks} from "../test/webLocks";
 
 // These shims replace the Tauri plugin modules under `vite --mode browser`.
 // The tests pin (a) that each shim exports exactly the names the app imports
@@ -15,6 +16,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // one would conflict with it (TS2717).
 
 beforeEach(() => {
+  vi.stubGlobal("navigator", {locks: webLocks().locks});
   vi.resetModules();
   delete window.__bdobbSeed;
   delete window.__bdobbFail;

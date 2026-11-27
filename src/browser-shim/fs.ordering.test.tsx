@@ -1,6 +1,8 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import {beforeEach, afterEach, it, vi, expect} from 'vitest';
+import {webLocks} from '../test/webLocks';
+let ownership: ReturnType<typeof webLocks>;
 
 type Write = {path: string; body: string; writer: string | null; sequence: string | null; keepalive: boolean; finish: () => void};
 let writes: Write[];
@@ -9,6 +11,7 @@ let removeListeners: () => void;
 const versions = new Map<string, number>();
 beforeEach(() => {
   vi.resetModules(); vi.useFakeTimers(); sessionStorage.clear();
+  ownership = webLocks(); vi.stubGlobal("navigator", {locks: ownership.locks});
   const win = vi.spyOn(window, 'addEventListener'), doc = vi.spyOn(document, 'addEventListener');
   removeListeners = () => {
     for (const [type, listener, options] of win.mock.calls) window.removeEventListener(type, listener, options);
@@ -100,6 +103,7 @@ it('keeps the tab writer and increasing file sequence after reload', async () =>
   writes[0].finish(); await vi.advanceTimersByTimeAsync(0);
   const first = writes[0];
   window.__bdobbSeed = {'settings.json': stored};
+  ownership.terminateDocument(); // A real reload destroys the prior document and releases its locks.
   vi.resetModules();
   const reloaded = await import('./fs');
   await reloaded.writeTextFile('settings.json', '{"theme":"new"}');
@@ -118,6 +122,7 @@ it('reserves a new sequence for an unchanged first-mirror seed after another wri
   const first = writes[0];
   // A new bootstrap can contain another tab's value, even though this tab's counter survives.
   window.__bdobbSeed = {'settings.json': '{"theme":"other-tab"}'};
+  ownership.terminateDocument(); // A real reload destroys the prior document and releases its locks.
   vi.resetModules();
   const reloaded = await import('./fs');
   await reloaded.writeTextFile('backends.json', '[]'); await vi.advanceTimersByTimeAsync(600);
@@ -128,4 +133,23 @@ it('reserves a new sequence for an unchanged first-mirror seed after another wri
   expect(Number(mirrored.sequence)).toBeGreaterThan(Number(first.sequence));
   mirrored.finish(); await vi.advanceTimersByTimeAsync(0);
   expect(stored).toBe('{"theme":"other-tab"}');
+});
+
+it('waits for writer ownership before changing an account file or starting its save', async () => {
+  let grant!: () => void;
+  const available = new Promise<void>(resolve => {grant = resolve;});
+  vi.stubGlobal('navigator', {locks: {
+    request: (...args: Parameters<LockManager['request']>) => available.then(() => ownership.locks.request(...args)),
+  }});
+  const fs = await import('./fs');
+  let settled = false;
+  const mutation = fs.writeTextFile('settings.json', '{"theme":"owned"}').then(() => {settled = true;});
+  await vi.advanceTimersByTimeAsync(600);
+  expect(settled).toBe(false);
+  expect(await fs.readTextFile('settings.json')).toBe('{}');
+  expect(writes).toHaveLength(0);
+  grant(); await mutation;
+  window.dispatchEvent(new Event('pagehide'));
+  expect(writes).toHaveLength(1);
+  expect(writes[0].writer).toMatch(/^[0-9a-f-]{36}$/);
 });
