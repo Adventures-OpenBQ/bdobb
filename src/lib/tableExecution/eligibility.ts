@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import {parseQueryBinding} from '../temporal/bindings';
-import { LOCAL_TABLE_ID, SSRM_TYPES } from '../builtins';
+import { LOCAL_TABLE_ID, SSRM_TYPES, isLinkedMetricCard } from '../builtins';
 import { tableRows } from '../tableColumns';
 import type { DashboardCard } from '../types';
 import { useWidgetRegistryStore } from '../../stores/widgetRegistryStore';
@@ -50,6 +50,6 @@ export function isManagedTable(card: DashboardCard): boolean {
  } catch { return false; }
 }
 export function isWorkerTableProducer(card: DashboardCard): boolean {
-  return !card.linkedChart && (card.widgetId === LOCAL_TABLE_ID || !!card.linkedSource || isTemporalTable(card) || isBackendTable(card) || isManagedTable(card))
+  return !card.linkedChart && !isLinkedMetricCard(card) && (card.widgetId === LOCAL_TABLE_ID || !!card.linkedSource || isTemporalTable(card) || isBackendTable(card) || isManagedTable(card))
     && (isManagedTable(card) || card.view === undefined || card.view === 'table' || card.view === 'statement');
 }

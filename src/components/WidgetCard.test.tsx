@@ -5486,7 +5486,7 @@ describe("a backend table on the table worker", () => {
     const table = screen.getByTestId("local-table");
     expect(table).toHaveAttribute("data-runtime", card.id);
     expect(table).toHaveAttribute("data-spec", "yes");
-    expect(handOver).toHaveBeenCalledWith("d1", card.id, data);
+    expect(handOver).toHaveBeenCalledWith("d1", card.id, data, undefined, undefined);
     // The worker's drawer replaces the in-thread panel's button.
     expect(screen.getByRole("button", { name: "Pivot" })).toHaveAttribute("data-widget", card.id);
     handOver.mockRestore();
@@ -5501,7 +5501,7 @@ describe("a backend table on the table worker", () => {
     render(<WidgetCard card={card} onRemove={vi.fn()} />);
     expect(screen.queryByTestId("local-table")).toBeNull();
     expect(screen.getByRole("button", { name: "Pivot" })).toHaveAttribute("data-pivot", "off");
-    expect(handOver).toHaveBeenCalledWith("d1", card.id, data);
+    expect(handOver).toHaveBeenCalledWith("d1", card.id, data, undefined, undefined);
     handOver.mockRestore();
   });
 

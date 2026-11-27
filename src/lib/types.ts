@@ -646,6 +646,7 @@ export type DashboardCard = {
   queryBinding?: import("./temporal/bindings").QueryBinding;
   linkedSource?: LinkedSource;
   linkedChart?: LinkedChartSettings;
+  linkedMetric?: import('./widgetData/kpi/types').LinkedKpiOptions;
   id: string;
   widgetId: string;
   backendId: string;

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { LinkedWidgetDialog } from "./LinkedWidgetDialog";
-import { BUILTIN_BACKEND_ID, LINKED_TABLE_ID, LINKED_CHART_ID } from "../lib/builtins";
+import { BUILTIN_BACKEND_ID, LINKED_TABLE_ID, LINKED_CHART_ID, LINKED_METRIC_ID } from "../lib/builtins";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildTree, railDashboardsWithPath } from "../lib/folderTree";
 import { buildPresenceIndex, presenceOf } from "../lib/libraryPresence";
@@ -26,7 +26,7 @@ import {
   type LibraryFilter,
 } from "./LibraryFilters";
 
-const isLinkedBuiltin = (widget: WidgetDef) => widget.backendId === BUILTIN_BACKEND_ID && (widget.id === LINKED_TABLE_ID || widget.id === LINKED_CHART_ID);
+const isLinkedBuiltin = (widget: WidgetDef) => widget.backendId === BUILTIN_BACKEND_ID && (widget.id === LINKED_TABLE_ID || widget.id === LINKED_CHART_ID || widget.id === LINKED_METRIC_ID);
 
 /** Custom type so a file or text drag cannot masquerade as a widget drop. */
 export const WIDGET_DRAG_TYPE = "application/x-bdobb-widget";
@@ -152,7 +152,7 @@ export function WidgetLibrary({ onClose, target }: { onClose: () => void; target
         ?.cards ?? EMPTY_CARDS,
   );
 
-  const [linkedPresentation, setLinkedPresentation] = useState<"table" | "chart">();
+  const [linkedPresentation, setLinkedPresentation] = useState<"table" | "chart" | "metric">();
   // Every dashboard, in the order the rail draws them -- the pills below read
   // as the rail does rather than as the flat dashboardOrder array.
   const dashboards = useDashboardStore((s) => s.dashboards);
@@ -297,7 +297,7 @@ export function WidgetLibrary({ onClose, target }: { onClose: () => void; target
   // the library open over dead UI.
   async function handleAdd(widget: WidgetDef) {
     if (isLinkedBuiltin(widget)) {
-      setLinkedPresentation(widget.id === LINKED_CHART_ID ? 'chart' : 'table');
+      setLinkedPresentation(widget.id === LINKED_METRIC_ID ? 'metric' : widget.id === LINKED_CHART_ID ? 'chart' : 'table');
       return;
     }
     try {

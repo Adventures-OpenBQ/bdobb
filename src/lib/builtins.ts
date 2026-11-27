@@ -20,6 +20,8 @@ export const BUILTIN_BACKEND_ID = "builtin";
 export const LOCAL_TABLE_ID = "local_table";
 export const LINKED_TABLE_ID = "linked_table";
 export const LINKED_CHART_ID = "linked_chart";
+export const LINKED_METRIC_ID = "linked_metric";
+export const isLinkedMetricCard = (card: {backendId: string; widgetId: string}): boolean => card.backendId === BUILTIN_BACKEND_ID && card.widgetId === LINKED_METRIC_ID;
 
 /**
  * The RSS built-in's default item count. Named because RssRenderer falls back
@@ -39,6 +41,7 @@ const base: Pick<WidgetDef, "backendId" | "category" | "subCategory" | "endpoint
 export const BUILTIN_WIDGETS: WidgetDef[] = [
   { ...base, id: LINKED_TABLE_ID, name: "Linked table", description: "A table using another table in this dashboard.", type: LINKED_TABLE_ID, gridData: { w: 24, h: 14 }, params: [] },
   { ...base, id: LINKED_CHART_ID, name: "Linked chart", description: "A chart using another table in this dashboard.", type: LINKED_CHART_ID, gridData: { w: 24, h: 14 }, params: [] },
+  { ...base, id: LINKED_METRIC_ID, name: "Linked metric", description: "A KPI card or gauge using a verified observation from a table in this dashboard.", type: "metric", gridData: { w: 24, h: 16 }, params: [] },
   {
     ...base,
     id: "note",

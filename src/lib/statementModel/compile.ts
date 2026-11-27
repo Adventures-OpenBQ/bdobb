@@ -6,6 +6,8 @@ import type { FormulaAst, MemberSelector, ModelDiagnostic, TableModelV1 } from '
 import { compileAnalyticalModel } from '../tableModel/calculate';
 import { pivotValueKey } from '../pivotKeys';
 import { validateStatementIntent } from './validation';
+import { displayedSections } from './placement';
+import { proveIncomeBindings } from './incomeChartProof';
 import { statementOwnedIds, type EffectiveStatement, type StatementIntent } from './types';
 import type { AnalyticalExecutionDescriptor } from '../tableModel/executionDescriptor';
 export class StatementCompilationError extends Error {
@@ -29,7 +31,8 @@ export function compileStatement(raw: StatementIntent, columns: readonly Dataset
     const sectionId = ids.prefix + 'category/section', sectionField = ids.prefix + 'field/section';
     const itemField = b.shape === 'long' ? b.longFields!.itemFieldId : ids.prefix + 'field/item';
     const valueField = b.shape === 'long' ? b.longFields!.valueFieldId : ids.prefix + 'field/value';
-    const sectionByLine = new Map(intent.template.sections.flatMap(s => s.lineIds.map(id => [id, s.id] as const)));
+    const sections = displayedSections(intent.template, intent.overrides);
+    const sectionByLine = new Map(sections.flatMap(s => s.lineIds.map(id => [id, s.id] as const)));
     const lineById = new Map(intent.template.lines.map(line => [line.id, line]));
     const selectorsForLine = (lineId: string): MemberSelector[] => [
         { categoryId: sectionId, memberKey: pivotValueKey(sectionByLine.get(lineId)) },
@@ -68,7 +71,7 @@ export function compileStatement(raw: StatementIntent, columns: readonly Dataset
     const formulas = [...new Map([...pinned, ...intent.overrides.formulas].map(f => [f.id, f])).values()].map(f => ({ ...f, ast: mapAst(f.ast) }));
     const sectionOrder = intent.overrides.sectionOrder ?? intent.template.sections.map(s => s.id);
     const orderedSections = [...sectionOrder, ...intent.template.sections.map(s => s.id).filter(id => !sectionOrder.includes(id))];
-    const lines = orderedSections.flatMap(id => { const section = intent.template.sections.find(s => s.id === id)!; const order = intent.overrides.lineOrder[id] ?? section.lineIds; return [...order, ...section.lineIds.filter(l => !order.includes(l))]; });
+    const lines = orderedSections.flatMap(id => { const section = sections.find(s => s.id === id)!; const order = intent.overrides.lineOrder[id] ?? section.lineIds; return [...order, ...section.lineIds.filter(l => !order.includes(l))]; });
     const memberOrders = { [sectionId]: orderedSections.map(pivotValueKey), [ids.item]: lines.map(pivotValueKey) };
     const linePolicies = Object.fromEntries(intent.template.lines.map(l => [pivotValueKey(l.id), l.policy]));
     const model: TableModelV1 = {
@@ -149,5 +152,6 @@ export function compileStatement(raw: StatementIntent, columns: readonly Dataset
         throw new StatementCompilationError(checked.validation.diagnostics);
     if (checked.graph.diagnostics.length)
         problem(checked.graph.diagnostics.map(d => d.message).join(' '), 'formulas');
-    return { model, unpivot, memberOrders, linePolicies, templateIdentity: { id: intent.template.id, version: intent.template.version }, execution, sectionField, sectionByLine: Object.fromEntries(sectionByLine) };
+    const incomeBindings = proveIncomeBindings(intent, columns);
+    return { ...(incomeBindings ? {incomeBindings} : {}), model, unpivot, memberOrders, linePolicies, templateIdentity: { id: intent.template.id, version: intent.template.version }, execution, sectionField, sectionByLine: Object.fromEntries(sectionByLine) };
 }

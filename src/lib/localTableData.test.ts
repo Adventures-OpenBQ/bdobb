@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, it } from 'vitest';
-import { datasetFromBytes } from './localTableData';
+import { dataFromBytes, datasetFromBytes, datasetFromRows, parseTableSnapshot } from './localTableData';
 it('normalizes literal column IDs and complete local provenance', async () => {
   const result = await datasetFromBytes('data.json', new TextEncoder().encode('[{"a.b":10},{"a.b":20}]'), 'widget', 4);
   expect(result.columns).toEqual([{ id: 'a.b', label: 'a.b' }]);
@@ -45,4 +45,57 @@ it('relabels statement rows from the given year ends before rows are identified'
   expect(plain.rows.map(r => r.values.fiscal_period)).toEqual(['Q2', 'FY', 'Q2']);
   expect(plain.diagnostics).toEqual([{ code: 'FISCAL_AS_REPORTED', severity: 'info', message: 'Fiscal labels as reported' }]);
   expect((await datasetFromBytes('s.csv', bytes, 'widget', 1)).diagnostics).toBeUndefined();
+});
+
+it('keeps explicit acquisition status and requests out of the price rows when importing a snapshot', async () => {
+  const rows = [{ date: '2026-01-02', adjusted_close: 100 }];
+  const receipt = { start_date: '2026-01-01', end_date: '2026-01-31', interval: '1d', symbol: 'A' };
+  for (const completeness of ['complete', 'bounded', 'paged', 'sample', 'unknown', 'partial']) {
+    const bytes = new TextEncoder().encode(JSON.stringify({ rows, receipt, completeness }));
+    const file = await datasetFromBytes('history.json', bytes, 'widget', 1);
+    expect(await dataFromBytes('history.json', bytes)).toEqual(rows);
+    expect(file.rows.map(row => row.values)).toEqual(rows);
+    expect(file.provenance.receipt).toEqual(receipt);
+    expect(file.completeness.kind).toBe(completeness);
+  }
+});
+
+it('refuses a malformed snapshot or an undeclared receipt field', async () => {
+  const rows = [{ symbol: 'A', adjusted_close: 100 }];
+  for (const value of [
+    { rows, receipt: {}, completeness: 'invented' },
+    { rows, receipt: { interval: {} }, completeness: 'bounded' },
+    { rows, receipt: { token: 'unused' }, completeness: 'bounded' },
+    { rows, receipt: {}, completeness: 'complete', extra: true },
+  ]) {
+    const bytes = new TextEncoder().encode(JSON.stringify(value));
+    await expect(datasetFromBytes('invalid.json', bytes, 'widget', 1)).rejects.toThrow('Could not parse local table');
+  }
+});
+
+it('rebuilds ETF evidence from each opened snapshot and refuses saved evidence injection', async () => {
+  const receipt = { fund_symbol: 'FUND_A.US', etf_kind: 'sector', weight_basis: 'equity-exposure', as_of: '2026-09-30', holdings_coverage: 'partial', retrieved_at: '2026-11-19T12:00:00Z' };
+  const snapshot = { receipt, rows: [{ sector: 'Energy', weight: .14 }], completeness: 'unknown' };
+  const open = (value: unknown) => datasetFromBytes('sectors.json', new TextEncoder().encode(JSON.stringify(value)), 'fund', 1);
+  const first = await open(snapshot);
+  expect(first.provenance.metadata?.etfEvidence).toMatchObject({ fund: receipt.fund_symbol, holdingsCoverage: 'partial', asOf: '2026-09-30', retrievedAt: Date.parse(receipt.retrieved_at) });
+  expect((await open({ ...snapshot, receipt: { ...receipt, fund_symbol: 'FUND_B.US' } })).provenance.metadata?.etfEvidence).toMatchObject({ fund: 'FUND_B.US' });
+  await expect(open({ ...snapshot, metadata: first.provenance.metadata })).rejects.toThrow('Could not parse local table');
+  await expect(open({ ...snapshot, receipt: { ...receipt, token: 'extra' } })).rejects.toThrow('Could not parse local table');
+});
+
+
+it('acquires the explicit financial snapshot from local bytes and requires backend receipt context', async () => {
+  const { dividendEvidence, dividendRow } = await import('../test/fixtures/financialEvidence');
+  const { readFinancialEvidence } = await import('./widgetData/chartRecipes/financialEvidence');
+  const wire = { rows: [dividendRow], completeness: 'bounded', chart_evidence: dividendEvidence };
+  const file = await datasetFromBytes('dividend.json', new TextEncoder().encode(JSON.stringify(wire)), 'local', 1);
+  expect(readFinancialEvidence(file.provenance)).toEqual(dividendEvidence);
+  const backend = datasetFromRows(wire.rows, 'backend', 1, 'backend', undefined, [], {
+    completeness: 'bounded', financialEvidence: readFinancialEvidence(file.provenance),
+  });
+  expect(readFinancialEvidence(backend.provenance)).toBeUndefined();
+  const selected = parseTableSnapshot({ ...wire, chart_evidence: { invented: true } });
+  expect(selected.data).toEqual([dividendRow]);
+  expect(selected.snapshot).toEqual({ completeness: 'unknown' });
 });

@@ -1,6 +1,9 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { captureChartSources, chartRequestContext, chartResponseRows, requestsDailyPriceSource } from "./widgetData/chartRecipes/chartSourceContracts";
+import { backendFinancialResponse, type BackendAcquisition } from "./widgetData/chartRecipes/financialEvidence";
+import { isTableSnapshotEnvelope } from "./tableRowValues";
 import { fetch } from "@tauri-apps/plugin-http";
 import type { BackendConfig, ParamOption, WidgetDef, WidgetForm } from "./types";
 import { calendarIdsOf, sendParams, type WireContext } from "./params";
@@ -204,14 +207,16 @@ export function createManagedTableRequest(backend: BackendConfig): typeof global
 }
 
 /** Walks a dotted dataKey; an unresolvable key yields the whole payload. */
-export function extractData(payload: unknown, dataKey?: string): unknown {
+export function extractData(payload: unknown, dataKey?: string, preserveTableSnapshot = false): unknown {
   if (!dataKey) return payload;
 
   let current: unknown = payload;
-  for (const segment of dataKey.split(".")) {
+  const segments = dataKey.split(".");
+  for (const [index, segment] of segments.entries()) {
     if (typeof current !== "object" || current === null) return payload;
     const next = (current as Record<string, unknown>)[segment];
     if (next === undefined) return payload;
+    if (preserveTableSnapshot && segment === "rows" && index === segments.length - 1 && isTableSnapshotEnvelope(current)) return current;
     current = next;
   }
   return current;
@@ -369,6 +374,8 @@ export class HttpError extends Error {
  * not carry (its declared size), and handing over headers rather than the
  * Response keeps the body this function's to consume.
  */
+type ResponseHead = Pick<Response, "url" | "status" | "headers" | "type">;
+
 async function request(
   method: "GET" | "PUT" | "POST" | "DELETE",
   url: string,
@@ -378,11 +385,13 @@ async function request(
     parse = true,
     allow404 = false,
     onHeaders,
+    onResponse,
     signal,
   }: {
     parse?: boolean;
     allow404?: boolean;
     onHeaders?: (headers: Headers) => void;
+    onResponse?: (head: ResponseHead) => void;
     signal?: AbortSignal;
   } = {},
 ): Promise<unknown> {
@@ -414,6 +423,7 @@ async function request(
     throw new HttpError(describeHttpError(res.status, text), res.status, text);
   }
   onHeaders?.(res.headers);
+  onResponse?.({url:res.url,status:res.status,headers:res.headers,type:res.type});
   if (!parse) {
     // Read to the end even though nothing is parsed: an unread body holds the
     // connection open, which is why the !res.ok branch above reads it too.
@@ -531,6 +541,22 @@ export function obbjectWarnings(payload: unknown): string[] {
   });
 }
 
+function rejectsDailyPriceTransport({ status, headers, type }: ResponseHead): boolean {
+  if (status === 206 || headers.has("content-range")) return true;
+  if (type === "cors") {
+    // Fetch represents missing and hidden headers the same way. Require an observable exposure list.
+    const exposed = (headers.get("access-control-expose-headers") ?? "").toLowerCase().split(",").map(name => name.trim());
+    if (!["link", "content-range", "access-control-expose-headers"].every(name => exposed.includes(name))) return true;
+  }
+  // Scan URI references and whole parameter values so their contents cannot be mistaken for a relation.
+  const link = headers.get("link") ?? "";
+  const parameters = link.matchAll(/<[^>]*>|;\s*([^=;,\s]+)\s*=\s*(?:"((?:[^"\\]|\\.)*)"|([^;,\s]+))/g);
+  for (const [, name, quoted, token] of parameters) {
+    if (name?.toLowerCase() === "rel" && /(?:^|\s)next(?:\s|$)/i.test(quoted?.replace(/\\(.)/g, "$1") ?? token)) return true;
+  }
+  return false;
+}
+
 export async function fetchWidgetData(
   backend: BackendConfig,
   widget: WidgetDef,
@@ -542,6 +568,8 @@ export async function fetchWidgetData(
   // an agent fetch has no card context to resolve, so it passes `undefined`.
   signal?: AbortSignal,
   onWarnings?: (warnings: string[]) => void,
+  onAcquisition?: (acquisition: BackendAcquisition) => void,
+  onRequest?: (url: string, headers: Record<string, string>) => void,
 ): Promise<unknown> {
   // Hookless callers (including Rita's synchronous card facade) may supply the legacy map while still needing
   // overnight bundles. Keep that map and load missing bundle calendars through the hooks' shared cache. A supplied
@@ -561,15 +589,47 @@ export async function fetchWidgetData(
     );
     ctx = { ...ctx, now, calendars: { ...ctx?.calendars, ...loaded.calendars } };
   }
-  const payload = await request("GET", buildWidgetUrl(backend, widget, params, ctx), authHeaders(backend), undefined, {
-    signal,
+  const requestUrl = buildWidgetUrl(backend, widget, params, ctx);
+  const headers = authHeaders(backend);
+  onRequest?.(requestUrl, headers);
+  let response: ResponseHead | undefined;
+  const payload = await request("GET", requestUrl, headers, undefined, {
+    signal, onResponse: head => { response = head; },
   });
+  signal?.throwIfAborted();
+  const table = widget.type === "table";
+  const url = table && onAcquisition ? new URL(requestUrl) : undefined;
+  const credentialKey = backend.authLocation === "query" && backend.headerValue ? backend.headerName : undefined;
+  const financial = url && backendFinancialResponse(payload, url, credentialKey);
+  const retrievedAt = Date.now();
+  const chartRequest = url && response?.url === url.href ? chartRequestContext(url, widget.dataKey, retrievedAt, credentialKey) : undefined;
+  const fullRows = chartRequest && chartResponseRows(payload, chartRequest.selector);
+  const sources = chartRequest && fullRows && captureChartSources(chartRequest, payload, fullRows);
+  const selected = extractData(payload, widget.dataKey, table);
+  if (url && onAcquisition) {
+    // Use the completed request and only its selected, complete result array.
+    const parameters: Record<string, string> = {};
+    for (const key of ["symbol", "exchange", "provider"]) {
+      if (credentialKey === key) continue;
+      const values = url.searchParams.getAll(key);
+      if (values.length) parameters[key] = values.join(",");
+    }
+    const selectedRows = isTableSnapshotEnvelope(selected) ? selected.rows : selected;
+    let captured = fullRows === selectedRows ? sources : undefined;
+    if (captured?.["daily-price"] && response && rejectsDailyPriceTransport(response)) {
+      delete captured["daily-price"];
+      if (!Object.keys(captured).length) captured = undefined;
+    }
+    onAcquisition({ endpoint: url.pathname, parameters, retrievedAt, ...(captured ? { ...chartRequest, chartSources: captured } : {}),
+      ...(!captured?.['daily-price'] && requestsDailyPriceSource(url, payload) ? { dailyPriceRejected: true } : {}),
+      ...(financial && selectedRows === financial.rows ? { financialEvidence: financial.evidence } : {}) });
+  }
   onWarnings?.(obbjectWarnings(payload));
   // A keys panel renders from the whole `{ tier, rows }` envelope — `tier`
   // decides whether edit controls show — so key-maint's own
   // `data.dataKey: "rows"` must not strip it.
   if (widget.type === "keys") return payload;
-  return extractData(payload, widget.dataKey);
+  return selected;
 }
 
 /**

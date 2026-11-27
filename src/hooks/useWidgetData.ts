@@ -1,9 +1,11 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { fetchesData } from "../lib/builtins";
 import { peekWidgetCalendars } from "../lib/calendars/bundles";
+import {tableExecutionStore,type BackendRowsRequest} from "../stores/tableExecutionStore";
+import type { BackendAcquisition } from "../lib/widgetData/chartRecipes/financialEvidence";
 import { fetchWidgetData, THEMED_TYPES } from "../lib/dataClient";
 import { cronMatches, cronNext, parseCron, type Cron } from "../lib/cron";
 import { logError } from "../lib/logger";
@@ -138,7 +140,9 @@ export function useWidgetData(
   const themeKey = widget && THEMED_TYPES.has(widget.type) ? resolved : "";
 
   const [status, setStatus] = useState<Status>("unresolved");
-  const [data, setData] = useState<unknown>(null);
+  const [publication, setPublication] = useState<{data: unknown; acquisition?: BackendAcquisition; request?:BackendRowsRequest}>({data:null});
+  const data = publication.data;
+  const setData = useCallback((value: unknown) => setPublication({data:value}), []);
   /** The bounds of the last answer to a request sent WITHOUT bounds. See `bounds`. */
   const [heldBounds, setHeldBounds] = useState<{ min: Date; max: Date } | undefined>(undefined);
   // OBBject warnings from the last successful fetch (e.g. a truncated result).
@@ -337,6 +341,17 @@ export function useWidgetData(
     isPeriodType(widget?.params.find((p) => p.paramName === key)?.type) && namesBounds(value));
   const bounds = wantsBounds ? heldBounds : undefined;
   const boundsKey = bounds ? `${bounds.min.getTime()}|${bounds.max.getTime()}` : "";
+  const backendRequest = useRef<BackendRowsRequest | undefined>(undefined);
+  // A new authenticated question must retire linked proof before paint, even while this card retains its old body.
+  const backendQuestion=widget?.type==='table'&&!linked&&!card.queryBinding?JSON.stringify([
+    card.id,card.backendId,widget.id,widget.endpoint,widget.dataKey,widget.table,
+    backend?.id,backend?.baseUrl,backend?.authLocation,backend?.headerName,backend?.headerValue,
+    key,fiscalKey,calendarTrigger,exchange,boundsKey,
+  ]):undefined;
+  useLayoutEffect(()=>{
+    backendRequest.current=backendQuestion===undefined?undefined:tableExecutionStore.observeBackendQuestion(card.id,backendQuestion);
+  },[card.id,backendQuestion]);
+
 
   /**
    * Are there parameter edits the card has not run? Compared through
@@ -612,17 +627,19 @@ export function useWidgetData(
       }
 
       try {
+        const request=backendRequest.current;
         let received: string[] = [];
+        let acquisition: BackendAcquisition | undefined;
         const result = await fetchWidgetData(backend, widget, fetchParams, {
           fiscalYearEnd: fetchFiscal,
           // A bound card's map is useBundleCalendars' (useCardRequest), so the GET resolves on what preview showed.
           calendars: sendMap,
           exchange,
           bounds,
-        }, undefined, (w) => { received = w; });
+        }, undefined, (w) => { received = w; }, next => { acquisition = next; });
         if (cancelled) return;
         setWarnings(received);
-        setData(result);
+        setPublication({data:result, acquisition, request});
         if (wantsBounds && bounds === undefined) setHeldBounds(dataBounds(result));
         setFetchedAt(Date.now());
         setError(undefined);
@@ -787,6 +804,8 @@ export function useWidgetData(
   return {
     status,
     data,
+    acquisition: publication.acquisition,
+    backendRequest: status==='ready'?publication.request:backendRequest.current,
     error,
     warnings,
     retry,
