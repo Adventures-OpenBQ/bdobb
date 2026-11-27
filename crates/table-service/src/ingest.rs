@@ -381,9 +381,7 @@ fn validate_dataset(input: &SourceDataset, limits: &ServiceLimits) -> Result<(),
         }
     }
     for column in &input.columns {
-        if column.id.is_empty() {
-            return Err(failed());
-        }
+        // Column IDs are raw JSON keys; row/source identities remain nonempty.
         for value in column.metadata.iter().flat_map(|m| m.values()) {
             check(value)?;
         }
@@ -402,4 +400,35 @@ fn validate_dataset(input: &SourceDataset, limits: &ServiceLimits) -> Result<(),
         check(value)?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod raw_field_tests {
+    use super::*;
+    #[test]
+    fn empty_raw_column_is_valid_but_row_and_source_identities_stay_required() {
+        let input: SourceDataset = serde_json::from_value(serde_json::json!({
+            "rows":[{"id":"r1","values":{"":{"tag":"f64","value":101}}}],
+            "columns":[{"id":"","label":""}],"resultRevision":1,"outputRevision":1,
+            "provenance":{"sourceWidgetId":"source"},
+            "completeness":{"kind":"complete","warnings":[]},
+            "freshness":{"availability":"available","stale":false}
+        }))
+        .unwrap();
+        validate_dataset(&input, &ServiceLimits::default()).unwrap();
+        let mut bad = input.clone();
+        bad.rows[0].id.clear();
+        assert!(validate_dataset(&bad, &ServiceLimits::default()).is_err());
+        let mut bad = input.clone();
+        bad.provenance.source_widget_id.clear();
+        assert!(validate_dataset(&bad, &ServiceLimits::default()).is_err());
+        assert!(validate_dataset(
+            &input,
+            &ServiceLimits {
+                max_input_columns: 0,
+                ..ServiceLimits::default()
+            }
+        )
+        .is_err());
+    }
 }

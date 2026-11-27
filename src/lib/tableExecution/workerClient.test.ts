@@ -25,6 +25,16 @@ const setup = () => {
   const executor = createWorkerExecutor('source', () => { const worker = new FakeWorker(); workers.push(worker); return worker as unknown as Worker; });
   return { executor, workers, signal: new AbortController().signal };
 };
+it('rejects pending reads as superseded when a new input replaces their view',async()=>{
+ const {executor,workers,signal}=setup();
+ await executor.registerInput(input,1,signal);await executor.applyModel(definition,{kind:'none'},revision,signal);
+ workers[0].hold=true;
+ const pending=executor.totals(revision,signal);await flush();
+ const rejected=expect(pending).rejects.toMatchObject({name:'ExecutionProtocolError',descriptor:{code:'REVISION_MISMATCH'}});
+ await executor.registerInput({...input,resultRevision:2},2,signal);await rejected;
+ const next={...revision,input:2,model:2,output:2};await executor.applyModel(definition,{kind:'none'},next,signal);
+ expect((await executor.totals(next,signal)).values.revenue).toBe(40);executor.dispose();
+});
 it('ignoresLateResponses', async () => {
   const { executor, workers, signal } = setup();
   await executor.registerInput(input, 1, signal);

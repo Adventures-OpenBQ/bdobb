@@ -6,6 +6,33 @@ import { captureBaseline, compareOracle, encodeOracleValue, decodeOracleValue, o
 const fixture = (name: string) => oracleCases.find(c => c.name === name)!;
 const capture = (name: string) => captureBaseline(fixture(name));
 
+// Preserve the reviewed 74cc3f6 baseline files. The V7 display change has four
+// explicit label replacements in this corpus; only rendered row/group labels
+// are upgraded. Input fields, member IDs, metadata, errors and numbers stay exact.
+function statementDisplayExpectation(result: OracleResult): OracleResult {
+  const copy = structuredClone(result);
+  const labels: Record<string, string> = { revenue: 'Revenue', cost_of_revenue: 'Cost of Revenue', total_assets: 'Total Assets', operating_cash_flow: 'Operating Cash Flow' };
+  function visit(value: unknown): void {
+    if (!value || typeof value !== 'object') return;
+    if (Array.isArray(value)) { value.forEach(visit); return; }
+    const record = value as Record<string, unknown>;
+    if (Array.isArray(record.groupPath)) {
+      const member = record.groupPath.at(-1) as { value?: unknown; label?: unknown } | undefined;
+      if (typeof member?.value === 'string' && /^statement\/(income|balance|cashflow)\/1\.0\.0\/line\//.test(member.value)) {
+        const raw = member.value.split('/').at(-1)!;
+        if (Object.hasOwn(labels, raw) && member.label === raw) {
+          member.label = labels[raw];
+          const cells = record.values as Record<string, unknown> | undefined;
+          if (cells?.['\u001egroup'] === raw) cells['\u001egroup'] = labels[raw];
+        }
+      }
+    }
+    Object.values(record).forEach(visit);
+  }
+  visit(copy);
+  return copy;
+}
+
 describe('reviewed Pivot baseline oracle', () => {
   // Catches paging over loaded rows and losing group identity when blocks arrive backwards.
   it('page_size_invariant', () => {
@@ -162,7 +189,23 @@ describe('reviewed Pivot baseline oracle', () => {
       expect(stored.formatVersion).toBe(1);
       expect(stored.baselineRevision).toBe('74cc3f6c4c718cd76044722b954a7bc0761c8866');
       expect(stored.case).toEqual(fixture(stored.case.name));
-      expect(compareOracle(captureBaseline(stored.case), stored.result)).toEqual([]);
+      expect(compareOracle(captureBaseline(stored.case), stored.case.name.startsWith('statement-') ? statementDisplayExpectation(stored.result) : stored.result)).toEqual([]);
     });
   }
+});
+
+it('certifies raw Rust registrations before hiding an invalid ETF weight', async () => {
+  const { realRustRuntime } = await import('../../../test/tableProviderBoundary');
+  const { input, revision } = await import('../fixtures');
+  const runtime = await realRustRuntime();
+  const session = runtime.open_session({ protocolVersion: 1, locale: 'en-US' });
+  const data = { ...input, rows: [{ id: 'keep', values: { symbol: 'KEEP', weight: .25 } }, { id: 'drop', values: { symbol: 'DROP', weight: -1 } }],
+    columns: ['symbol', 'weight'].map(id => ({ id, label: id })), completeness: { ...input.completeness, acquiredRowCount: 2 },
+    provenance: { sourceWidgetId: 'source', receipt: { fund_symbol: 'FUND_A.US', etf_kind: 'holdings', weight_basis: 'fund-assets' } } };
+  try {
+    runtime.dispatch(session, { kind: 'registerInput', requestId: 'register', revision, inputRevision: 1, input: data });
+    runtime.dispatch(session, { kind: 'applyModel', requestId: 'apply', revision, definition: { search: 'KEEP', table: {} }, selection: { kind: 'none' } });
+    const chart = runtime.dispatch(session, { kind: 'chartData', requestId: 'chart', revision, fields: ['symbol', 'weight'] });
+    expect(chart).toMatchObject({ rows: [{ values: { symbol: 'KEEP', weight: .25 } }], provenance: { metadata: { etfEvidence: { issue: expect.stringMatching(/weight/i) } } } });
+  } finally { runtime.close_session(session); }
 });

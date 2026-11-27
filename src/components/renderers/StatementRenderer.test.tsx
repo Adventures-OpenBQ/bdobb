@@ -27,6 +27,13 @@ const statement: StatementRows = {
 };
 
 describe("StatementRenderer", () => {
+  it('keeps a collapsed section caption and its item count together inside the sticky label',async()=>{
+    const onToggle=vi.fn();
+    render(<StatementRenderer statement={statement} collapsed={new Set(['Income'])} onToggle={onToggle}/>);
+    const button=screen.getByRole('button',{name:'Income (1)'});
+    expect(button.querySelector('.statement-section-label')).toHaveTextContent('Income (1)');
+    await userEvent.setup().click(button);expect(onToggle).toHaveBeenCalledWith('Income');
+  });
   it('renders authoritative cell errors and per-period formats without displaying a false numeric result', () => {
     const presented: StatementRows = { ...statement, headers: ['FY2026', 'FY2025', 'FY2024'], sections: [{ id: 'section/stable', name: 'Results', items: [{
       field: 'margin', label: 'Margin', values: [0.4, 0.4, 40], formats: [{ formatterFn: 'normalizedPercent' }, { formatterFn: 'none' }, undefined],

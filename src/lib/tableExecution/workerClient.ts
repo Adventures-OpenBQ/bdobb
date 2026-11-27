@@ -10,7 +10,7 @@ import { ExecutionProtocolError, validateExecutionRequest, validateExecutionResp
 type Pending = { revision: Revision; kind: ExecutionResponse['kind']; resolve: (value: ExecutionResponse) => void; reject: (error: unknown) => void; cleanup: () => void };
 type Source = { kind: 'registerInput'; input: WidgetDataset; inputRevision: number } | { kind: 'importFile'; name: string; bytes: Uint8Array; inputRevision: number; yearEnds?: Record<string, number | null> };
 const aborted = () => new DOMException('Table request cancelled', 'AbortError');
-// A read of the view a newer apply replaces; consumers may ignore it like an obsolete response.
+// A read of a view replaced by a newer input or model; consumers ignore it like an obsolete response.
 const superseded = () => new ExecutionProtocolError('REVISION_MISMATCH', 'Table view superseded');
 // Shared hydration/restoration is never cancelled by one caller: only reset/dispose end it (by rejecting its sends).
 const shared = new AbortController().signal;
@@ -152,7 +152,7 @@ export function createWorkerExecutor(widgetId: string, factory: () => Worker = (
     if (signal.aborted) throw aborted();
     if (disposed) throw new Error('Table executor disposed');
     const snapshot = structuredClone(next);
-    const token = ++operation; applying = false; reset(aborted());
+    const token = ++operation; applying = false; reset(superseded());
     acquiring = token;
     try {
       await ensure(signal, false, snapshot);

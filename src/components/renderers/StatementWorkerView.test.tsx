@@ -4,6 +4,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { StatementWorkerView } from './StatementWorkerView';
 import type { StatementSnapshot } from '../../lib/statementExecution';
+import { tableCommitCoordinators } from '../../stores/tableCommitCoordinator';
 const state = vi.hoisted(() => ({ view: { active: {widgetId:'cash',input:1,model:1,output:1}, ready: {}, status:'ready', stale:false }, listeners: new Set<() => void>(), load: vi.fn() }));
 vi.mock('../../stores/tableExecutionStore', () => ({ tableExecutionStore: {
   subscribe: (listener: () => void) => { state.listeners.add(listener); return () => state.listeners.delete(listener); },
@@ -16,6 +17,15 @@ vi.mock('../../lib/tableExecution/workerClient', () => ({ createWorkerExecutor: 
 }) }));
 function snapshot(revision: StatementSnapshot['revision']): StatementSnapshot { return {revision,statement:null,completeness:{kind:'complete',warnings:[]},freshness:{availability:'available',stale:false}}; }
 beforeEach(() => { state.listeners.clear(); state.load.mockReset(); state.view = { active:{widgetId:'cash',input:1,model:1,output:1},ready:{},status:'ready',stale:false }; });
+it('keeps the owned Statement coordinator available to table tools and releases it on unmount',async()=>{
+ state.load.mockResolvedValue(snapshot(state.view.active));
+ const mounted=render(<StatementWorkerView dashboardId="statement-owner" widgetId="cash" owned data={null} collapsed={new Set()} onToggle={()=>{}}/>);
+ await waitFor(()=>expect(tableCommitCoordinators.peek('statement-owner','cash')).toBeDefined());
+ mounted.unmount();
+ await waitFor(()=>expect(tableCommitCoordinators.peek('statement-owner','cash')).toBeUndefined());
+ const plain=render(<StatementWorkerView dashboardId="statement-owner" widgetId="cash" owned={false} data={[]} collapsed={new Set()} onToggle={()=>{}}/>);
+ expect(tableCommitCoordinators.peek('statement-owner','cash')).toBeUndefined();plain.unmount();
+});
 it('labels retained Statement data stale until the new ready revision completes its transfer', async () => {
   state.load.mockResolvedValueOnce(snapshot(state.view.active));
   let finish!: (value: StatementSnapshot) => void;

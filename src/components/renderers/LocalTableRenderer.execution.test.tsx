@@ -592,6 +592,22 @@ it('retains old singular Page raw intent in reachable Inspect repair without ins
  const dashboard={id:'execution',name:'Execution',tabs:[{id:'t',name:'T',cards:[{id:'w',widgetId:'local_table',backendId:'builtin',params:{file:'data.csv'},layout:{x:0,y:0,w:1,h:1},tableDefinition:{table:{},search:'',analytical:raw}}]}]} as Dashboard;
  useDashboardStore.setState({dashboards:[dashboard],viewer:false});tableExecutionStore.syncDashboard(dashboard);render(<LocalTableRenderer executionIdentity={{dashboardId:'execution',widgetId:'w'}} file="data.csv" label="Data" refreshKey={0}/>);inspect();const draft=await screen.findByLabelText('Model repair draft');expect(JSON.parse((draft as HTMLTextAreaElement).value)).toEqual(raw);expect((draft as HTMLTextAreaElement).value).not.toContain('memberKeys');expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[0].tableDefinition?.analytical).toEqual(raw);await act(async()=>{await tableExecutionStore.settled('execution');});
 });
+it('presents the activated Statement with section-wide toggles instead of ordinary pivot cells',async()=>{
+ const {fixture}=await import('../../lib/statementModel/compileFixtures');const {statement,source}=fixture();
+ const {readLocalFile}=await import('../../lib/localFiles');const values=source.rows[0].values;
+ vi.mocked(readLocalFile).mockResolvedValueOnce(new TextEncoder().encode(`${Object.keys(values).join(',')}\n${Object.values(values).join(',')}\n`));
+ vi.stubGlobal('Worker',Boundary);
+ const dashboard={id:'execution',name:'Statement',tabs:[{id:'t',name:'T',cards:[{id:'w',widgetId:'local_table',backendId:'builtin',params:{file:'data.csv'},tableDefinition:{table:{},search:'',analytical:statement},layout:{x:0,y:0,w:1,h:1}}]}]} as Dashboard;
+ useDashboardStore.setState({dashboards:[dashboard],viewer:false});tableExecutionStore.syncDashboard(dashboard);
+ const {container}=render(<LocalTableRenderer executionIdentity={{dashboardId:'execution',widgetId:'w'}} file="data.csv" label="Data" refreshKey={0}/>);
+ await act(async()=>{await tableExecutionStore.settled('execution');});
+ await waitFor(()=>expect(container.querySelector('table.statement-model')).not.toBeNull());
+ const section=container.querySelector('tbody tr.statement-section')!;
+ expect(section.querySelector('.statement-section-label')).toHaveTextContent('Income');
+ expect(section.querySelector('button')).toHaveAttribute('aria-expanded','false');
+ fireEvent.click(section.querySelector('button')!);
+ await waitFor(()=>expect(container.querySelector('tbody tr.statement-section button')).toHaveAttribute('aria-expanded','true'));
+});
 it.each(['source','refresh','viewer','cancel'] as const)('Statement held preview is inert after %s changes and retains draft',async mode=>{
  const {fixture}=await import('../../lib/statementModel/compileFixtures');const {statement,source}=fixture();
  const {readLocalFile}=await import('../../lib/localFiles');const values=source.rows[0].values;
