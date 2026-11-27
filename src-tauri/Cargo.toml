@@ -37,6 +37,10 @@ objc2-app-kit = { version = "0.3", default-features = false, features = ["std", 
 [target.'cfg(target_os = "ios")'.dependencies]
 objc2 = "0.6"
 
+# Native UI Automation is scoped to the held Chrome player.
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "=0.61.3", features = ["Win32_UI_Accessibility", "Win32_System_Com", "Win32_Foundation"] }
+
 # Xcode 27's SwiftPM internalizes the `@_cdecl` exports of a static Swift
 # product, so the Rust side of Tauri's iOS build fails to link. swift-rs 1.0.8
 # fixes most of that (it plans with `--triple`, clamps the iOS deployment
