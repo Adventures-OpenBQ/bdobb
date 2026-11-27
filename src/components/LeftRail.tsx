@@ -1,5 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
+import { windowsShortcuts } from "../lib/platformShortcuts";
 import { SOURCE_CODE_LINK } from "../lib/sourceOffer";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -761,7 +762,7 @@ export function LeftRail({
     const index = workspaces.findIndex((x) => x.id === w.id);
     const shortcut =
       shortcutTarget === "workspaces" && index > -1 && index < 9 ? (
-        <kbd className="rail-shortcut">⌥{index + 1}</kbd>
+        <kbd className="rail-shortcut">{windowsShortcuts() ? "Alt+" : "⌥"}{index + 1}</kbd>
       ) : null;
 
     // Same replacement-not-nesting reason as a dashboard row: an input
@@ -830,7 +831,7 @@ export function LeftRail({
     // The same holds when ⌥1–⌥9 go to workspaces: no badge, so the initial.
     const shortcut =
       shortcutTarget === "dashboards" && index > -1 && index < 9 ? (
-        <kbd className="rail-shortcut">⌥{index + 1}</kbd>
+        <kbd className="rail-shortcut">{windowsShortcuts() ? "Alt+" : "⌥"}{index + 1}</kbd>
       ) : (
         <span className="rail-shortcut rail-initial" aria-hidden="true">
           {[...d.name][0] ?? "·"}
@@ -1144,10 +1145,8 @@ export function LeftRail({
           returnFocusTo={helpMenuAnchor}
           items={[
             {
-              // The shortcut rides inside the label. A MenuItem is a plain
-              // string, and one menu wanting a second column is not reason
-              // enough to give all five of them one.
-              label: "Quick Help (⌘?)",
+              // Display the current platform modifier in the help menu.
+              label: windowsShortcuts() ? "Quick Help (Ctrl+Shift+/)" : "Quick Help (⌘?)",
               onSelect: () => {
                 // panel.close() first, the same line railButton's rows
                 // carry. Not strictly required -- the dialog is
