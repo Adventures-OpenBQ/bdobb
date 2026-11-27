@@ -16,6 +16,7 @@ import type { BackendAcquisition } from "../lib/widgetData/chartRecipes/financia
 import { parseTableSnapshot } from "../lib/tableRowValues";
 import { datasetFromRows } from "../lib/localTableData";
 import { tableColumns, tableRows } from "../lib/tableColumns";
+import { copyStatementSourceRow } from "../lib/statementFiscal";
 import { useWidgetRegistryStore } from "./widgetRegistryStore";
 import { LOCAL_TABLE_ID } from '../lib/builtins';
 import { readLocalFile } from '../lib/localFiles';
@@ -139,7 +140,7 @@ export function backendTableSource(card: DashboardCard): SourceAdapter {
     const sourceRows = tableRows(parsed.data, spec) ?? [];
     if (!fitsTableWorker(sourceRows)) throw new Error('This table is too large for the table engine');
     // Copied only after admission: datasetFromRows fills absent keys, and these rows are also on screen.
-    const rows = sourceRows.map(row => ({ ...row }));
+    const rows = sourceRows.map(copyStatementSourceRow);
     // The provider's aggregation hint rides as column metadata, so a linked table's input keeps it for Rita's describe_table (V9-P2).
     const columns = spec ? tableColumns(rows, spec).map(c => ({ id: c.field, label: c.header, ...(c.cellDataType ? { dtype: c.cellDataType } : {}), ...(c.format ? { format: c.format } : {}), ...(c.hint ? { metadata: { aggregationHint: c.hint } } : {}) })) : [];
     return { kind: 'dataset', dataset: datasetFromRows(rows, card.id, 0, 'backend', undefined, columns, parsed.snapshot, entry.acquisition) };

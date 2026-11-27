@@ -53,6 +53,47 @@ export function groupValueLabel(g: { paramName: string; value: string }): string
 
 export type Row = Record<string, unknown>;
 
+const fiscalFields = ['fiscal_year', 'fiscal_period'] as const;
+const contextFields = ['symbol', 'period_ending', 'date', 'period_kind'] as const;
+type OwnField = readonly [present: boolean, value: unknown];
+type FiscalDisplay = { acquired: OwnField[]; displayed: OwnField[]; context: OwnField[] };
+// Private identity, never provider metadata: only the fiscal relabeller records this transform.
+// This records raw values, not their validity; the acquisition receipt must still validate them.
+const fiscalDisplays = new WeakMap<Row, FiscalDisplay>();
+const ownFields = (row: Row, fields: readonly string[]): OwnField[] => fields.map(field => [Object.hasOwn(row, field), row[field]]);
+const fieldsAgree = (row: Row, fields: readonly string[], values: OwnField[]) => fields.every((field, index) =>
+  Object.hasOwn(row, field) === values[index][0] && Object.is(row[field], values[index][1]));
+function fiscalDisplay(row: Row): FiscalDisplay | undefined {
+  const display = fiscalDisplays.get(row);
+  return display && fieldsAgree(row, fiscalFields, display.displayed) && fieldsAgree(row, contextFields, display.context) ? display : undefined;
+}
+function displayRow(source: Row, values: Row): Row {
+  fiscalDisplays.set(values, { acquired: fiscalDisplay(source)?.acquired ?? ownFields(source, fiscalFields),
+    displayed: ownFields(values, fiscalFields), context: ownFields(values, contextFields) });
+  return values;
+}
+
+/** The backend copy boundary retains only an intact, privately recorded display transform. */
+export function copyStatementSourceRow(row: Row): Row {
+  const copy = { ...row }, display = fiscalDisplay(row);
+  if (display) fiscalDisplays.set(copy, display);
+  return copy;
+}
+
+/** Validate acquisition receipts against original fiscal primitives, keeping every other current field. */
+export function acquiredStatementRows(rows: readonly Row[]): readonly Row[] {
+  return rows.map(row => {
+    const display = fiscalDisplay(row);
+    if (!display) return row;
+    const acquired = { ...row };
+    fiscalFields.forEach((field, index) => {
+      const [present, value] = display.acquired[index];
+      if (present) acquired[field] = value; else delete acquired[field];
+    });
+    return acquired;
+  });
+}
+
 type Kind = "quarter" | "annual" | "ttm";
 const KIND: Record<string, Kind> = {
   quarter: "quarter", quarterly: "quarter", quarterly_yoy: "quarter", Q: "quarter",
@@ -126,14 +167,14 @@ export function correctStatementRows(
     const kind = kinds[i];
     if (kind === undefined) return row;
     const m = months[i] as number;
-    if (kind === "ttm") return { ...row, fiscal_period: "TTM" };
+    if (kind === "ttm") return displayRow(row, { ...row, fiscal_period: "TTM" });
     const end = ends[i] as CalendarDate;
     const { fy, q } = fiscalPeriod(reportMonth(end), m);
     // Always text: formatCell compacts a number (2026 would show as "2.03K") and a
     // corrected column would mix "FY2027" strings with numbers. The Statement
     // view's period header still prefixes FY, because "2026" does not start with FY.
     const year = m === 12 ? String(fy) : `FY${fy}`;
-    return { ...row, fiscal_period: kind === "annual" ? "FY" : `${m === 12 ? "Q" : "FQ"}${q}`, fiscal_year: year };
+    return displayRow(row, { ...row, fiscal_period: kind === "annual" ? "FY" : `${m === 12 ? "Q" : "FQ"}${q}`, fiscal_year: year });
   });
   return { rows: out, asReported: false };
 }

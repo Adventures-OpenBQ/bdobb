@@ -99,3 +99,14 @@ it('acquires the explicit financial snapshot from local bytes and requires backe
   expect(selected.data).toEqual([dividendRow]);
   expect(selected.snapshot).toEqual({ completeness: 'unknown' });
 });
+it('retains verified local income facts through its per-row fiscal display correction', async () => {
+  const { incomeEvidence, incomeRow } = await import('../test/fixtures/financialEvidence');
+  const wire = { rows: [incomeRow], completeness: 'bounded', chart_evidence: incomeEvidence };
+  const data = await datasetFromBytes('income.json', new TextEncoder().encode(JSON.stringify(wire)), 'local', 1, { 'HSBA.LSE': 6 });
+  // With no source symbol the local fiscal relabeller refuses to guess.
+  expect(data.provenance.metadata?.financialEvidence).toEqual(incomeEvidence);
+  const identified = { ...wire, rows: [{ ...incomeRow, symbol: 'HSBA.LSE' }] };
+  const corrected = await datasetFromBytes('income.json', new TextEncoder().encode(JSON.stringify(identified)), 'local', 1, { 'HSBA.LSE': 6 });
+  expect(corrected.rows[0].values.fiscal_year).toBe('FY2026');
+  expect(corrected.provenance.metadata?.financialEvidence).toEqual(incomeEvidence);
+});

@@ -12,7 +12,7 @@ export { parseTableSnapshot } from "./tableRowValues";
 import { identifyRows } from "./widgetData/identity";
 import type { Row } from "./tableColumns";
 import type { DatasetColumn, DatasetRow, WidgetDataset } from "./widgetData/types";
-import { correctStatementRows, FISCAL_AS_REPORTED } from "./statementFiscal";
+import { acquiredStatementRows, correctStatementRows, FISCAL_AS_REPORTED } from "./statementFiscal";
 const extensionOf = (name: string) => {
   const dot = name.lastIndexOf(".");
   return dot === -1 ? "" : name.slice(dot + 1).toLowerCase();
@@ -167,7 +167,7 @@ export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: nu
     ? acquiredChartSources(snapshot?.chartSources, rows, snapshot?.completeness, undefined, snapshot?.receipt)
     : acquiredChartSources(acquisition?.chartSources, rows, snapshot?.completeness, acquisition, snapshot?.receipt);
   const receipt = parseFinancialEvidence(sourceKind === 'localFile' ? snapshot?.financialEvidence : acquisition?.financialEvidence);
-  const evidence = receipt && financialRowsAgree(receipt, rows) ? receipt : undefined;
+  const evidence = receipt && financialRowsAgree(receipt, receipt.kind === 'income' ? acquiredStatementRows(rows) : rows) ? receipt : undefined;
   if (evidence?.kind === 'income') {
     // The provider returns period records without repeated issuer and period kind columns.
     rows = rows.map(row => ({ ...row, symbol: row.symbol ?? evidence.qualified_symbol, period_kind: row.period_kind ?? evidence.period_kind }));
