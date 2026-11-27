@@ -83,8 +83,10 @@ const scopedRequests = new Map<string, { producer: string; question: RunQuestion
 let watchingScopedRequests = false;
 const runScope = (dashboardId: string, cardId: string) => JSON.stringify([dashboardId, cardId]);
 function runProducer(card: DashboardCard, widget: WidgetDef | undefined, backend: BackendConfig | undefined) {
+  // A connection refresh re-asks the last Run; it must never adopt an un-run
+  // draft. backendQuestion separately retires rows and proof on auth/URL changes.
   return JSON.stringify([card.backendId, card.widgetId, widget?.endpoint, widget?.dataKey, widget?.table, widget?.runButton,
-    backend?.id, backend?.baseUrl, backend?.authLocation, backend?.headerName, backend?.headerValue]);
+    backend?.id]);
 }
 export function armedRequestOf(card: DashboardCard | string, widget?: WidgetDef, backend?: BackendConfig, dashboardId?: string): ArmedRequest | undefined {
   if (typeof card === "string") return armedRequests.get(card);
