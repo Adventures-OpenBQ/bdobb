@@ -591,3 +591,158 @@ fn incoming_field_errors_block_aggregates_without_authored_source_formulas() {
     );
     assert_eq!(serde_json::to_value(&input).unwrap(), before);
 }
+
+#[test]
+fn sort_field_orders_members_like_typescript() {
+    let num = |n: f64| WireValue::F64(WireNumber::Finite(n));
+    let split = |sort: Option<&str>| {
+        let (_, mut input, mut d, runtime) = fixture("ratio-source-scope");
+        input.rows = [("1M", 1., 30.), ("1W", 0.25, 7.), ("3M", 3., 90.)]
+            .iter()
+            .enumerate()
+            .map(|(i, (tenor, months, dte))| {
+                let mut row = input.rows[0].clone();
+                row.id = format!("r{i}");
+                row.values
+                    .insert("tenor".into(), WireValue::String((*tenor).into()));
+                row.values.insert("tenor_months".into(), num(*months));
+                row.values.insert("dte".into(), num(*dte));
+                row
+            })
+            .collect();
+        for id in ["tenor", "tenor_months", "dte"] {
+            let mut column = input.columns[0].clone();
+            column.id = id.into();
+            column.label = id.into();
+            input.columns.push(column);
+        }
+        let a = d
+            .definition
+            .analytical
+            .as_mut()
+            .unwrap()
+            .table_mut()
+            .unwrap();
+        let mut days = a.formulas[0].clone();
+        days.id = "days".into();
+        days.name = "days".into();
+        days.scope = FormulaScope::Source;
+        days.ast = FormulaAst::Reference {
+            target: ReferenceTarget::Field,
+            id: "dte".into(),
+        };
+        a.formulas.push(days);
+        a.categories = vec![Category {
+            id: "expiry".into(),
+            name: "Expiry".into(),
+            source_field_id: "tenor".into(),
+            transform: Transform::Native,
+            fiscal_binding: None,
+            legacy_bucket: None,
+            sort_field_id: sort.map(Into::into),
+        }];
+        a.layout.rows.clear();
+        a.layout.columns = vec!["expiry".into()];
+        refresh_recipe(&mut d);
+        let view = calculate_view(&input, &d, &SelectionSpec::None, &runtime, &Host).unwrap();
+        view.columns
+            .iter()
+            .filter_map(|c| c.split_path.as_ref())
+            .map(|p| text(&p[0].value).to_string())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(split(None), ["1M", "1W", "3M"]);
+    assert_eq!(split(Some("tenor_months")), ["1W", "1M", "3M"]);
+    assert_eq!(split(Some("days")), ["1W", "1M", "3M"]);
+
+    let (_, _, d, _) = fixture("ratio-source-scope");
+    let mut raw = serde_json::to_value(d.definition.analytical.as_ref().unwrap()).unwrap();
+    raw["categories"][0]["sortFieldId"] = "".into();
+    let mut wire: WireDefinition = serde_json::from_str(
+        r#"{"protocolVersion":1,"locale":"en-US","definition":{"table":{},"search":""}}"#,
+    )
+    .unwrap();
+    wire.definition.analytical = Some(serde_json::from_value(raw).unwrap());
+    let refused = pivot_core::validation::validate_definition(&wire).unwrap_err();
+    assert_eq!(refused.path.as_deref(), Some("categories.sortFieldId"));
+}
+
+#[test]
+fn chronological_measures_block_invalid_bound_dates_when_date_category_is_off_axes() {
+    let raw = serde_json::json!({"protocolVersion":1,"locale":"en-US","definition":{"table":{},"search":"","analytical":{
+        "schemaVersion":1,"enabled":true,"params":{"promotePage":false,"filters":[]},
+        "categories":[{"id":"d","name":"Year","sourceFieldId":"date","transform":"Y"},{"id":"g","name":"Group","sourceFieldId":"group","transform":"native"}],
+        "measures":[{"id":"first","sourceFieldId":"x","aggregation":"first"},{"id":"last","sourceFieldId":"x","aggregation":"last"},{"id":"sum","sourceFieldId":"x","aggregation":"sum"}],
+        "formulas":[],"layout":{"rows":["g"],"columns":[],"values":["first","last","sum"]},"checklists":[],"resultFilters":[],"subtotals":{"groups":true,"grandTotal":true}
+    }}});
+    let wire: WireDefinition = serde_json::from_value(raw.clone()).unwrap();
+    let mut definition = pivot_core::validation::validate_definition(&wire).unwrap();
+    definition.analytical_recipe_source = Some(tag(&raw["definition"]["analytical"]));
+    let mut input: SourceDataset = serde_json::from_value(serde_json::json!({
+        "rows":[{"id":"valid","values":{"date":{"tag":"string","value":"2025-12-31"},"group":{"tag":"string","value":"A"},"x":{"tag":"f64","value":100}}},
+                {"id":"invalid","values":{"date":{"tag":"string","value":"2026-01-01"},"group":{"tag":"string","value":"A"},"x":{"tag":"f64","value":999}}}],
+        "columns":[{"id":"date","label":"Date"},{"id":"group","label":"Group"},{"id":"x","label":"X"}],"resultRevision":1,"outputRevision":1,"provenance":{"sourceWidgetId":"w"},
+        "completeness":{"kind":"complete","warnings":[]},"freshness":{"availability":"available","stale":false}
+    })).unwrap();
+    let valid = calculate_view(
+        &input,
+        &definition,
+        &SelectionSpec::None,
+        &RuntimeParams::new(),
+        &PlainOrder,
+    )
+    .unwrap();
+    assert_eq!(
+        valid.totals.values["first"],
+        WireValue::F64(WireNumber::Finite(100.))
+    );
+    assert_eq!(
+        valid.totals.values["last"],
+        WireValue::F64(WireNumber::Finite(999.))
+    );
+    for date in ["zz-not-a-date", "!not-a-date", "2025-02-29", "2026-04-31"] {
+        input.rows[1]
+            .values
+            .insert("date".into(), WireValue::String(date.into()));
+        let view = calculate_view(
+            &input,
+            &definition,
+            &SelectionSpec::None,
+            &RuntimeParams::new(),
+            &PlainOrder,
+        )
+        .unwrap();
+        assert_eq!(
+            view.pool.members["invalid"]["d"].as_ref().unwrap_err().code,
+            "invalid-date"
+        );
+        assert_eq!(
+            view.totals.values["sum"],
+            WireValue::F64(WireNumber::Finite(1099.))
+        );
+        for id in ["first", "last"] {
+            assert_eq!(
+                view.totals.values[id],
+                WireValue::String("#ERROR".into()),
+                "{date}: {id} must not publish a value"
+            );
+            let error = &view
+                .totals
+                .cell_errors
+                .as_ref()
+                .expect("chronological errors")[id];
+            assert_eq!(error.code, "blocked-dependency");
+            assert_eq!(error.affected_record_count, Some(1));
+            assert_eq!(error.record_preview, Some(vec!["invalid".to_string()]));
+            assert!(error
+                .dependency_ids
+                .as_ref()
+                .unwrap()
+                .contains(&"date".to_string()));
+        }
+        assert!(view
+            .errors
+            .iter()
+            .any(|error| error.code == "blocked-dependency" && error.record_ids == ["invalid"]));
+    }
+}

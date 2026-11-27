@@ -4,6 +4,7 @@
 import { statementOwnedIds, type StatementIntent, type StatementTemplate } from './types';
 import { statementSnapshot, validateStatementTemplate } from './persistence';
 import type { FormulaAst } from '../tableModel/types';
+import { displayedSections } from './placement';
 export type StatementUpdateChange = Readonly<{ id: string; label: string; field: string; before: unknown; after: unknown }>;
 function immutable<T>(value: T): T {
   if (value && typeof value === 'object') { Object.values(value).forEach(immutable); Object.freeze(value); }
@@ -42,6 +43,7 @@ export function previewStatementUpdate(intent: StatementIntent, next: StatementT
   overrides.hiddenIds = overrides.hiddenIds.map(map);
   overrides.sectionOrder = overrides.sectionOrder?.map(map);
   overrides.lineOrder = Object.fromEntries(Object.entries(overrides.lineOrder).map(([id,order])=>[map(id),order.map(map)]));
+  if (overrides.lineSection) overrides.lineSection = Object.fromEntries(Object.entries(overrides.lineSection).map(([line,section])=>[map(line),map(section)]));
   overrides.formulas = overrides.formulas.map(f=>({...f,id:map(f.id),ast:ast(f.ast)}));
   const selection = (s:NonNullable<StatementIntent['page']>) => ({categoryId:map(s.categoryId),memberKeys:s.categoryId===oldIds.item?s.memberKeys.map(map):[...s.memberKeys]});
   if (candidate.page) candidate.page = selection(candidate.page);
@@ -49,8 +51,11 @@ export function previewStatementUpdate(intent: StatementIntent, next: StatementT
   candidate.resultFilters = candidate.resultFilters.map(f=>({...f,categoryId:map(f.categoryId),target:{...f.target,id:map(f.target.id)}}));
   candidate.template = snapshot;
   // Order overrides also conflict when section membership changed; never silently drop user's order.
+  for (const [line,section] of Object.entries(overrides.lineSection ?? {}))
+    if (!snapshot.lines.some(l=>l.id===line) || !snapshot.sections.some(s=>s.id===section)) conflict(line,'Section membership changed; resolve the local line placement.');
+  const displayed = displayedSections(snapshot, overrides);
   for (const [section,order] of Object.entries(overrides.lineOrder)) {
-    const current = snapshot.sections.find(s=>s.id===section);
+    const current = displayed.find(s=>s.id===section);
     if (!current || current.lineIds.length !== order.length || current.lineIds.some(id=>!order.includes(id))) conflict(section,'Section membership changed; resolve the local line order.');
   }
   if (overrides.sectionOrder && (overrides.sectionOrder.length!==snapshot.sections.length || snapshot.sections.some(s=>!overrides.sectionOrder!.includes(s.id)))) conflict('overrides.sectionOrder','Section membership changed; resolve the local section order.');

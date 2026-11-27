@@ -35,6 +35,11 @@ pub struct CategoryMetadata {
     pub recipe: Result<String, Diagnostic>,
     pub bucket: Bucket,
     pub periodicity: Periodicity,
+    pub sort_field_id: Option<String>,
+}
+/// Row key carrying a category's sort value beside its member.
+pub fn category_sort_key(id: &str) -> String {
+    format!("\u{1e}sort\u{1e}{id}")
 }
 #[derive(Clone, Debug)]
 pub struct CategorizedRows {
@@ -127,6 +132,7 @@ pub fn derive_categories(
             recipe,
             bucket,
             periodicity,
+            sort_field_id: c.sort_field_id.clone(),
         });
         if matches!(periodicity, Periodicity::Weekly)
             && matches!(bucket, Bucket::Month | Bucket::Quarter | Bucket::Year)
@@ -329,6 +335,14 @@ pub fn derive_categories(
                     result.evaluated.rows[i]
                         .values
                         .insert(c.id.clone(), m.value.clone());
+                    if let Some(sort) = &c.sort_field_id {
+                        let value = read(&result.evaluated.rows[i], Some(sort)).clone();
+                        if !matches!(value, WireValue::Missing) {
+                            result.evaluated.rows[i]
+                                .values
+                                .insert(category_sort_key(&c.id), value);
+                        }
+                    }
                     if let Some(p) = &m.fiscal {
                         fiscal_periods
                             .entry(c.id.clone())

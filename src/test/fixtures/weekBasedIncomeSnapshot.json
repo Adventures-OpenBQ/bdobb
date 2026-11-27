@@ -1,0 +1,75 @@
+{
+  "rows": [
+    {
+      "period_ending": "2025-02-01",
+      "revenue": 100.0,
+      "cost_of_revenue": 40.0,
+      "gross_profit": 60.0,
+      "total_operating_expenses": 70.0,
+      "operating_income": 30.0,
+      "income_before_tax": 25.0,
+      "income_tax_expense": 5.0,
+      "net_income": 20.0,
+      "net_income_to_common": 19.0
+    }
+  ],
+  "completeness": "bounded",
+  "chart_evidence": {
+    "version": 1,
+    "retrieved_at": "2026-11-19T00:00:00Z",
+    "raw_count": 1,
+    "normalized_count": 1,
+    "delivered_count": 1,
+    "diagnostics": [],
+    "kind": "income",
+    "field_origins": {
+      "period_ending": "date",
+      "reporting_currency": "Financials.Income_Statement.currency_symbol",
+      "revenue": "totalRevenue",
+      "cost_of_revenue": "costOfRevenue",
+      "gross_profit": "grossProfit",
+      "operating_income": "operatingIncome",
+      "income_before_tax": "incomeBeforeTax",
+      "net_income": "netIncome",
+      "income_tax_expense": "incomeTaxExpense"
+    },
+    "qualified_symbol": "HSBA.LSE",
+    "period_kind": "FQ",
+    "reporting_currency": "USD",
+    "scale": {
+      "status": "verified",
+      "authority": "explicit-snapshot",
+      "multiplier": 1000.0,
+      "reference": "fixture"
+    },
+    "requested_limit": null,
+    "available_period_count": 1,
+    "unsafe": {
+      "invalid_period_identity": false,
+      "scale_conflict": false
+    },
+    "periods": [
+      {
+        "period_end": "2025-02-01",
+        "period_kind": "FQ",
+        "fiscal_year": null,
+        "fiscal_period": null,
+        "record_coverage": "full-record",
+        "declared_currency": "USD",
+        "currency_conflict": false,
+        "scale_conflict": false,
+        "identity_conflict": false,
+        "field_origin_conflict": false,
+        "present_fields": [
+          "cost_of_revenue",
+          "gross_profit",
+          "income_before_tax",
+          "income_tax_expense",
+          "net_income",
+          "operating_income",
+          "revenue"
+        ]
+      }
+    ]
+  }
+}

@@ -1050,3 +1050,46 @@ fn sparse_formula_state_can_be_materialized_without_changing_a_cloned_snapshot()
     assert_eq!(edited.formula_cells["r"]["f"], CellResult::Value(n(2.)));
     assert_eq!(edited.source_dependencies["r"]["f"], vec!["x"]);
 }
+#[test]
+fn ln_and_sqrt_match_the_typescript_engine() {
+    let call = |function, x: WireValue| {
+        let compiled = compile(
+            &model(vec![formula(
+                "f",
+                FormulaAst::Call {
+                    function,
+                    args: vec![reference(ReferenceTarget::Field, "x")],
+                },
+            )]),
+            &[column("x", "X")],
+        );
+        evaluate_source(&[row(vec![("x", x)])], &compiled).formula_cells["r"]["f"].clone()
+    };
+    assert_eq!(
+        call(FormulaFunction::Ln, n(std::f64::consts::E)),
+        CellResult::Value(n(1.))
+    );
+    assert_eq!(
+        call(FormulaFunction::Sqrt, n(4.)),
+        CellResult::Value(n(2.))
+    );
+    assert_eq!(code(&call(FormulaFunction::Ln, n(0.))), "nonfinite");
+    assert_eq!(code(&call(FormulaFunction::Sqrt, n(-1.))), "nonfinite");
+    assert_eq!(
+        code(&call(FormulaFunction::Ln, WireValue::String("x".into()))),
+        "invalid-type"
+    );
+    assert_eq!(
+        parse_formula("SQRT(1, 2)").diagnostics[0].message,
+        "Invalid function argument count."
+    );
+    assert!(parse_formula("LN(x) + SQRT(x)").diagnostics.is_empty());
+    assert_eq!(
+        serde_json::to_value(FormulaFunction::Ln).unwrap(),
+        serde_json::json!("LN")
+    );
+    assert_eq!(
+        serde_json::to_value(FormulaFunction::Sqrt).unwrap(),
+        serde_json::json!("SQRT")
+    );
+}

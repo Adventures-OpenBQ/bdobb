@@ -362,6 +362,14 @@ pub fn calculate_view(
         selection: selection.clone(),
         selection_namespace: None,
     };
+    let constraints = &view.pool.constraints;
+    view.provenance.mark_presentation_filtered(
+        !constraints.search.is_empty()
+            || !constraints.filters.is_empty()
+            || !constraints.checklists.is_empty()
+            || view.pool.page.is_some()
+            || !active.result_filters.is_empty(),
+    );
     if let Some(presentation) = presentation {
         view.provenance
             .metadata
@@ -377,6 +385,13 @@ pub fn calculate_view(
         order,
         &mut scope_results,
     )?;
+    use crate::statement::income_chart::{clear_proof, income_chart_proof, PROOF_KEY};
+    clear_proof(&mut view.provenance);
+    if let Some(AnalyticalDefinition::Statement(intent)) = &definition.definition.analytical {
+        if let Some(proof) = income_chart_proof(input, intent, &view) {
+            view.provenance.metadata.get_or_insert_with(Default::default).insert(PROOF_KEY.into(), proof);
+        }
+    }
     for warning in &view.warnings {
         utf16_prefix(&warning.message, 1000)?;
     }

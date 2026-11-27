@@ -219,3 +219,13 @@ it('retains drafts on failed deletion and guards pending footer actions',async()
  expect(screen.getByRole('button',{name:'Save formula'})).toBeDisabled();expect(screen.getByRole('button',{name:'Delete formula'})).toBeDisabled();
  view.rerender(<FormulaPanel {...props} readonly/>);expect(screen.getByRole('button',{name:'Delete formula'})).toBeDisabled();
 });
+
+it.each(['LN', 'SQRT'] as const)('inserts %s around the chosen aggregate measure without rebinding it as a source field', async fn => {
+ render(<Editor model={{...initial,measures:[initial.measures[0]]}}/>);
+ fireEvent.change(screen.getByLabelText('Expression'),{target:{value:''}});
+ fireEvent.click(screen.getByRole('button',{name:`Insert ${fn}`}));
+ fireEvent.click(screen.getByRole('button',{name:'Insert Volume'}));
+ fireEvent.click(screen.getByRole('button',{name:'Save formula'}));
+ await waitFor(()=>expect(JSON.parse(screen.getByLabelText('Saved model').textContent!)[0].ast)
+  .toEqual({kind:'call',function:fn,args:[{kind:'reference',target:'measure',id:'average'}]}));
+});

@@ -42,6 +42,7 @@ export function validateLinkedBindings(definition: TableDefinition, columns: rea
   };
   for (const c of categories) {
     source(c.sourceFieldId);
+    if (c.sortFieldId) source(c.sortFieldId);
     if (c.fiscalBinding) for (const [key, value] of Object.entries(c.fiscalBinding))
       if (key.endsWith('FieldId') && value) source(value);
   }

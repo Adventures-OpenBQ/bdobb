@@ -1,0 +1,2122 @@
+{
+  "source": "public-demo",
+  "routes": {
+    "/api/v1/eodhd/equity/price/historical": {
+      "method": "GET",
+      "query": {
+        "provider": "eodhd",
+        "interval": "1d",
+        "symbol": "MCD.US,AAPL.US",
+        "start_date": "2026-10-12",
+        "end_date": "2026-11-19",
+        "exchange": "US",
+        "chart_source": "true"
+      },
+      "status": 200,
+      "selector": "results",
+      "widgetId": "eodhd_equity_price_historical_eodhd_obb",
+      "widget": {
+        "name": "Price Historical",
+        "description": "EODHD /equity/price/historical: the standard command's EODHD data (provider=eodhd), in the eodhd namespace.",
+        "category": "EODHD",
+        "type": "table",
+        "widgetId": "eodhd_equity_price_historical_eodhd_obb",
+        "mcp_tool": {
+          "mcp_server": "Open Data Platform",
+          "tool_id": "eodhd_equity_price_historical"
+        },
+        "params": [
+          {
+            "label": "Symbol",
+            "description": "Symbol to get data for. Multiple comma separated items allowed.",
+            "optional": false,
+            "type": "text",
+            "value": null,
+            "show": true,
+            "multiSelect": true,
+            "paramName": "symbol",
+            "multiple": true,
+            "style": {
+              "popupWidth": 400
+            }
+          },
+          {
+            "label": "Start Date",
+            "description": "Start date of the data, in YYYY-MM-DD format.",
+            "optional": true,
+            "type": "date",
+            "value": null,
+            "show": true,
+            "paramName": "start_date"
+          },
+          {
+            "label": "End Date",
+            "description": "End date of the data, in YYYY-MM-DD format.",
+            "optional": true,
+            "type": "date",
+            "value": null,
+            "show": true,
+            "paramName": "end_date"
+          },
+          {
+            "label": "Interval",
+            "description": "Time interval of the data to return.",
+            "optional": true,
+            "type": "text",
+            "value": "1d",
+            "show": true,
+            "options": [
+              {
+                "label": "1m",
+                "value": "1m"
+              },
+              {
+                "label": "5m",
+                "value": "5m"
+              },
+              {
+                "label": "1h",
+                "value": "1h"
+              },
+              {
+                "label": "1d",
+                "value": "1d"
+              },
+              {
+                "label": "1W",
+                "value": "1W"
+              },
+              {
+                "label": "1M",
+                "value": "1M"
+              }
+            ],
+            "paramName": "interval"
+          },
+          {
+            "label": "Exchange",
+            "description": "EODHD exchange code appended to bare symbols (e.g. 'US', 'LSE', 'TO'). Ignored when the symbol is already qualified, like 'AAPL.US'.",
+            "optional": true,
+            "type": "text",
+            "value": "US",
+            "show": true,
+            "paramName": "exchange"
+          },
+          {
+            "label": "Chart Source",
+            "description": "Include acquisition evidence for bounded daily US prices.",
+            "optional": true,
+            "type": "boolean",
+            "value": false,
+            "show": true,
+            "paramName": "chart_source"
+          },
+          {
+            "paramName": "provider",
+            "value": "eodhd",
+            "show": false
+          }
+        ],
+        "endpoint": "/api/v1/eodhd/equity/price/historical",
+        "runButton": false,
+        "gridData": {
+          "w": 40,
+          "h": 15
+        },
+        "data": {
+          "dataKey": "results",
+          "table": {
+            "showAll": true,
+            "columnsDefs": [
+              {
+                "field": "date",
+                "pinned": "left",
+                "formatterFn": null,
+                "headerName": "Date",
+                "headerTooltip": "The date of the data.",
+                "cellDataType": "date",
+                "sort": "desc",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "dimension"
+                }
+              },
+              {
+                "field": "open",
+                "formatterFn": null,
+                "headerName": "Open",
+                "headerTooltip": "The open price.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "first"
+                }
+              },
+              {
+                "field": "high",
+                "formatterFn": null,
+                "headerName": "High",
+                "headerTooltip": "The high price.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "max"
+                }
+              },
+              {
+                "field": "low",
+                "formatterFn": null,
+                "headerName": "Low",
+                "headerTooltip": "The low price.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "min"
+                }
+              },
+              {
+                "field": "close",
+                "formatterFn": null,
+                "headerName": "Close",
+                "headerTooltip": "The close price.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "last"
+                }
+              },
+              {
+                "field": "volume",
+                "formatterFn": null,
+                "headerName": "Volume",
+                "headerTooltip": "The trading volume.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "sum"
+                }
+              },
+              {
+                "field": "vwap",
+                "formatterFn": null,
+                "headerName": "Vwap",
+                "headerTooltip": "Volume Weighted Average Price over the period.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "requires_selection"
+                }
+              },
+              {
+                "field": "adjusted_close",
+                "formatterFn": null,
+                "headerName": "Adjusted Close",
+                "headerTooltip": "Split/dividend-adjusted closing price (EOD endpoint only).",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "last"
+                }
+              }
+            ],
+            "enableAdvanced": true
+          }
+        },
+        "source": [
+          "EODHD"
+        ],
+        "subCategory": "Price"
+      },
+      "openapiParameters": [
+        {
+          "name": "provider",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "const": "eodhd",
+            "type": "string",
+            "default": "eodhd",
+            "title": "Provider"
+          }
+        },
+        {
+          "name": "symbol",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): eodhd.",
+            "eodhd": {
+              "multiple_items_allowed": true
+            },
+            "title": "Symbol"
+          },
+          "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): eodhd."
+        },
+        {
+          "name": "start_date",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Start date of the data, in YYYY-MM-DD format.",
+            "title": "Start Date"
+          },
+          "description": "Start date of the data, in YYYY-MM-DD format."
+        },
+        {
+          "name": "end_date",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "End date of the data, in YYYY-MM-DD format.",
+            "title": "End Date"
+          },
+          "description": "End date of the data, in YYYY-MM-DD format."
+        },
+        {
+          "name": "interval",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "enum": [
+              "1m",
+              "5m",
+              "1h",
+              "1d",
+              "1W",
+              "1M"
+            ],
+            "type": "string",
+            "title": "eodhd",
+            "description": "Time interval of the data to return. (provider: eodhd)",
+            "eodhd": {
+              "multiple_items_allowed": false,
+              "choices": [
+                "1m",
+                "5m",
+                "1h",
+                "1d",
+                "1W",
+                "1M"
+              ]
+            },
+            "default": "1d"
+          },
+          "description": "Time interval of the data to return. (provider: eodhd)"
+        },
+        {
+          "name": "exchange",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "title": "eodhd",
+            "description": "EODHD exchange code appended to bare symbols (e.g. 'US', 'LSE', 'TO'). Ignored when the symbol is already qualified, like 'AAPL.US'. (provider: eodhd)",
+            "default": "US"
+          },
+          "description": "EODHD exchange code appended to bare symbols (e.g. 'US', 'LSE', 'TO'). Ignored when the symbol is already qualified, like 'AAPL.US'. (provider: eodhd)"
+        },
+        {
+          "name": "chart_source",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "title": "eodhd",
+            "description": "Include acquisition evidence for bounded daily US prices. (provider: eodhd)",
+            "default": false
+          },
+          "description": "Include acquisition evidence for bounded daily US prices. (provider: eodhd)"
+        }
+      ],
+      "capturedAt": "2026-11-21T02:32:05.127361+00:00",
+      "responseSha256": "1a371ab9e041489372b3a76e0b30452fb3d8b53d6f5f3fef5e66a4ce121d279d",
+      "sdkCalls": [
+        {
+          "symbol": "MCD.US",
+          "period": "d",
+          "from_date": "2026-10-12",
+          "to_date": "2026-11-19",
+          "order": "a"
+        },
+        {
+          "symbol": "AAPL.US",
+          "period": "d",
+          "from_date": "2026-10-12",
+          "to_date": "2026-11-19",
+          "order": "a"
+        }
+      ],
+      "body": {
+        "id": "06b0102a-5a98-78ea-8000-f2296174d342",
+        "results": [
+          {
+            "date": "2026-10-12",
+            "open": 338.215,
+            "high": 342.63,
+            "low": 337.6,
+            "close": 340.97,
+            "volume": 25900599,
+            "adjusted_close": 340.7111,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-13",
+            "open": 344.665,
+            "high": 348.1499,
+            "low": 340.74,
+            "close": 341.27,
+            "volume": 38983839,
+            "adjusted_close": 341.0109,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-14",
+            "open": 344.605,
+            "high": 347.09,
+            "low": 341.72,
+            "close": 342.96,
+            "volume": 50061053,
+            "adjusted_close": 342.6996,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-15",
+            "open": 346.95,
+            "high": 347.85,
+            "low": 341.6,
+            "close": 342.0,
+            "volume": 39767256,
+            "adjusted_close": 341.7403,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-16",
+            "open": 346.085,
+            "high": 347.82,
+            "low": 340.46,
+            "close": 343.46,
+            "volume": 59946368,
+            "adjusted_close": 343.1992,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-19",
+            "open": 340.775,
+            "high": 346.0,
+            "low": 340.115,
+            "close": 342.94,
+            "volume": 34573181,
+            "adjusted_close": 342.6796,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-20",
+            "open": 339.86,
+            "high": 343.06,
+            "low": 338.7,
+            "close": 339.5,
+            "volume": 35851382,
+            "adjusted_close": 339.2422,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-21",
+            "open": 339.36,
+            "high": 345.25,
+            "low": 338.83,
+            "close": 343.99,
+            "volume": 35614126,
+            "adjusted_close": 343.7288,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-22",
+            "open": 344.94,
+            "high": 348.36,
+            "low": 342.28,
+            "close": 348.22,
+            "volume": 46898875,
+            "adjusted_close": 347.9556,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-23",
+            "open": 349.115,
+            "high": 351.73,
+            "low": 345.75,
+            "close": 347.725,
+            "volume": 39539690,
+            "adjusted_close": 347.461,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-26",
+            "open": 343.92,
+            "high": 347.09,
+            "low": 341.03,
+            "close": 343.91,
+            "volume": 42743575,
+            "adjusted_close": 343.6489,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-27",
+            "open": 343.165,
+            "high": 347.78,
+            "low": 342.39,
+            "close": 347.1,
+            "volume": 39984395,
+            "adjusted_close": 346.8365,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-28",
+            "open": 346.92,
+            "high": 347.18,
+            "low": 343.52,
+            "close": 343.83,
+            "volume": 35714331,
+            "adjusted_close": 343.569,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-29",
+            "open": 348.0,
+            "high": 351.43,
+            "low": 347.3,
+            "close": 348.91,
+            "volume": 42582126,
+            "adjusted_close": 348.6451,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-30",
+            "open": 346.715,
+            "high": 349.19,
+            "low": 334.35,
+            "close": 344.63,
+            "volume": 67841555,
+            "adjusted_close": 344.3684,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-11-02",
+            "open": 342.67,
+            "high": 343.8,
+            "low": 335.82,
+            "close": 338.32,
+            "volume": 64757691,
+            "adjusted_close": 338.0631,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-11-03",
+            "open": 325.58,
+            "high": 334.5,
+            "low": 325.33,
+            "close": 331.9,
+            "volume": 63160026,
+            "adjusted_close": 331.648,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-11-04",
+            "open": 341.565,
+            "high": 354.5,
+            "low": 340.99,
+            "close": 349.51,
+            "volume": 89637749,
+            "adjusted_close": 349.2446,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-11-05",
+            "open": 353.89,
+            "high": 355.38,
+            "low": 342.06,
+            "close": 344.17,
+            "volume": 75678945,
+            "adjusted_close": 343.9087,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-11-06",
+            "open": 338.73,
+            "high": 345.79,
+            "low": 338.3,
+            "close": 342.37,
+            "volume": 44703806,
+            "adjusted_close": 342.1101,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-11-09",
+            "open": 344.995,
+            "high": 352.33,
+            "low": 344.78,
+            "close": 350.69,
+            "volume": 48753052,
+            "adjusted_close": 350.4238,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-11-10",
+            "open": 351.35,
+            "high": 353.87,
+            "low": 346.4605,
+            "close": 348.51,
+            "volume": 29756060,
+            "adjusted_close": 348.2454,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-11-11",
+            "open": 349.545,
+            "high": 355.91,
+            "low": 349.325,
+            "close": 355.63,
+            "volume": 34453477,
+            "adjusted_close": 355.36,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-11-12",
+            "open": 357.81,
+            "high": 359.3684,
+            "low": 354.41,
+            "close": 354.88,
+            "volume": 31874978,
+            "adjusted_close": 354.88,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-11-13",
+            "open": 357.96,
+            "high": 360.83,
+            "low": 355.75,
+            "close": 356.27,
+            "volume": 40027467,
+            "adjusted_close": 356.27,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-11-16",
+            "open": 357.125,
+            "high": 357.125,
+            "low": 351.31,
+            "close": 352.78,
+            "volume": 50292161,
+            "adjusted_close": 352.78,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-11-17",
+            "open": 352.83,
+            "high": 355.36,
+            "low": 349.67,
+            "close": 351.91,
+            "volume": 37407537,
+            "adjusted_close": 351.91,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-11-18",
+            "open": 351.94,
+            "high": 356.42,
+            "low": 351.4706,
+            "close": 352.45,
+            "volume": 34209928,
+            "adjusted_close": 352.45,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-11-19",
+            "open": 352.91,
+            "high": 355.28,
+            "low": 346.47,
+            "close": 349.21,
+            "volume": 40906860,
+            "adjusted_close": 349.21,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-12",
+            "open": 235.23,
+            "high": 236.14,
+            "low": 232.5,
+            "close": 235.65,
+            "volume": 4371300,
+            "adjusted_close": 235.65,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-13",
+            "open": 237.6,
+            "high": 238.25,
+            "low": 235.07,
+            "close": 235.81,
+            "volume": 4541600,
+            "adjusted_close": 235.81,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-14",
+            "open": 235.31,
+            "high": 238.31,
+            "low": 234.23,
+            "close": 238.31,
+            "volume": 5207800,
+            "adjusted_close": 238.31,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-15",
+            "open": 242.76,
+            "high": 245.46,
+            "low": 241.76,
+            "close": 242.5,
+            "volume": 6610600,
+            "adjusted_close": 242.5,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-16",
+            "open": 244.31,
+            "high": 245.85,
+            "low": 241.88,
+            "close": 242.97,
+            "volume": 7265800,
+            "adjusted_close": 242.97,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-19",
+            "open": 241.75,
+            "high": 243.61,
+            "low": 240.01,
+            "close": 242.67,
+            "volume": 5385300,
+            "adjusted_close": 242.67,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-20",
+            "open": 244.43,
+            "high": 247.29,
+            "low": 243.5,
+            "close": 246.52,
+            "volume": 5511400,
+            "adjusted_close": 246.52,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-21",
+            "open": 246.0,
+            "high": 246.85,
+            "low": 243.33,
+            "close": 246.25,
+            "volume": 4577800,
+            "adjusted_close": 246.25,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-22",
+            "open": 248.16,
+            "high": 252.88,
+            "low": 246.47,
+            "close": 252.63,
+            "volume": 5084800,
+            "adjusted_close": 252.63,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-23",
+            "open": 250.53,
+            "high": 251.75,
+            "low": 246.67,
+            "close": 248.46,
+            "volume": 4158500,
+            "adjusted_close": 248.46,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-26",
+            "open": 248.44,
+            "high": 252.88,
+            "low": 247.98,
+            "close": 250.83,
+            "volume": 4736500,
+            "adjusted_close": 250.83,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-27",
+            "open": 249.16,
+            "high": 250.18,
+            "low": 248.35,
+            "close": 249.47,
+            "volume": 3799000,
+            "adjusted_close": 249.47,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-28",
+            "open": 248.42,
+            "high": 252.39,
+            "low": 248.0,
+            "close": 250.5,
+            "volume": 3398900,
+            "adjusted_close": 250.5,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-29",
+            "open": 254.82,
+            "high": 257.65,
+            "low": 253.71,
+            "close": 257.38,
+            "volume": 4554200,
+            "adjusted_close": 257.38,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-30",
+            "open": 260.38,
+            "high": 262.88,
+            "low": 257.11,
+            "close": 258.12,
+            "volume": 6526400,
+            "adjusted_close": 258.12,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-11-02",
+            "open": 260.02,
+            "high": 265.67,
+            "low": 259.75,
+            "close": 265.64,
+            "volume": 6472000,
+            "adjusted_close": 265.64,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-11-03",
+            "open": 262.79,
+            "high": 264.0,
+            "low": 261.0,
+            "close": 263.04,
+            "volume": 6097100,
+            "adjusted_close": 263.04,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-11-04",
+            "open": 268.79,
+            "high": 281.14,
+            "low": 267.8,
+            "close": 280.22,
+            "volume": 11531500,
+            "adjusted_close": 280.22,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-11-05",
+            "open": 281.0,
+            "high": 282.14,
+            "low": 275.06,
+            "close": 278.04,
+            "volume": 7334700,
+            "adjusted_close": 278.04,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-11-06",
+            "open": 270.02,
+            "high": 278.45,
+            "low": 269.11,
+            "close": 276.52,
+            "volume": 6332100,
+            "adjusted_close": 276.52,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-11-09",
+            "open": 276.98,
+            "high": 283.26,
+            "low": 276.85,
+            "close": 281.44,
+            "volume": 4951600,
+            "adjusted_close": 281.44,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-11-10",
+            "open": 281.76,
+            "high": 283.53,
+            "low": 277.28,
+            "close": 282.17,
+            "volume": 3950800,
+            "adjusted_close": 282.17,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-11-11",
+            "open": 279.0,
+            "high": 279.41,
+            "low": 274.45,
+            "close": 274.8,
+            "volume": 6859900,
+            "adjusted_close": 274.8,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-11-12",
+            "open": 277.0,
+            "high": 279.79,
+            "low": 272.62,
+            "close": 273.63,
+            "volume": 4272300,
+            "adjusted_close": 273.63,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-11-13",
+            "open": 274.4,
+            "high": 275.65,
+            "low": 271.64,
+            "close": 271.97,
+            "volume": 4670300,
+            "adjusted_close": 271.97,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-11-16",
+            "open": 277.0,
+            "high": 277.95,
+            "low": 274.34,
+            "close": 274.67,
+            "volume": 5724000,
+            "adjusted_close": 274.67,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-11-17",
+            "open": 271.6,
+            "high": 279.16,
+            "low": 271.0,
+            "close": 275.82,
+            "volume": 4435600,
+            "adjusted_close": 275.82,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-11-18",
+            "open": 272.29,
+            "high": 276.05,
+            "low": 271.87,
+            "close": 274.03,
+            "volume": 4998300,
+            "adjusted_close": 274.03,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-11-19",
+            "open": 269.0,
+            "high": 272.68,
+            "low": 267.47,
+            "close": 272.35,
+            "volume": 5797800,
+            "adjusted_close": 272.35,
+            "symbol": "MCD.US"
+          }
+        ],
+        "provider": "eodhd",
+        "warnings": null,
+        "chart": null,
+        "extra": {
+          "results_metadata": {
+            "chart_sources": {
+              "version": 1,
+              "receipts": [
+                {
+                  "version": 1,
+                  "kind": "daily-price",
+                  "retrieved_at": "2026-11-21T02:32:05.649803Z",
+                  "raw_count": 58,
+                  "normalized_count": 58,
+                  "delivered_count": 58,
+                  "diagnostics": [],
+                  "unsafe": {
+                    "undatable_loss": false,
+                    "conflicting_duplicates": false,
+                    "identity_conflict": false,
+                    "partial_acquisition": false,
+                    "invalid_response": false,
+                    "missing_adjusted_basis": false
+                  },
+                  "interval": "1d",
+                  "start_date": "2026-10-12",
+                  "end_date": "2026-11-19",
+                  "symbols": [
+                    "MCD.US",
+                    "AAPL.US"
+                  ],
+                  "date_field": "date",
+                  "price_field": "adjusted_close",
+                  "symbol_field": "symbol",
+                  "listings": [
+                    {
+                      "symbol": "MCD.US",
+                      "raw_count": 29,
+                      "normalized_count": 29,
+                      "delivered_count": 29,
+                      "duplicate_count": 0,
+                      "omissions": []
+                    },
+                    {
+                      "symbol": "AAPL.US",
+                      "raw_count": 29,
+                      "normalized_count": 29,
+                      "delivered_count": 29,
+                      "duplicate_count": 0,
+                      "omissions": []
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "metadata": {
+            "arguments": {
+              "provider_choices": {
+                "provider": "eodhd"
+              },
+              "standard_params": {
+                "symbol": "MCD.US,AAPL.US",
+                "start_date": "2026-10-12",
+                "end_date": "2026-11-19"
+              },
+              "extra_params": {
+                "interval": "1d",
+                "exchange": "US",
+                "chart_source": true
+              }
+            },
+            "duration": 502885041,
+            "route": "/eodhd/equity/price/historical",
+            "timestamp": "2026-11-21T02:32:05.160582"
+          }
+        }
+      },
+      "expected": {
+        "MCD.US": {
+          "quotes": [
+            [
+              "2026-10-12",
+              235.65
+            ],
+            [
+              "2026-10-13",
+              235.81
+            ],
+            [
+              "2026-10-14",
+              238.31
+            ],
+            [
+              "2026-10-15",
+              242.5
+            ],
+            [
+              "2026-10-16",
+              242.97
+            ],
+            [
+              "2026-10-19",
+              242.67
+            ],
+            [
+              "2026-10-20",
+              246.52
+            ],
+            [
+              "2026-10-21",
+              246.25
+            ],
+            [
+              "2026-10-22",
+              252.63
+            ],
+            [
+              "2026-10-23",
+              248.46
+            ],
+            [
+              "2026-10-26",
+              250.83
+            ],
+            [
+              "2026-10-27",
+              249.47
+            ],
+            [
+              "2026-10-28",
+              250.5
+            ],
+            [
+              "2026-10-29",
+              257.38
+            ],
+            [
+              "2026-10-30",
+              258.12
+            ],
+            [
+              "2026-11-02",
+              265.64
+            ],
+            [
+              "2026-11-03",
+              263.04
+            ],
+            [
+              "2026-11-04",
+              280.22
+            ],
+            [
+              "2026-11-05",
+              278.04
+            ],
+            [
+              "2026-11-06",
+              276.52
+            ],
+            [
+              "2026-11-09",
+              281.44
+            ],
+            [
+              "2026-11-10",
+              282.17
+            ],
+            [
+              "2026-11-11",
+              274.8
+            ],
+            [
+              "2026-11-12",
+              273.63
+            ],
+            [
+              "2026-11-13",
+              271.97
+            ],
+            [
+              "2026-11-16",
+              274.67
+            ],
+            [
+              "2026-11-17",
+              275.82
+            ],
+            [
+              "2026-11-18",
+              274.03
+            ],
+            [
+              "2026-11-19",
+              272.35
+            ]
+          ],
+          "returns": [
+            {
+              "date": "2026-10-13",
+              "value": 0.000678973053257037
+            },
+            {
+              "date": "2026-10-14",
+              "value": 0.010601755650735845
+            },
+            {
+              "date": "2026-10-15",
+              "value": 0.01758214090890009
+            },
+            {
+              "date": "2026-10-16",
+              "value": 0.001938144329896918
+            },
+            {
+              "date": "2026-10-19",
+              "value": -0.0012347203358439307
+            },
+            {
+              "date": "2026-10-20",
+              "value": 0.015865166687270893
+            },
+            {
+              "date": "2026-10-21",
+              "value": -0.001095245821840063
+            },
+            {
+              "date": "2026-10-22",
+              "value": 0.02590862944162442
+            },
+            {
+              "date": "2026-10-23",
+              "value": -0.016506353164707277
+            },
+            {
+              "date": "2026-10-26",
+              "value": 0.009538758753924181
+            },
+            {
+              "date": "2026-10-27",
+              "value": -0.005421998963441421
+            },
+            {
+              "date": "2026-10-28",
+              "value": 0.004128752956267245
+            },
+            {
+              "date": "2026-10-29",
+              "value": 0.027465069860279412
+            },
+            {
+              "date": "2026-10-30",
+              "value": 0.002875126272437578
+            },
+            {
+              "date": "2026-11-02",
+              "value": 0.029133736246706787
+            },
+            {
+              "date": "2026-11-03",
+              "value": -0.009787682577924839
+            },
+            {
+              "date": "2026-11-04",
+              "value": 0.06531326034063256
+            },
+            {
+              "date": "2026-11-05",
+              "value": -0.00777960174148884
+            },
+            {
+              "date": "2026-11-06",
+              "value": -0.005466839303697402
+            },
+            {
+              "date": "2026-11-09",
+              "value": 0.017792564733111638
+            },
+            {
+              "date": "2026-11-10",
+              "value": 0.0025938032973280567
+            },
+            {
+              "date": "2026-11-11",
+              "value": -0.02611900627281427
+            },
+            {
+              "date": "2026-11-12",
+              "value": -0.004257641921397437
+            },
+            {
+              "date": "2026-11-13",
+              "value": -0.006066586266125662
+            },
+            {
+              "date": "2026-11-16",
+              "value": 0.009927565540316818
+            },
+            {
+              "date": "2026-11-17",
+              "value": 0.004186842392689405
+            },
+            {
+              "date": "2026-11-18",
+              "value": -0.006489739685302087
+            },
+            {
+              "date": "2026-11-19",
+              "value": -0.006130715615078497
+            }
+          ]
+        },
+        "AAPL.US": {
+          "quotes": [
+            [
+              "2026-10-12",
+              340.7111
+            ],
+            [
+              "2026-10-13",
+              341.0109
+            ],
+            [
+              "2026-10-14",
+              342.6996
+            ],
+            [
+              "2026-10-15",
+              341.7403
+            ],
+            [
+              "2026-10-16",
+              343.1992
+            ],
+            [
+              "2026-10-19",
+              342.6796
+            ],
+            [
+              "2026-10-20",
+              339.2422
+            ],
+            [
+              "2026-10-21",
+              343.7288
+            ],
+            [
+              "2026-10-22",
+              347.9556
+            ],
+            [
+              "2026-10-23",
+              347.461
+            ],
+            [
+              "2026-10-26",
+              343.6489
+            ],
+            [
+              "2026-10-27",
+              346.8365
+            ],
+            [
+              "2026-10-28",
+              343.569
+            ],
+            [
+              "2026-10-29",
+              348.6451
+            ],
+            [
+              "2026-10-30",
+              344.3684
+            ],
+            [
+              "2026-11-02",
+              338.0631
+            ],
+            [
+              "2026-11-03",
+              331.648
+            ],
+            [
+              "2026-11-04",
+              349.2446
+            ],
+            [
+              "2026-11-05",
+              343.9087
+            ],
+            [
+              "2026-11-06",
+              342.1101
+            ],
+            [
+              "2026-11-09",
+              350.4238
+            ],
+            [
+              "2026-11-10",
+              348.2454
+            ],
+            [
+              "2026-11-11",
+              355.36
+            ],
+            [
+              "2026-11-12",
+              354.88
+            ],
+            [
+              "2026-11-13",
+              356.27
+            ],
+            [
+              "2026-11-16",
+              352.78
+            ],
+            [
+              "2026-11-17",
+              351.91
+            ],
+            [
+              "2026-11-18",
+              352.45
+            ],
+            [
+              "2026-11-19",
+              349.21
+            ]
+          ],
+          "returns": [
+            {
+              "date": "2026-10-13",
+              "value": 0.000879924369942664
+            },
+            {
+              "date": "2026-10-14",
+              "value": 0.004952041122439077
+            },
+            {
+              "date": "2026-10-15",
+              "value": -0.002799244586220606
+            },
+            {
+              "date": "2026-10-16",
+              "value": 0.004269031191229233
+            },
+            {
+              "date": "2026-10-19",
+              "value": -0.0015139895430992256
+            },
+            {
+              "date": "2026-10-20",
+              "value": -0.010030944357352967
+            },
+            {
+              "date": "2026-10-21",
+              "value": 0.013225359345034216
+            },
+            {
+              "date": "2026-10-22",
+              "value": 0.012296903838142192
+            },
+            {
+              "date": "2026-10-23",
+              "value": -0.0014214457246843892
+            },
+            {
+              "date": "2026-10-26",
+              "value": -0.010971303254178166
+            },
+            {
+              "date": "2026-10-27",
+              "value": 0.009275746263119
+            },
+            {
+              "date": "2026-10-28",
+              "value": -0.009420865451012173
+            },
+            {
+              "date": "2026-10-29",
+              "value": 0.01477461587046558
+            },
+            {
+              "date": "2026-10-30",
+              "value": -0.012266628729329598
+            },
+            {
+              "date": "2026-11-02",
+              "value": -0.01830975199815077
+            },
+            {
+              "date": "2026-11-03",
+              "value": -0.0189760432297994
+            },
+            {
+              "date": "2026-11-04",
+              "value": 0.05305806155924353
+            },
+            {
+              "date": "2026-11-05",
+              "value": -0.015278403731940227
+            },
+            {
+              "date": "2026-11-06",
+              "value": -0.005229876417781831
+            },
+            {
+              "date": "2026-11-09",
+              "value": 0.024301241033223064
+            },
+            {
+              "date": "2026-11-10",
+              "value": -0.006216472739579926
+            },
+            {
+              "date": "2026-11-11",
+              "value": 0.0204298463095276
+            },
+            {
+              "date": "2026-11-12",
+              "value": -0.0013507429085998224
+            },
+            {
+              "date": "2026-11-13",
+              "value": 0.0039168169522092455
+            },
+            {
+              "date": "2026-11-16",
+              "value": -0.00979594128048955
+            },
+            {
+              "date": "2026-11-17",
+              "value": -0.002466126197630092
+            },
+            {
+              "date": "2026-11-18",
+              "value": 0.0015344832485577609
+            },
+            {
+              "date": "2026-11-19",
+              "value": -0.00919279330401479
+            }
+          ]
+        }
+      }
+    }
+  },
+  "requestsTls": {
+    "bundle": "/usr/local/lib/python3.12/site-packages/certifi/cacert.pem",
+    "sha256": "2ef52ad56b4803e264045c915e55c236cbfa045b84b81efefc218a19eb44bd2b"
+  },
+  "directPublicCaptures": {
+    "MCD.US": {
+      "source": "https://eodhd.com/api/eod/MCD.US",
+      "query": {
+        "from": "2026-10-12",
+        "to": "2026-11-19",
+        "period": "d",
+        "order": "a",
+        "fmt": "json"
+      },
+      "retrieved_at": "2026-11-20T23:51:04.147818+00:00",
+      "status": 200,
+      "sha256": "04ecc3153ccc7ae62653c332c5741671e742430acabd1fde614b1a20dbf2499a",
+      "response": [
+        {
+          "date": "2026-10-12",
+          "open": 235.23,
+          "high": 236.14,
+          "low": 232.5,
+          "close": 235.65,
+          "adjusted_close": 235.65,
+          "volume": 4371300
+        },
+        {
+          "date": "2026-10-13",
+          "open": 237.6,
+          "high": 238.25,
+          "low": 235.07,
+          "close": 235.81,
+          "adjusted_close": 235.81,
+          "volume": 4541600
+        },
+        {
+          "date": "2026-10-14",
+          "open": 235.31,
+          "high": 238.31,
+          "low": 234.23,
+          "close": 238.31,
+          "adjusted_close": 238.31,
+          "volume": 5207800
+        },
+        {
+          "date": "2026-10-15",
+          "open": 242.76,
+          "high": 245.46,
+          "low": 241.76,
+          "close": 242.5,
+          "adjusted_close": 242.5,
+          "volume": 6610600
+        },
+        {
+          "date": "2026-10-16",
+          "open": 244.31,
+          "high": 245.85,
+          "low": 241.88,
+          "close": 242.97,
+          "adjusted_close": 242.97,
+          "volume": 7265800
+        },
+        {
+          "date": "2026-10-19",
+          "open": 241.75,
+          "high": 243.61,
+          "low": 240.01,
+          "close": 242.67,
+          "adjusted_close": 242.67,
+          "volume": 5385300
+        },
+        {
+          "date": "2026-10-20",
+          "open": 244.43,
+          "high": 247.29,
+          "low": 243.5,
+          "close": 246.52,
+          "adjusted_close": 246.52,
+          "volume": 5511400
+        },
+        {
+          "date": "2026-10-21",
+          "open": 246,
+          "high": 246.85,
+          "low": 243.33,
+          "close": 246.25,
+          "adjusted_close": 246.25,
+          "volume": 4577800
+        },
+        {
+          "date": "2026-10-22",
+          "open": 248.16,
+          "high": 252.88,
+          "low": 246.47,
+          "close": 252.63,
+          "adjusted_close": 252.63,
+          "volume": 5084800
+        },
+        {
+          "date": "2026-10-23",
+          "open": 250.53,
+          "high": 251.75,
+          "low": 246.67,
+          "close": 248.46,
+          "adjusted_close": 248.46,
+          "volume": 4158500
+        },
+        {
+          "date": "2026-10-26",
+          "open": 248.44,
+          "high": 252.88,
+          "low": 247.98,
+          "close": 250.83,
+          "adjusted_close": 250.83,
+          "volume": 4736500
+        },
+        {
+          "date": "2026-10-27",
+          "open": 249.16,
+          "high": 250.18,
+          "low": 248.35,
+          "close": 249.47,
+          "adjusted_close": 249.47,
+          "volume": 3799000
+        },
+        {
+          "date": "2026-10-28",
+          "open": 248.42,
+          "high": 252.39,
+          "low": 248,
+          "close": 250.5,
+          "adjusted_close": 250.5,
+          "volume": 3398900
+        },
+        {
+          "date": "2026-10-29",
+          "open": 254.82,
+          "high": 257.65,
+          "low": 253.71,
+          "close": 257.38,
+          "adjusted_close": 257.38,
+          "volume": 4554200
+        },
+        {
+          "date": "2026-10-30",
+          "open": 260.38,
+          "high": 262.88,
+          "low": 257.11,
+          "close": 258.12,
+          "adjusted_close": 258.12,
+          "volume": 6526400
+        },
+        {
+          "date": "2026-11-02",
+          "open": 260.02,
+          "high": 265.67,
+          "low": 259.75,
+          "close": 265.64,
+          "adjusted_close": 265.64,
+          "volume": 6472000
+        },
+        {
+          "date": "2026-11-03",
+          "open": 262.79,
+          "high": 264,
+          "low": 261,
+          "close": 263.04,
+          "adjusted_close": 263.04,
+          "volume": 6097100
+        },
+        {
+          "date": "2026-11-04",
+          "open": 268.79,
+          "high": 281.14,
+          "low": 267.8,
+          "close": 280.22,
+          "adjusted_close": 280.22,
+          "volume": 11531500
+        },
+        {
+          "date": "2026-11-05",
+          "open": 281,
+          "high": 282.14,
+          "low": 275.06,
+          "close": 278.04,
+          "adjusted_close": 278.04,
+          "volume": 7334700
+        },
+        {
+          "date": "2026-11-06",
+          "open": 270.02,
+          "high": 278.45,
+          "low": 269.11,
+          "close": 276.52,
+          "adjusted_close": 276.52,
+          "volume": 6332100
+        },
+        {
+          "date": "2026-11-09",
+          "open": 276.98,
+          "high": 283.26,
+          "low": 276.85,
+          "close": 281.44,
+          "adjusted_close": 281.44,
+          "volume": 4951600
+        },
+        {
+          "date": "2026-11-10",
+          "open": 281.76,
+          "high": 283.53,
+          "low": 277.28,
+          "close": 282.17,
+          "adjusted_close": 282.17,
+          "volume": 3950800
+        },
+        {
+          "date": "2026-11-11",
+          "open": 279,
+          "high": 279.41,
+          "low": 274.45,
+          "close": 274.8,
+          "adjusted_close": 274.8,
+          "volume": 6859900
+        },
+        {
+          "date": "2026-11-12",
+          "open": 277,
+          "high": 279.79,
+          "low": 272.62,
+          "close": 273.63,
+          "adjusted_close": 273.63,
+          "volume": 4272300
+        },
+        {
+          "date": "2026-11-13",
+          "open": 274.4,
+          "high": 275.65,
+          "low": 271.64,
+          "close": 271.97,
+          "adjusted_close": 271.97,
+          "volume": 4670300
+        },
+        {
+          "date": "2026-11-16",
+          "open": 277,
+          "high": 277.95,
+          "low": 274.34,
+          "close": 274.67,
+          "adjusted_close": 274.67,
+          "volume": 5724000
+        },
+        {
+          "date": "2026-11-17",
+          "open": 271.6,
+          "high": 279.16,
+          "low": 271,
+          "close": 275.82,
+          "adjusted_close": 275.82,
+          "volume": 4435600
+        },
+        {
+          "date": "2026-11-18",
+          "open": 272.29,
+          "high": 276.05,
+          "low": 271.87,
+          "close": 274.03,
+          "adjusted_close": 274.03,
+          "volume": 4998300
+        },
+        {
+          "date": "2026-11-19",
+          "open": 269,
+          "high": 272.68,
+          "low": 267.47,
+          "close": 272.35,
+          "adjusted_close": 272.35,
+          "volume": 5797800
+        }
+      ]
+    },
+    "AAPL.US": {
+      "source": "https://eodhd.com/api/eod/AAPL.US",
+      "query": {
+        "from": "2026-10-12",
+        "to": "2026-11-19",
+        "period": "d",
+        "order": "a",
+        "fmt": "json"
+      },
+      "retrieved_at": "2026-11-20T23:51:04.460754+00:00",
+      "status": 200,
+      "sha256": "da4eaf62364dfb9bb93784665166e1d80155b1d796513c424e7a5ff5e19e5a17",
+      "response": [
+        {
+          "date": "2026-10-12",
+          "open": 338.215,
+          "high": 342.63,
+          "low": 337.6,
+          "close": 340.97,
+          "adjusted_close": 340.7111,
+          "volume": 25900599
+        },
+        {
+          "date": "2026-10-13",
+          "open": 344.665,
+          "high": 348.1499,
+          "low": 340.74,
+          "close": 341.27,
+          "adjusted_close": 341.0109,
+          "volume": 38983839
+        },
+        {
+          "date": "2026-10-14",
+          "open": 344.605,
+          "high": 347.09,
+          "low": 341.72,
+          "close": 342.96,
+          "adjusted_close": 342.6996,
+          "volume": 50061053
+        },
+        {
+          "date": "2026-10-15",
+          "open": 346.95,
+          "high": 347.85,
+          "low": 341.6,
+          "close": 342,
+          "adjusted_close": 341.7403,
+          "volume": 39767256
+        },
+        {
+          "date": "2026-10-16",
+          "open": 346.085,
+          "high": 347.82,
+          "low": 340.46,
+          "close": 343.46,
+          "adjusted_close": 343.1992,
+          "volume": 59946368
+        },
+        {
+          "date": "2026-10-19",
+          "open": 340.775,
+          "high": 346,
+          "low": 340.115,
+          "close": 342.94,
+          "adjusted_close": 342.6796,
+          "volume": 34573181
+        },
+        {
+          "date": "2026-10-20",
+          "open": 339.86,
+          "high": 343.06,
+          "low": 338.7,
+          "close": 339.5,
+          "adjusted_close": 339.2422,
+          "volume": 35851382
+        },
+        {
+          "date": "2026-10-21",
+          "open": 339.36,
+          "high": 345.25,
+          "low": 338.83,
+          "close": 343.99,
+          "adjusted_close": 343.7288,
+          "volume": 35614126
+        },
+        {
+          "date": "2026-10-22",
+          "open": 344.94,
+          "high": 348.36,
+          "low": 342.28,
+          "close": 348.22,
+          "adjusted_close": 347.9556,
+          "volume": 46898875
+        },
+        {
+          "date": "2026-10-23",
+          "open": 349.115,
+          "high": 351.73,
+          "low": 345.75,
+          "close": 347.725,
+          "adjusted_close": 347.461,
+          "volume": 39539690
+        },
+        {
+          "date": "2026-10-26",
+          "open": 343.92,
+          "high": 347.09,
+          "low": 341.03,
+          "close": 343.91,
+          "adjusted_close": 343.6489,
+          "volume": 42743575
+        },
+        {
+          "date": "2026-10-27",
+          "open": 343.165,
+          "high": 347.78,
+          "low": 342.39,
+          "close": 347.1,
+          "adjusted_close": 346.8365,
+          "volume": 39984395
+        },
+        {
+          "date": "2026-10-28",
+          "open": 346.92,
+          "high": 347.18,
+          "low": 343.52,
+          "close": 343.83,
+          "adjusted_close": 343.569,
+          "volume": 35714331
+        },
+        {
+          "date": "2026-10-29",
+          "open": 348,
+          "high": 351.43,
+          "low": 347.3,
+          "close": 348.91,
+          "adjusted_close": 348.6451,
+          "volume": 42582126
+        },
+        {
+          "date": "2026-10-30",
+          "open": 346.715,
+          "high": 349.19,
+          "low": 334.35,
+          "close": 344.63,
+          "adjusted_close": 344.3684,
+          "volume": 67841555
+        },
+        {
+          "date": "2026-11-02",
+          "open": 342.67,
+          "high": 343.8,
+          "low": 335.82,
+          "close": 338.32,
+          "adjusted_close": 338.0631,
+          "volume": 64757691
+        },
+        {
+          "date": "2026-11-03",
+          "open": 325.58,
+          "high": 334.5,
+          "low": 325.33,
+          "close": 331.9,
+          "adjusted_close": 331.648,
+          "volume": 63160026
+        },
+        {
+          "date": "2026-11-04",
+          "open": 341.565,
+          "high": 354.5,
+          "low": 340.99,
+          "close": 349.51,
+          "adjusted_close": 349.2446,
+          "volume": 89637749
+        },
+        {
+          "date": "2026-11-05",
+          "open": 353.89,
+          "high": 355.38,
+          "low": 342.06,
+          "close": 344.17,
+          "adjusted_close": 343.9087,
+          "volume": 75678945
+        },
+        {
+          "date": "2026-11-06",
+          "open": 338.73,
+          "high": 345.79,
+          "low": 338.3,
+          "close": 342.37,
+          "adjusted_close": 342.1101,
+          "volume": 44703806
+        },
+        {
+          "date": "2026-11-09",
+          "open": 344.995,
+          "high": 352.33,
+          "low": 344.78,
+          "close": 350.69,
+          "adjusted_close": 350.4238,
+          "volume": 48753052
+        },
+        {
+          "date": "2026-11-10",
+          "open": 351.35,
+          "high": 353.87,
+          "low": 346.4605,
+          "close": 348.51,
+          "adjusted_close": 348.2454,
+          "volume": 29756060
+        },
+        {
+          "date": "2026-11-11",
+          "open": 349.545,
+          "high": 355.91,
+          "low": 349.325,
+          "close": 355.63,
+          "adjusted_close": 355.36,
+          "volume": 34453477
+        },
+        {
+          "date": "2026-11-12",
+          "open": 357.81,
+          "high": 359.3684,
+          "low": 354.41,
+          "close": 354.88,
+          "adjusted_close": 354.88,
+          "volume": 31874978
+        },
+        {
+          "date": "2026-11-13",
+          "open": 357.96,
+          "high": 360.83,
+          "low": 355.75,
+          "close": 356.27,
+          "adjusted_close": 356.27,
+          "volume": 40027467
+        },
+        {
+          "date": "2026-11-16",
+          "open": 357.125,
+          "high": 357.125,
+          "low": 351.31,
+          "close": 352.78,
+          "adjusted_close": 352.78,
+          "volume": 50292161
+        },
+        {
+          "date": "2026-11-17",
+          "open": 352.83,
+          "high": 355.36,
+          "low": 349.67,
+          "close": 351.91,
+          "adjusted_close": 351.91,
+          "volume": 37407537
+        },
+        {
+          "date": "2026-11-18",
+          "open": 351.94,
+          "high": 356.42,
+          "low": 351.4706,
+          "close": 352.45,
+          "adjusted_close": 352.45,
+          "volume": 34209928
+        },
+        {
+          "date": "2026-11-19",
+          "open": 352.91,
+          "high": 355.28,
+          "low": 346.47,
+          "close": 349.21,
+          "adjusted_close": 349.21,
+          "volume": 40906860
+        }
+      ]
+    }
+  },
+  "qualification": {
+    "providerCommit": "75a902664054b3afbd23c5b6328efe7eedcf429c",
+    "providerTree": "35e2586eca1f6b39527412188879eb133639d026",
+    "runtime": "Local linux/arm64 v3 image, Core and Platform API 2.0.1",
+    "acquisition": "fresh real SDK GET compared with preserved independent public HTTPS bytes",
+    "dockerCommit": "2c5464675090c73f0c52cf8482ccf454e07b7704",
+    "imageIndex": "sha256:f8cca8ee400a88f4ae331bc498c9e28520e9ff766410926bbfdac0e4edd29404"
+  }
+}

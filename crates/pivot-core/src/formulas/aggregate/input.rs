@@ -195,8 +195,21 @@ impl Evaluator<'_> {
             }
             if matches!(op, Aggregation::First | Aggregation::Last) {
                 if let Some(date) = &at.temporal_context.date_field_id {
+                    // Category errors use category IDs, which may differ from this bound source field.
                     if let Some(e) = self.pool.errors.get(&row.id).and_then(|m| m.get(date)) {
                         failures.push(e.clone());
+                    } else if crate::fiscal::period_date(crate::fiscal::read(row, Some(date)))
+                        .is_none()
+                    {
+                        let mut error = crate::fiscal::error(
+                            "invalid-date",
+                            "The bound report date is missing or invalid.",
+                            date,
+                            vec![row.id.clone()],
+                        );
+                        error.dependency_ids_present = true;
+                        error.dependency_ids = vec![date.clone()];
+                        failures.push(error);
                     }
                 }
             }
