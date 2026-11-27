@@ -34,5 +34,11 @@
     "rule": "generic-api-key",
     "content_sha256": "2fe846f2ad2ef578a7c84e4471243e7c2f6186d22be925b4321953ee7f0a3c97",
     "reason": "Reviewed canonical chart-stream protocol examples from Adventures-OpenBQ/bdobb codex/v10-day-chart f49e61e4. Six flagged view_key values are 64-lowercase-hex SHA256 view-identity digests repeated across snapshot/change/resume frames, not access credentials. The entire normalized fixture is bound by this exact content hash; any modification requires fresh review."
+  },
+  {
+    "path": "deploy/table-service/examples/temporal-backends.example.json",
+    "rule": "generic-api-key",
+    "content_sha256": "16924315448333bb1f69afef689c8947dbebcb93a2645e700d37e749b4624c82",
+    "reason": "Historical example contains only the documented internal Docker DNS service URL with no userinfo, query, credential headers, or private host. JSON parsing and every URL independently verified; exact normalized complete historical file bytes bound."
   }
 ]
