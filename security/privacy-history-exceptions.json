@@ -208,5 +208,17 @@
     "rule": "private-tailnet",
     "line_sha256": "e2a733bc8e23de59582818dc07c7a7cefb176ac51e2cca2bb74628ca8e984dcd",
     "reason": "Historical unit-only wireUrl string-conversion assertion, confined to the test source in both verified Git blobs. No request, runtime configuration, authentication or known operator-identity binding. Namespace assignment is unknown; no reserved, fake, unassigned or synthetic DNS claim. Exact history path/rule/line only."
+  },
+  {
+    "path": "web/CHART-FUNNEL.md",
+    "rule": "private-tailnet",
+    "line_sha256": "0c07a55bebce5a4c5f8dfc27828fed1cd308555acedce0aded2c6f5f6a20eb37",
+    "reason": "History only: exact already-published deployment diagram/example origin in public origin/main ancestry, commit 1a4ccfe46c8e128ab4150c723febb9bd8d93a9bc and blob 8324cb1f0a5713472afd9403280f63de404603b1. Contains no credential value. Historical ownership is unknown; no synthetic or inactive-host claim. Current documentation is sanitized. This separate policy is invoked only after strict current-tree checks; default staged/tree/artifact policies remain unchanged. Exact path/rule/normalized-line bytes only."
+  },
+  {
+    "path": "web/CHART-FUNNEL.md",
+    "rule": "private-tailnet",
+    "line_sha256": "2c69bc21aca9b3dc594bf645010e96675a56e1bb7ce93988038f3729be9b9f6a",
+    "reason": "History only: exact already-published deployment diagram/example origin in public origin/main ancestry, commit 1a4ccfe46c8e128ab4150c723febb9bd8d93a9bc and blob 8324cb1f0a5713472afd9403280f63de404603b1. Contains no credential value. Historical ownership is unknown; no synthetic or inactive-host claim. Current documentation is sanitized. This separate policy is invoked only after strict current-tree checks; default staged/tree/artifact policies remain unchanged. Exact path/rule/normalized-line bytes only."
   }
 ]
