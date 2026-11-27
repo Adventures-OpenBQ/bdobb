@@ -1,0 +1,20 @@
+{
+  "package": "random-user-agent",
+  "version": "1.0.1",
+  "package_member": "random_user_agent/data/user_agents.zip",
+  "original_zip_sha256": "8cf42ece815b3496382639d346981cb7771124b095f17780eff2a7ecc3063f76",
+  "member": "user_agents.jl",
+  "original_member_sha256": "d71248d43e79b57dde8c56b2bec5f99011a911512c4fca19d7a5cf401cb35438",
+  "original_records": 326133,
+  "remove_raw_line_sha256": [
+    "46736d0f43f8442d48f00ed288ee42f38d37b5340a3771fc27cb4fb167416d23",
+    "6f8a8d60a6b5c0712e19b518b59002184d3776b27d52be52285d55cefe5be4ee"
+  ],
+  "filtered_member_sha256": "3ada483fa40b4439a1dd369a761e3216b179fad9099bc5dc6f8854a21a569869",
+  "filtered_records": 326131,
+  "provenance": {
+    "wheel_url": "https://files.pythonhosted.org/packages/61/88/8a953b6f08d7cc709695be1a640cdd3a50996636e675381c2b3ec2d7ec44/random_user_agent-1.0.1-py3-none-any.whl",
+    "wheel_sha256": "535636a55fb63fe3d74fd0260d854c241d9f2946447026464e578e68eac17dac",
+    "reason": "Remove two exact reviewed public-corpus records: explicit private-network URI and unexplained authentication assignments. Keep all other original record bytes and archive members."
+  }
+}
