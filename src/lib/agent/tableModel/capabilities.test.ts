@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { expect, it } from "vitest";
 import { capabilitiesFor } from "./capabilities";
-import { OPERATIONS } from "./contract";
+import { OPERATIONS, parseArrangement } from "./contract";
 import { measureEligibility } from "../../../components/renderers/table-model/measureEligibility";
 import { statementTemplate } from "../../statementModel/catalog";
 import type { DatasetColumn } from "../../widgetData/types";
@@ -58,6 +58,14 @@ it("advertises the exact override intent on every measure operation that can cho
   for (const op of ["measure.add", "measure.update", "measure.duplicate"]) expect(caps.operation_fields[op].optional).toContain("aggregation_intent");
   expect(caps.how_to_arrange?.join(" ")).toContain("aggregation_intent");
   expect(caps.how_to_arrange?.join(" ")).toContain("user_override");
+});
+it("provides a complete flat-operation example accepted by the actual arrangement parser", () => {
+  const instructions = capabilitiesFor(undefined, columns, "authoring").how_to_arrange!;
+  const examples = instructions.filter(t => t.startsWith("Example: "));
+  expect(examples).toHaveLength(1);
+  const example = JSON.parse(examples[0].slice("Example: ".length));
+  expect(parseArrangement(example).errors).toEqual([]);
+  expect(example.operations.map((op: { op: string }) => op.op)).toEqual(["category.add", "measure.add", "layout.set"]);
 });
 
 it("maps calendar units explicitly so a quarter-named field does not change a requested year grouping", () => {

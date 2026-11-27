@@ -29,7 +29,7 @@ import { isCardAgentOffLimits, keyMaintBackendIds } from "../lib/providerKeys";
 import { availableViews } from "../lib/cardViews";
 import { rowsOf } from "../lib/chartShapes";
 import { dataUpdateText } from "../lib/cron";
-import { authHeaders } from "../lib/dataClient";
+import { authHeaders, buildIframeWidgetUrl } from "../lib/dataClient";
 import { originOf } from "../lib/iframeProtocol";
 import { temporalExportMetadata, temporalJson, temporalCsv } from "../lib/temporal/export";
 import { exportFilename, collectPresentedExport, rowsForExport, toCsv, toJson, toJsonRows, toXlsx } from "../lib/export";
@@ -441,7 +441,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // false until discovery resolves it — which is exactly the render on which
   // the hook arms its first fetch.
   const { status, data: rawData, acquisition, backendRequest, error, warnings, retry, attempt, run, stale, intervalMs, completedAt, stalePastInterval, dataStale, retryIn } =
-    useWidgetData(card, query, widget?.runButton, fiscalYearEnd, hold, exchange);
+    useWidgetData(card, query, widget?.runButton, fiscalYearEnd, hold, exchange, isBackendTable(card) ? dashboard : undefined);
   // Statement fiscal relabelling (useStatementRows says why). Named `fiscalRows`:
   // `fiscal` above is the card's own FY-ends lookup.
   const fiscalRows = useStatementRows(widget, backend, query, rawData);
@@ -557,7 +557,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
    * losing its JSON item to a view it never shows. ViewToggle still displays
    * the stray value (disabled) so the user can clear it.
    */
-  const isStatement = view === "statement" && (TRANSPOSABLE_TYPES.has(widget?.type ?? "") || !!card.linkedSource || isManagedTable(card));
+  const isStatement = !linkedMetric && view === "statement" && (TRANSPOSABLE_TYPES.has(widget?.type ?? "") || !!card.linkedSource || isManagedTable(card));
   const [statementSnapshot, setStatementSnapshot] = useState<StatementSnapshot>();
   const statementDefinition = useMemo(() => card.tableDefinition ?? (card.table ? { table: card.table, search: "" } : undefined), [card.tableDefinition, card.table]);
   const statementCollapsed = useMemo(() => new Set(card.statement?.collapsed ?? []), [card.statement?.collapsed]);
@@ -568,7 +568,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // get here. The rest pivot in-thread with TableRenderer's own panel.
   const backendTable = isBackendTable(card);
   // Memoised: the table's date filters start from these rows, recomputed per payload.
-  const backendRows = useMemo(() => (backendTable ? tableRows(data) ?? undefined : undefined), [backendTable, data]);
+  const backendRows = useMemo(() => (backendTable ? tableRows(data, widget?.table) ?? undefined : undefined), [backendTable, data, widget?.table]);
   const workerTable = isWorkerTableProducer(card) && (!backendTable || fitsTableWorker(data));
   const backendPivot =
     widget?.type === "table" && !isTransposed && (view === undefined || view === "table") && !card.linkedSource && !workerTable;
@@ -582,7 +582,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     else if (status === "ready" && acquired !== null) tableExecutionStore.setBackendRows(dashboardId, card.id, acquired, acquisition, backendRequest);
   }, [dashboardId, backendTable, card.id, acquired, acquisition, backendRequest, status, failed, error]);
 
-  const modes: ViewMode[] = useMemo(() => availableViews(widget, data, { linkedSource: card.linkedSource }), [widget, data, card.linkedSource]);
+  const modes: ViewMode[] = useMemo(() => availableViews(widget, data, { linkedSource: linkedMetric ? undefined : card.linkedSource }), [widget, data, card.linkedSource, linkedMetric]);
 
   // No export surface at all for the built-in and document cards: fetchesData
   // is already the "this card has a fetched payload" predicate (it is false
@@ -630,12 +630,12 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
    */
   const transposed = useMemo(() => {
     if (!isTransposed) return null;
-    const rows = tableRows(data);
+    const rows = tableRows(data, widget?.table);
     return rows ? transposeRows(rows) : null;
-  }, [isTransposed, data]);
+  }, [isTransposed, data, widget?.table]);
   const exportRows = useMemo(
-    () => (isStatement ? (statementSnapshot?.statement?.rows ?? null) : isTransposed ? (transposed?.rows ?? null) : rowsForExport(data)),
-    [isStatement, statementSnapshot, isTransposed, transposed, data],
+    () => (isStatement ? (statementSnapshot?.statement?.rows ?? null) : isTransposed ? (transposed?.rows ?? null) : rowsForExport(tableRows(data, widget?.table) ?? data)),
+    [isStatement, statementSnapshot, isTransposed, transposed, data, widget?.table],
   );
   // Explicit order for the exporters; undefined lets them derive it as today.
   const exportColumns = isStatement ? statementSnapshot?.statement?.columns : isTransposed ? transposed?.columns : undefined;
@@ -662,7 +662,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       view !== "raw" &&
       view !== "chart" &&
       !isTransposed && !isStatement &&
-      tableRows(data) !== null) ||
+      tableRows(data, widget?.table) !== null) ||
     // A local-file card's rows live inside its renderer, not in `data`: it
     // fetches nothing. The ⌕ toggle is the only thing this gate reaches for
     // such a card -- the Columns and Reset items below sit inside the ⋯ menu,
@@ -676,7 +676,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
    */
   const menuColumns = useMemo(() => {
     if (workerTable && executionView.ready) return schemaColumns(executionView.ready.inspection.inputColumns, widget?.table);
-    const rows = tableRows(data);
+    const rows = tableRows(data, widget?.table);
     return rows && rows.length > 0 ? tableColumns(rows, widget?.table) : [];
   }, [data, widget?.table, workerTable, executionView.ready]);
   const menuOrder = orderFields(menuColumns, card.table?.columnOrder);
@@ -755,7 +755,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
    */
   function messagingFor(w: WidgetDef | undefined): WidgetMessaging | undefined {
     if (!w) return undefined;
-    const frameOrigin = originOf(w.endpoint);
+    const frameOrigin = originOf(w.type === "iframe" ? buildIframeWidgetUrl(backend, w, query) : w.endpoint);
     return {
       headers:
         backend && frameOrigin !== null && frameOrigin === originOf(backend.baseUrl)
@@ -1129,7 +1129,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       const isBuiltin = widget.backendId === BUILTIN_BACKEND_ID;
       return (
         <IframeRenderer
-          url={isBuiltin ? (card.params.url ?? "") : widget.endpoint}
+          url={isBuiltin ? (card.params.url ?? "") : buildIframeWidgetUrl(backend, widget, query)}
           emptyHint={isBuiltin ? "Enter a URL in Parameters to frame a page." : undefined}
           messaging={messagingFor(widget)}
         />
@@ -1453,7 +1453,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     // must suppress the raw view has to do so explicitly (SP5's keys widget).
     if (view === "raw") return <RawJsonView data={data} />;
     if (view === "chart") return <ChartRenderer
-        data={data}
+        data={tableRows(data, widget?.table) ?? data}
         uirevision={paramsKey(query)}
         columns={widget?.table?.columns}
         chartType={widget?.chartView?.chartType}

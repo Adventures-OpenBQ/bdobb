@@ -1,5 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
+import { acquisitionConfiguration, acquisitionParams, type SourceGroups } from '../lib/widgetData/sources';
 import { isLinkedMetricCard } from '../lib/builtins';
 
 import { filterDateContext, resolveDateFilters } from "../lib/dateFilters";
@@ -93,28 +94,37 @@ type Runtime = {
   jobs: Set<Promise<void>>;
 };
 export type ExecutionDependencies = {
+  liveDashboard?: (id: string) => Dashboard | undefined;
   viewerAuthority?: {isViewer:()=>boolean;subscribe:(listener:()=>void)=>()=>void};
   managedProvider?: (card: DashboardCard) => ExecutionProvider;
   temporalClient?: (card:DashboardCard)=>TemporalClient;
   temporalManagedProvider?:(card:DashboardCard,identity:{executionId:string;resultHash:string})=>ExecutionProvider;
   executor?: (id: string) => LocalWorkerExecutor;
   engine?: TableEngine;
-  source: (card: DashboardCard) => SourceAdapter | undefined;
+  source: (card: DashboardCard, dashboardId?: string, scope?: SourceGroups) => SourceAdapter | undefined;
   reconcileSelection?: (dashboardId: string, widgetId: string, definition: TableDefinition, selection: SelectionSpec, guard: TableCommitGuard) => Promise<boolean>;
 };
 /**
  * The rows each backend table card fetched, handed over by its WidgetCard so
  * the worker never fetches a second time. `ready` settles on the first rows.
  */
-export type BackendRowsRequest = {readonly cardId:string; readonly revision:number};
+export type BackendRowsRequest = {readonly cardId:string; readonly revision:number; readonly dashboardId?:string; readonly configuration?:unknown[]};
 const backendRows = new Map<string, { data?: unknown; acquisition?: BackendAcquisition; question?:string; request?:BackendRowsRequest; ready: Promise<void>; resolve: () => void }>();
-function rowsEntry(id: string) {
-  let entry = backendRows.get(id);
+const rowsKey = (id: string, dashboardId?: string) => dashboardId === undefined ? id : JSON.stringify([dashboardId, id]);
+function rowsEntry(id: string, dashboardId?: string) {
+  const key = rowsKey(id, dashboardId);
+  let entry = backendRows.get(key);
+  // Legacy direct callers supplied no ticket; production hooks always publish an explicit scoped ticket.
+  const legacy = backendRows.get(id);
+  if (!entry && legacy && legacy.request?.dashboardId === undefined) {
+    entry = legacy;
+    backendRows.set(key, entry);
+  }
   if (!entry) {
     let resolve!: () => void;
     const ready = new Promise<void>(r => { resolve = r; });
     entry = { ready, resolve };
-    backendRows.set(id, entry);
+    backendRows.set(key, entry);
   }
   return entry;
 }
@@ -127,12 +137,16 @@ function defaultHidden(card: DashboardCard, table: TableDefinition['table']): Ta
   const hidden = useWidgetRegistryStore.getState().find(card.backendId, card.widgetId)?.table?.columns?.filter(c => c.hide === true).map(c => c.field) ?? [];
   return hidden.length ? { ...table, hidden } : table;
 }
-export function backendTableSource(card: DashboardCard): SourceAdapter {
+export function backendTableSource(card: DashboardCard, dashboardId?: string, scope?: SourceGroups): SourceAdapter {
   return { async acquire() {
-    const entry = rowsEntry(card.id);
+    const entry = rowsEntry(card.id, dashboardId);
     const request = entry.request;
     await entry.ready;
-    if (request !== entry.request) throw new DOMException("Backend question changed", "AbortError");
+    if (request && request !== entry.request) throw new DOMException("Backend question changed", "AbortError");
+    const completedRequest = entry.request;
+    if (completedRequest?.configuration && !sameConfig(completedRequest.configuration, [card.widgetId, card.backendId, acquisitionParams(card, scope)])) {
+      throw new Error('The source request has changed. Run the source card to use its new values.');
+    }
     // The card's own fetch failed: its children must not keep the previous rows.
     if (entry.data instanceof Error) throw entry.data;
     const spec = useWidgetRegistryStore.getState().find(card.backendId, card.widgetId)?.table;
@@ -228,8 +242,8 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
     const page=state.page;if(!page)return undefined;
     return {pageNumber:page.pageNumber,offset:page.offset,loadedRows:page.page.rows.length,totalCount:page.page.total_count,countQuality:page.page.count_quality,hasPrevious:page.hasPrevious,hasNext:page.hasNext,busy,...(error?{error}:{})};
   }
-  function sourceFor(node:Node):SourceAdapter|undefined {
-    if(!deps.temporalClient||!isTemporalTable(node.card)||node.card.linkedSource)return deps.source(node.card);
+  function sourceFor(node:Node,dashboardId?:string):SourceAdapter|undefined {
+    if(!deps.temporalClient||!isTemporalTable(node.card)||node.card.linkedSource)return deps.source(node.card,dashboardId,dashboardId ? dashboards.get(dashboardId) : undefined);
     const binding=parseQueryBinding(node.card.queryBinding);
     if(!node.temporal){
       const client=deps.temporalClient(node.card);
@@ -441,7 +455,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           }
         }
         else {
-          const source = sourceFor(node);
+          const source = sourceFor(node,d);
           if (!source) {
             unavailable(node, 'unavailable', 'Source unavailable; choose a source');
             return;
@@ -547,7 +561,8 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
     },
     syncDashboard(dashboard: Dashboard) {
       const runtime: Runtime = dashboards.get(dashboard.id) ?? { nodes: new Map(), seen: new Set(), leases: 0, jobs: new Set() };
-      dashboards.set(dashboard.id, runtime);runtime.groups=dashboard.groups;runtime.groupsDisabled=dashboard.groupsDisabled;runtime.exchange=dashboard.exchange;
+      const previousGroups = {groups: runtime.groups, groupsDisabled: runtime.groupsDisabled};
+      dashboards.set(dashboard.id, runtime);runtime.groups=structuredClone(dashboard.groups);runtime.groupsDisabled=dashboard.groupsDisabled;runtime.exchange=dashboard.exchange;
       const cards = dashboard.tabs.flatMap(tab => tab.cards).filter(c => c.widgetId === LOCAL_TABLE_ID || c.linkedSource || isTemporalTable(c) || isBackendTable(c) || isManagedTable(c));
       const ids = new Set(cards.map(c => c.id));
       // A previously owned deleted source is unavailable, whereas foreign persisted references are invalid.
@@ -578,7 +593,9 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           node.acquisition = undefined;
           disposeNode(node);
           runtime.nodes.delete(id);
-          backendRows.delete(id);
+          const entry=backendRows.get(rowsKey(id,dashboard.id));
+          backendRows.delete(rowsKey(id,dashboard.id));
+          if (entry && backendRows.get(id) === entry) backendRows.delete(id);
           for (const child of runtime.nodes.values())
             if (child.card.linkedSource?.sourceWidgetId === id)
               invalidate(runtime, child.card.id);
@@ -589,7 +606,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
         if (!existing)
           runtime.nodes.set(card.id, { card: structuredClone(card), runtimeParams:emptyRuntime, groupCandidates:snapshotCandidates(baseline.candidates),groupDiagnostics:baseline.diagnostics, acquired: false, version: 0, view: { status: 'pending', requested: { widgetId: card.id, input: 0, model: 1, output: 1 }, definition: structuredClone(definition), selection: structuredClone(selection), stale: false } });
         else {
-          const sourceChanged = JSON.stringify([existing.card.params, existing.card.linkedSource, existing.card.managedSource, existing.card.queryBinding, existing.card.backendId, existing.card.widgetId]) !== JSON.stringify([card.params, card.linkedSource, card.managedSource, card.queryBinding, card.backendId, card.widgetId]) || isWorkerTableProducer(existing.card) !== isWorkerTableProducer(card);
+          const sourceChanged = !sameConfig(acquisitionParams(existing.card,previousGroups), acquisitionParams(card,runtime)) || JSON.stringify([existing.card.params, existing.card.linkedSource, existing.card.managedSource, existing.card.queryBinding, existing.card.backendId, existing.card.widgetId]) !== JSON.stringify([card.params, card.linkedSource, card.managedSource, card.queryBinding, card.backendId, card.widgetId]) || isWorkerTableProducer(existing.card) !== isWorkerTableProducer(card);
           // Compare against the last persisted card, separately from live runtime edits.
           const definitionChanged = !sameConfig(existing.card.tableDefinition, card.tableDefinition);
           const tableChanged = !sameConfig(existing.card.table, card.table);
@@ -639,19 +656,19 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           void ensure(dashboard.id, card.id);
     },
     /** A question owns both its rows and receipt. Credentials stay private; consumers see only a numeric revision. */
-    observeBackendQuestion(id:string, question:string):BackendRowsRequest {
-      const entry=rowsEntry(id);
-      if(entry.question===question&&entry.request)return entry.request;
+    observeBackendQuestion(id:string, question:string, dashboardId?:string, configuration?:unknown[]):BackendRowsRequest {
+      const entry=rowsEntry(id,dashboardId);
+      if(entry.question===question&&entry.request&&sameConfig(entry.request.configuration,configuration))return entry.request;
       const replaced=entry.question!==undefined||Object.hasOwn(entry,'data');
       entry.question=question;
-      entry.request={cardId:id,revision:(entry.request?.revision??0)+1};
+      entry.request={cardId:id,revision:(entry.request?.revision??0)+1,...(dashboardId === undefined ? {} : {dashboardId}),...(configuration === undefined ? {} : {configuration:structuredClone(configuration)})};
       if(Object.hasOwn(entry,'data')) {
         delete entry.data;
         entry.ready=new Promise<void>(resolve=>{entry.resolve=resolve;});
       }
       entry.acquisition=undefined;
       if(replaced)for(const runtime of dashboards.values()) {
-        if(!runtime.nodes.has(id))continue;
+        if(!runtime.nodes.has(id) || dashboardId !== undefined && dashboards.get(dashboardId) !== runtime)continue;
         invalidate(runtime,id,true);
         const clear=(target:string,seen=new Set<string>())=>{
           if(seen.has(target))return;seen.add(target);
@@ -666,12 +683,13 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
       return entry.request;
     },
     backendWireRevision(d:string,id:string|undefined) {
-      return id&&get(d,id)?backendRows.get(id)?.request?.revision??0:0;
+      return id&&get(d,id)?(backendRows.get(rowsKey(id,d)) ?? backendRows.get(id))?.request?.revision??0:0;
     },
     /** A backend table card's newly fetched rows; a change re-acquires the table. */
     setBackendRows(d: string, id: string, data: unknown, acquisition?: BackendAcquisition, request?:BackendRowsRequest) {
-      const entry = rowsEntry(id);
-      if(entry.request!==request)return;
+      const entry = rowsEntry(id,request?.dashboardId ?? d);
+      if(entry.request!==request || request?.dashboardId !== undefined && request.dashboardId !== d)return;
+      if (request === undefined) backendRows.set(id,entry);
       if (entry.data === data && entry.acquisition === acquisition) return;
       const replaced = 'data' in entry;
       entry.data = data;
@@ -791,7 +809,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           return preview.columns;
         }finally{session.result.dispose();}
       }
-      const source = sourceFor(node);
+      const source = sourceFor(node,d);
       if (!source) throw new Error('Source schema unavailable');
       const executor = makeExecutor(id);
       try {
@@ -809,12 +827,13 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
      * Metadata only: never reads source rows or reaches behind a presented linked input. */
     sourceMatches(d: string, id: string, liveCards: readonly DashboardCard[], ownActivation?: {view:ViewState;executor:LocalWorkerExecutor}): boolean {
       const runtime=dashboards.get(d); if(!runtime||runtime.invalid)return false;
+      const liveScope = deps.liveDashboard?.(d) ?? runtime;
       const seen=new Set<string>(); let currentId:string|undefined=id;
-      const source=(card:DashboardCard)=>[card.widgetId,card.backendId,card.params,card.linkedSource,card.managedSource,card.queryBinding,card.view];
       while(currentId) {
         if(seen.has(currentId))return false;seen.add(currentId);
         const node=runtime.nodes.get(currentId),live=liveCards.find(card=>card.id===currentId);
-        if(!node||!live||!sameConfig(source(node.card),source(live)))return false;
+        if(!node||!live||!sameConfig(node.card.params,live.params)
+          || !sameConfig(acquisitionConfiguration(node.card,runtime),acquisitionConfiguration(live,liveScope)))return false;
         // Only the coordinator's exact own activation may queue another functional
         // edit over already acquired input. Acquisition and every upstream stay strict.
         const ownRecalculation=currentId===id&&node.view.status==='updating'&&node.acquired&&!node.acquisition
@@ -883,6 +902,12 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
       emit();
     },
     disposeDashboard(d: string) {
+      const prefix = JSON.stringify([d]).slice(0,-1) + ',';
+      for (const [key, entry] of backendRows) if (key.startsWith(prefix)) {
+        backendRows.delete(key);
+        const [, cardId] = JSON.parse(key) as [string,string];
+        if (backendRows.get(cardId) === entry) backendRows.delete(cardId);
+      }
       const runtime = dashboards.get(d);
       if (!runtime)
         return;
@@ -892,7 +917,9 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
         node.acquisition?.controller.abort();
         node.acquisition = undefined;
         disposeNode(node);
-        backendRows.delete(node.card.id);
+        const entry=backendRows.get(rowsKey(node.card.id,d));
+        backendRows.delete(rowsKey(node.card.id,d));
+        if (entry && backendRows.get(node.card.id) === entry) backendRows.delete(node.card.id);
       }
       runtime.nodes.clear();
       runtime.seen.clear();
@@ -912,6 +939,7 @@ function sameRevision(a: Revision, b: Revision) {
   return a.widgetId === b.widgetId && a.input === b.input && a.model === b.model && a.output === b.output;
 }
 export const tableExecutionStore = createTableExecutionStore({
+  liveDashboard: id => useDashboardStore.getState().dashboards.find(dashboard => dashboard.id === id),
   viewerAuthority:{isViewer:()=>useDashboardStore.getState().viewer,subscribe:listener=>useDashboardStore.subscribe(listener)},
   reconcileSelection: async (d, id, definition, selection, guard) => {
     const { useDashboardStore } = await import('./dashboardStore');
@@ -920,14 +948,14 @@ export const tableExecutionStore = createTableExecutionStore({
       const state=useBackendsStore.getState(),backend=state.backends.find(b=>b.id===card.backendId);
       if(!backend||state.services[backend.id]!=='TemporalDB')throw new Error(backend&&(state.statuses[backend.id]??'unknown')==='unknown'?'Waiting for backend discovery or startup credentials…':'TemporalDB source unavailable; reconnect the original service');
       return createTemporalClient(backend);
-    }, source: card => card.widgetId === LOCAL_TABLE_ID && !card.linkedSource ? { async acquire(signal) {
+    }, source: (card,dashboardId,scope) => card.widgetId === LOCAL_TABLE_ID && !card.linkedSource ? { async acquire(signal) {
       const bytes = await readLocalFile(card.params.file);
       if (signal.aborted)
         throw new DOMException('Aborted', 'AbortError');
       const backendId = card.params.fiscalYearEndBackend;
       const backend = backendId ? useBackendsStore.getState().backends.find(b => b.id === backendId) : undefined;
       return { kind: 'file', name: card.params.file, bytes, ...(backend ? { yearEnds: (symbols: string[]) => statementYearEnds(backend, symbols) } : {}) };
-    } } : isBackendTable(card) ? backendTableSource(card) : undefined });
+    } } : isBackendTable(card) ? backendTableSource(card,dashboardId,scope) : undefined });
 onTemporalScopeChange(() => {
   useSharedQueryLibraryStore.getState().clear();
   tableExecutionStore.clearTemporalResults();

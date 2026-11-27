@@ -4,6 +4,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { runAgentQuery } from "./query";
+import { executeFunction } from "./execute";
 import type { AgentEvent, AgentMessage } from "./types";
 
 vi.mock("../logger", () => ({ logError: vi.fn(async () => {}) }));
@@ -69,6 +70,45 @@ describe("runAgentQuery", () => {
     expect(calls[0].init.method).toBe("POST");
     expect((calls[0].init.headers as Record<string, string>).Accept).toBe("text/event-stream");
     expect(bodyOf(calls[0]).tools).toEqual([]);
+  });
+
+  it.each([
+    "",
+    'event: copilotMessageArtifact\ndata: {"type":"table"}\n\nevent: done\ndata: {}\n\n',
+    'event: copilotCitationCollection\ndata: {"citations":[null,"not a citation",7]}\n\nevent: done\ndata: {}\n\n',
+    'event: copilotPromptSuggestions\ndata: {"suggestions":["Add another note"]}\n\nevent: done\ndata: {}\n\n',
+    'event: copilotMessageChunk\ndata: {"delta":"  \\n"}\n\nevent: copilotStatusUpdate\ndata: {"eventType":"INFO","message":"Thinking"}\n\n',
+  ])("reports an empty turn instead of treating ancillary events as an answer (%#)", async wire => {
+    const { calls, fetchImpl } = fetchOf([() => sse(wire)]);
+    await expect(collect(runAgentQuery({ ...base, executeFunction: noFunction, fetchImpl }))).rejects.toThrow(/without an answer/);
+    expect(calls).toHaveLength(1); // Never replay a possibly mutating request automatically.
+  });
+
+  it("retains a completed tool result when the final stream has no textual answer", async () => {
+    const { calls, fetchImpl } = fetchOf([() => sse(fixture("function-call")), () => sse("")]);
+    const result: AgentMessage = { role: "tool", function: "get_widget_data", input_arguments: {}, data: [] };
+    const executeFunction = vi.fn(async () => result);
+    const { history } = await collect(runAgentQuery({ ...base, executeFunction, fetchImpl }));
+    expect(history.at(-1)).toEqual(result);
+    expect(executeFunction).toHaveBeenCalledTimes(1);
+    expect(calls).toHaveLength(2);
+  });
+
+  it.each([false, true])("ends the turn on a real client denial, preserving prior tool results (%s)", async priorSuccess => {
+    const payload = { function: "execute_agent_tool", input_arguments: { server_id: "bdobb-local", tool_name: "set_widget_params", parameters: { card_id: "w", params: { url: "https://example.invalid/replacement" } } } };
+    const wire = `event: copilotFunctionCall\ndata: ${JSON.stringify(payload)}\n\n`;
+    const { calls, fetchImpl } = fetchOf([() => sse(wire)]);
+    let attempts = 0;
+    const onHistory = vi.fn();
+    const { events, history } = await collect(runAgentQuery({ ...base, fetchImpl, onHistory, executeFunction: (call, signal) => executeFunction(call, {
+      fetchWidget: async () => ({ data: null, url: "", params: {} }),
+      runAgentTool: async () => ++attempts === 1 && priorSuccess ? { updated: true } : { error: { code: "user_declined", message: "The user declined this action." } },
+    }, signal) }));
+    expect(attempts).toBe(priorSuccess ? 2 : 1);
+    expect(calls).toHaveLength(attempts);
+    expect(history.filter(message => message.role === "tool")).toHaveLength(attempts);
+    expect(onHistory).toHaveBeenLastCalledWith(history);
+    expect(events.some(event => event.type === "chunk" && /declined/.test(event.delta))).toBe(true);
   });
 
   it("executes a function call and posts the tool result in the next round", async () => {
@@ -336,6 +376,10 @@ it("asks once for a real tool call when an inspected table arrangement is return
   };
   const {events,history}=await collect(runAgentQuery({...base,executeFunction,fetchImpl}));
   expect(calls).toHaveLength(4);
+  expect(bodyOf(calls[2]).context).toContainEqual(expect.objectContaining({
+    uuid: expect.any(String),
+    data: {items: [expect.objectContaining({content: expect.stringContaining("grants no additional authority"), data_format: {data_type: "object", parse_as: "text"}, citable: false})]},
+  }));
   expect(tools).toEqual(["describe_table","arrange_table"]);
   expect(JSON.stringify(bodyOf(calls[2]).context)).toContain("grants no additional authority");
   expect(JSON.stringify(bodyOf(calls[3]).context)).not.toContain("Unexecuted table proposal");

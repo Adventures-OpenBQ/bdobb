@@ -3,6 +3,11 @@
 
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { useCardRequest } from "../hooks/useCardRequest";
+import { useWidgetData } from "../hooks/useWidgetData";
+import { startMockServer } from "../test/mockServer";
+import { tableExecutionStore } from "./tableExecutionStore";
 import { backend, card, widget } from "../test/fixtures";
 import { __list, __read, __reset } from "../test/memfs";
 import { normalizeAgentsJson } from "../lib/agent/agents-json";
@@ -312,6 +317,74 @@ describe("chatStore.send", () => {
     expect(calls).toEqual([expect.objectContaining({ kind: "widget_data", ok: true, url: "http://x/historical?symbol=AAPL" })]);
     expect(messages.some((m) => m.role === "tool")).toBe(true);
     expect(messages[messages.length - 1].role).toBe("ai");
+  });
+
+  it("reads the source's last Run over HTTP while mounted, off-tab and after remount", async () => {
+    const http = globalThis.fetch;
+    const server = await startMockServer({ "/prices": (url: URL) => [{ issuer: url.searchParams.get("symbol") }] });
+    const be = backend({ baseUrl: server.url });
+    const w = widget({ endpoint: "prices", runButton: true, params: [{ paramName: "symbol", type: "text" }] });
+    const source = (symbol: string) => card({ params: { symbol } });
+    const dash = (symbol: string) => ({ id: "rita-run", name: "Market", tabs: [
+      { id: "prices", name: "Prices", cards: [source(symbol)] }, { id: "other", name: "Other", cards: [] },
+    ] });
+    const mount = (symbol: string) => renderHook(({ symbol }) => {
+      const c = source(symbol);
+      const q = useCardRequest(c, w, be, dash(symbol));
+      return useWidgetData(c, q.query, w.runButton, q.fiscalYearEnd, q.hold, q.exchange, dash(symbol));
+    }, { initialProps: { symbol } });
+    let input: Record<string, string> | undefined;
+    let beforeCall: (() => void) | undefined;
+    let round = 0;
+    route((url, init) => {
+      if (!url.endsWith("/v1/query")) return http(url, init);
+      if (round % 2 === 0) beforeCall?.();
+      const call = { function: "get_widget_data", input_arguments: { data_sources: [
+        { widget_uuid: "c", origin: be.id, input_args: input },
+      ] } };
+      return sse(round++ % 2 === 0 ? `event: copilotFunctionCall\ndata: ${JSON.stringify(call)}\n\n` : fixture("rita/roundtrip-answer.sse"));
+    });
+    const ask = async (overrides?: Record<string, string>) => {
+      input = overrides;
+      await useChatStore.getState().send("Read prices");
+      return useChatStore.getState().messages.filter(m => m.role === "tool").at(-1);
+    };
+    const received = (issuer: string) => ({ data: [{ items: [{ content: JSON.stringify([{ issuer }]) }] }] });
+    const symbols = () => server.requests.filter(r => r.path === "/prices").map(r => new URLSearchParams(r.search).get("symbol"));
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, contextSharing: true, ritaUrl: "https://rita.example" } });
+    useWidgetRegistryStore.setState({ widgets: [w] });
+    useBackendsStore.setState({ backends: [be] });
+    useDashboardStore.setState({ dashboards: [dash("AAPL")], activeId: "rita-run", activeTabIds: { "rita-run": "prices" } });
+    try {
+      const visible = mount("AAPL");
+      await waitFor(() => expect(visible.result.current.data).toEqual([{ issuer: "AAPL" }]));
+      useDashboardStore.setState({ dashboards: [dash("TSLA")] });
+      visible.rerender({ symbol: "TSLA" });
+      expect(visible.result.current.stale).toBe(true);
+      visible.unmount();
+      useDashboardStore.setState({ activeTabIds: { "rita-run": "other" } });
+      const idleAnswer = await ask();
+      useDashboardStore.setState({ activeTabIds: { "rita-run": "prices" } });
+      const resumed = mount("TSLA");
+      await waitFor(() => expect(resumed.result.current.data).toEqual([{ issuer: "AAPL" }]));
+      expect(symbols()).toEqual(["AAPL", "AAPL", "AAPL"]);
+      expect(idleAnswer).toMatchObject(received("AAPL"));
+      expect(await ask({ symbol: "NVDA" })).toMatchObject(received("NVDA"));
+      expect(await ask()).toMatchObject(received("AAPL"));
+      act(() => resumed.result.current.run());
+      await waitFor(() => expect(resumed.result.current.data).toEqual([{ issuer: "TSLA" }]));
+      resumed.unmount();
+      expect(await ask()).toMatchObject(received("TSLA"));
+      expect(symbols()).toEqual(["AAPL", "AAPL", "AAPL", "NVDA", "AAPL", "TSLA", "TSLA"]);
+      // A backend can change while Rita is deciding which card to read.
+      useDashboardStore.setState({ dashboards: [dash("MSFT")] });
+      beforeCall = () => useBackendsStore.setState({ backends: [{ ...be, headerName: "X-Fixture", headerValue: "replacement" }] });
+      expect(await ask()).toMatchObject(received("MSFT"));
+      expect(server.requests.filter(r => r.path === "/prices").at(-1)?.headers["x-fixture"]).toBe("replacement");
+    } finally {
+      tableExecutionStore.disposeDashboard("rita-run");
+      await server.close();
+    }
   });
 
   describe("get_widget_data reads the turn's dashboard live (review A5, A8, U8)", () => {
@@ -992,6 +1065,91 @@ describe("chatStore.load and clear", () => {
     await useChatStore.getState().clear();
     expect(useChatStore.getState().messages).toEqual([]);
     expect(__list()).not.toContain("chat.json");
+  });
+
+  it.each(["Stop", "transport failure"])("retains an actual committed note and its tool history through %s", async ending => {
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example", contextSharing: true } });
+    const d = await useDashboardStore.getState().addDashboard("Notes");
+    if (!d) throw new Error("Expected an editable dashboard");
+    useDashboardStore.getState().setActive(d);
+    const note = (await import("../lib/builtins")).BUILTIN_WIDGETS.find(w => w.id === "markdown")!;
+    useWidgetRegistryStore.setState({ widgets: [note] });
+    let round = 0;
+    let secondStarted!: () => void;
+    const reached = new Promise<void>(resolve => { secondStarted = resolve; });
+    route((_url, init) => {
+      if (round++ === 0) return sse('event: copilotFunctionCall\ndata: {"function":"execute_agent_tool","input_arguments":{"server_id":"bdobb-local","tool_name":"add_note","input":{"text":"Already committed"}}}\n\n');
+      secondStarted();
+      if (ending === "transport failure") return Promise.reject(new TypeError("stream closed"));
+      return new Promise((_, reject) => init.signal?.addEventListener("abort", () => reject(new DOMException("x", "AbortError"))));
+    });
+    const turn = useChatStore.getState().send("Add a note");
+    await reached;
+    if (ending === "Stop") useChatStore.getState().abort();
+    await turn;
+    const cards = useDashboardStore.getState().dashboards.find(dashboard => dashboard.id === d)!.tabs[0].cards;
+    expect(cards).toHaveLength(1);
+    expect(cards[0].params.text).toBe("Already committed");
+    const committedId = cards[0].id;
+    expect(JSON.parse(__read(`dashboards/${d}.json`)!).tabs[0].cards[0].id).toBe(committedId);
+    await useChatStore.getState().load();
+    const tools = useChatStore.getState().messages.filter(message => message.role === "tool");
+    expect(tools).toHaveLength(1);
+    expect(JSON.stringify(tools)).toContain(committedId);
+    replies(fixture("rita/simple-text.sse"));
+    await useChatStore.getState().send("A separate request");
+    expect(JSON.stringify(bodies.at(-1)!.messages)).toContain(committedId);
+    expect(useDashboardStore.getState().dashboards.find(dashboard => dashboard.id === d)!.tabs[0].cards).toHaveLength(1);
+  });
+
+  it("Stop preserves completed tool history across save/reload and marks the turn stopped", async () => {
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example", contextSharing: true } });
+    useBackendsStore.setState({ backends: [backend({ id: "reference", name: "Reference", baseUrl: "http://x" })] });
+    useWidgetRegistryStore.setState({
+      widgets: [widget({ id: "historical_prices", backendId: "reference", name: "Historical Prices", endpoint: "/historical" })],
+    });
+    useDashboardStore.setState({
+      dashboards: [
+        {
+          id: "d1",
+          name: "Main",
+          tabs: [{ id: "t1", name: "Tab", cards: [card({ id: UUID, widgetId: "historical_prices", backendId: "reference" })] }],
+        },
+      ],
+      activeId: "d1",
+      activeTabIds: { d1: "t1" },
+    });
+    // Round 1 answers with a function call (yields one widget_data ledger
+    // entry via onCall); round 2 hangs until Stop aborts it --
+    // by which point that entry already sits in send()'s local `calls`.
+    let n = 0;
+    let resolveSecondCall = () => {};
+    const secondCallStarted = new Promise<void>((resolve) => {
+      resolveSecondCall = resolve;
+    });
+    route((url, init) => {
+      if (url.endsWith("/v1/query")) {
+        if (n++ === 0) return sse(fixture("rita/function-call.sse"));
+        resolveSecondCall();
+        return new Promise((_, reject) =>
+          init.signal?.addEventListener("abort", () => reject(new DOMException("x", "AbortError"))),
+        );
+      }
+      return new Response(JSON.stringify([{ close: 1 }]), { status: 200, headers: { "content-type": "application/json" } });
+    });
+    const turn = useChatStore.getState().send("show AAPL");
+    await secondCallStarted;
+    useChatStore.getState().abort();
+    await turn;
+    expect(useChatStore.getState().messages.filter((m) => m.role === "tool")).toHaveLength(1);
+    expect(useChatStore.getState().messages.at(-1)).toMatchObject({ role: "ai", content: expect.stringMatching(/stopped/i) });
+    await useChatStore.getState().load();
+    expect(useChatStore.getState().messages.filter((m) => m.role === "tool")).toHaveLength(1);
+    replies(fixture("rita/simple-text.sse"));
+    await useChatStore.getState().send("A new request, without resuming the old one");
+    const nextMessages = bodies.at(-1)!.messages as Array<{ role: string; content: unknown }>;
+    expect(nextMessages.filter((m) => m.role === "tool")).toHaveLength(1);
+    expect(nextMessages.some((m) => m.role === "ai" && /Stopped by the user/.test(String(m.content)))).toBe(true);
   });
 
   it("clear() mid-turn does not resurrect the aborted turn's ledger", async () => {

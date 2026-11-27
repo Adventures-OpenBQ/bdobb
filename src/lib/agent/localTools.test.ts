@@ -3,6 +3,7 @@
 
 import { beforeEach, describe, it, expect } from "vitest";
 import { LOCAL_TOOL_SERVER_ID, LOCAL_TOOLS, resolveWidgetMatch, executeLocalTool } from "./localTools";
+import { OPERATIONS } from "./tableModel/contract";
 import type { DashboardCard, WidgetDef } from "../types";
 import { __read, __reset } from "../../test/memfs";
 import { widget } from "../../test/fixtures";
@@ -94,6 +95,20 @@ describe("the local tool declaration", () => {
     // D-012: a read-only ask previews; nothing commits.
     expect((arrange.input_schema.properties as Record<string, { enum?: string[] }>).mode.enum).toEqual(["apply", "preview"]);
     for (const must of ["mode \"preview\"", "previewed", "committed false", "summarize", "totalRowCount"]) expect(arrange.description, must).toContain(must);
+  });
+
+  it("advertises complete required and optional fields for each actual table operation", () => {
+    const schema = LOCAL_TOOLS.find(t => t.name === "arrange_table")!.input_schema as {
+      properties: { arrangement: { properties: { operations: { items: { anyOf?: Array<{ required: string[]; properties: Record<string, unknown> & { op: { enum: string[] } } }> } } } } };
+    };
+    const variants = schema.properties.arrangement.properties.operations.items.anyOf;
+    expect(variants?.map(v => v.properties.op.enum[0])).toEqual(Object.keys(OPERATIONS));
+    for (const variant of variants!) {
+      const name = variant.properties.op.enum[0] as keyof typeof OPERATIONS;
+      const operation = OPERATIONS[name];
+      expect(variant.required).toEqual(["op", ...Object.keys(operation.required)]);
+      expect(Object.keys(variant.properties)).toEqual(["op", ...Object.keys(operation.required), ...Object.keys(operation.optional)]);
+    }
   });
 
   it("gives every tool the reserved server id and an object schema", () => {
@@ -270,6 +285,19 @@ describe("executeLocalTool", () => {
     expect(r).toMatchObject({ added: true, params: { applied: ["symbol", "interval"] } });
     const card = useDashboardStore.getState().activeDashboard()!.tabs[0].cards.find((c) => c.id === r.card_id)!;
     expect(card.params).toMatchObject({ symbol: "AAPL", interval: "1d" });
+  });
+
+  it("add_widget keeps native chart intent on the default chart view while applying valid params", async () => {
+    useWidgetRegistryStore.setState({ widgets: [widget({ id: "native_chart", name: "Equity Chart", backendId: "reference", type: "chart", params: [{ paramName: "symbol", type: "text", value: "AAPL" }, { paramName: "interval", options: [{ label: "30m", value: "30m" }] }] })] });
+    const r = await executeLocalTool("add_widget", { widget_id: "native_chart", params: { symbol: "NVDA", interval: "30m" }, view: "chart" });
+    expect(r).toMatchObject({ added: true, params: { applied: ["symbol", "interval"] } });
+    const cards = useDashboardStore.getState().activeDashboard()!.tabs[0].cards;
+    expect(cards).toHaveLength(1);
+    expect(cards[0].params).toMatchObject({ symbol: "NVDA", interval: "30m" });
+    expect(cards[0].view).toBeUndefined();
+    expect(r.view).toBe("default");
+    await useAgentEditsStore.getState().undoLast();
+    expect(useDashboardStore.getState().activeDashboard()!.tabs[0].cards[0].params.symbol).toBe("AAPL");
   });
 
   it("add_widget still adds the card on a bad param and reports what was refused and why", async () => {
@@ -950,6 +978,37 @@ describe("markdown tools persist the tool input exactly (adaptation 4, #326)", (
     const card = saved.tabs[0].cards.find((c: DashboardCard) => c.id === out.card_id);
     expect(card.widgetId).toBe("markdown");
     expect(card.params.text).toBe(tricky);
+  });
+  it("refuses a copied UUID paired with another note title before any write or Undo entry", async () => {
+    const rates = await executeLocalTool("add_note", { text: "Rates draft" });
+    const oil = await executeLocalTool("add_note", { text: "Oil draft" });
+    await useDashboardStore.getState().patchCardField(String(rates.card_id), "title", "Rates answer");
+    await useDashboardStore.getState().patchCardField(String(oil.card_id), "title", "Oil answer");
+    const before = structuredClone(useDashboardStore.getState().dashboards);
+    const edits = useAgentEditsStore.getState().entries.length;
+    const result = await executeLocalTool("set_markdown_content", {
+      card_id: oil.card_id, card_title: "Rates answer", text: "Rates output",
+    });
+    expect(result).toMatchObject({ error: { code: "CARD_TITLE_MISMATCH" } });
+    expect(useDashboardStore.getState().dashboards).toEqual(before);
+    expect(useAgentEditsStore.getState().entries).toHaveLength(edits);
+  });
+  it("writes the matching named note once and keeps its existing Undo behavior", async () => {
+    const rates = await executeLocalTool("add_note", { text: "Rates draft" });
+    const oil = await executeLocalTool("add_note", { text: "Oil draft" });
+    await useDashboardStore.getState().patchCardField(String(rates.card_id), "title", "Rates answer");
+    await useDashboardStore.getState().patchCardField(String(oil.card_id), "title", "Oil answer");
+    const edits = useAgentEditsStore.getState().entries.length;
+    expect(await executeLocalTool("set_markdown_content", {
+      card_id: rates.card_id, card_title: "Rates answer", text: "Rates output",
+    })).toMatchObject({ updated: true, card_id: rates.card_id });
+    const cards = () => useDashboardStore.getState().activeDashboard()!.tabs[0].cards;
+    expect(cards().find(c => c.id === rates.card_id)?.params.text).toBe("Rates output");
+    expect(cards().find(c => c.id === oil.card_id)?.params.text).toBe("Oil draft");
+    expect(useAgentEditsStore.getState().entries).toHaveLength(edits + 1);
+    await useAgentEditsStore.getState().undoLast();
+    expect(cards().find(c => c.id === rates.card_id)?.params.text).toBe("Rates draft");
+    expect(cards().find(c => c.id === oil.card_id)?.params.text).toBe("Oil draft");
   });
   it("set_markdown_content writes the note text unchanged", async () => {
     const out = await executeLocalTool("add_note", { text: "x" });

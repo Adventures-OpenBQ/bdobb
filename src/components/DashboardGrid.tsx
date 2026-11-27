@@ -380,7 +380,7 @@ function BackendSourceRunner({ card, dashboard }: { card: DashboardCard; dashboa
   const widget = useWidgetRegistryStore((s) => s.find(card.backendId, card.widgetId));
   const backend = useBackendsStore((s) => s.backends.find((b) => b.id === (widget?.backendId ?? card.backendId)));
   const { fiscalYearEnd, hold, query, exchange } = useCardRequest(card, widget, backend, dashboard);
-  const { status, data: rawData, acquisition, backendRequest, error } = useWidgetData(card, query, widget?.runButton, fiscalYearEnd, hold, exchange);
+  const { status, data: rawData, acquisition, backendRequest, error } = useWidgetData(card, query, widget?.runButton, fiscalYearEnd, hold, exchange, dashboard);
   // The card's fiscal relabelling too: the rows it hands over are corrected ones.
   const { data } = useStatementRows(widget, backend, query, rawData);
   // WidgetCard's hand-over, unchanged: every outcome reaches the store.

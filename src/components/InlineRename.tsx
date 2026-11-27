@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 type Props = {
   /** The current name; shown pre-selected so typing replaces it. */
@@ -25,7 +25,7 @@ export function InlineRename({ value, ariaLabel, onCommit, onCancel }: Props) {
   const [draft, setDraft] = useState(value);
   const ref = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     ref.current?.focus();
     // select(), not just focus(): the field opens on a name the user means to
     // replace, so the first keystroke should overwrite it.

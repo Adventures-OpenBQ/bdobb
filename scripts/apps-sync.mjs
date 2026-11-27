@@ -38,6 +38,8 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SERVED = {
+  // Imports with its separate fixture connection; the stack does not serve those widget ids.
+  "v9-chart-expansion": false,
   // Built-ins only.
   "v3.1.0-builtins": true,
   // openbq-docker v3's keyless BLS, CFTC, EconDB, Nasdaq and Videos widgets,
@@ -109,7 +111,7 @@ for (const rel of found) {
   const episode = /^v(\d+)[.-]/.exec(name);
   if (!episode) throw new Error(`docs/examples/${rel}: no leading vN episode in its name`);
   seen.add(name);
-  if (Number(episode[1]) > EPISODE) continue;
+  if (!SERVED[name] || Number(episode[1]) > EPISODE) continue;
   const parsed = JSON.parse(readFileSync(join(SRC, rel), "utf8"));
   const also = SERVED[name].also;
   if (also) elsewhere.set(also, [...(elsewhere.get(also) ?? []), ...parsed]);

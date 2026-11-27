@@ -6,26 +6,31 @@ import { FORMULA_BINARY_OPERATORS } from "../../tableModel/formulaSyntax";
 import { INSTALLED_STATEMENT_TEMPLATES } from "../../statementModel/catalog";
 import { paramRow } from "../../tableModel/pivotParams";
 import { measureEligibility } from "../../../components/renderers/table-model/measureEligibility";
-import { AGGREGATION_INTENTS, OPERATIONS, PERIODS, SCOPES } from "./contract";
+import { AGGREGATION_INTENTS, OPERATIONS, PERIODS, SCOPES, TABLE_MODEL_CONTRACT } from "./contract";
 import type { TableModelV1 } from "../../tableModel/types";
 import type { DatasetColumn } from "../../widgetData/types";
 
-export type Capabilities = ReturnType<typeof capabilitiesFor>;
 const EMPTY: TableModelV1 = { schemaVersion: 1, enabled: true, params: { promotePage: false, filters: [] }, categories: [], measures: [], formulas: [], layout: { rows: [], columns: [], values: [] }, checklists: [], resultFilters: [], subtotals: { grandTotal: false, groups: false } };
 const VIEWER_OPS = ["viewer.set", "viewer.reset"];
 const req = (op: keyof typeof OPERATIONS) => Object.keys(OPERATIONS[op].required).join(", ");
 const NATIVE: (typeof CATEGORY_TRANSFORMS)[number] = "native";
 /** The field / category / measure roles in a few lines, built from OPERATIONS; live Rita kept placing field ids directly. */
 const HOW_TO_ARRANGE = [
-  'describe_table has not changed the table and contains no grouped totals. For a requested change, call arrange_table with mode "apply"; for a read-only summary call it with mode "preview". Wait for that result before quoting grouped values or claiming a change. An inspection result alone never makes Undo available.',
+  'Choose the requested grouping: calendar year: "Y", calendar quarter: "Q", calendar month: "M". The source field name (for example Quarter end) does not choose the grouping; calendar year of Quarter end still uses "Y". FY/FQ require the listed fiscal binding.',
   'For an unambiguous request to change the table, send the complete arrangement directly with mode "apply". The apply transaction already validates and calculates a preview before committing; do not precede it with a separate preview call.',
+  'describe_table has not changed the table and contains no grouped totals. For a requested change, call arrange_table with mode "apply"; for a read-only summary call it with mode "preview". Wait for that result before quoting grouped values or claiming a change. An inspection result alone never makes Undo available.',
+  'Every operation is a flat object with an "op" discriminator, for example {"op":"layout.set","rows":[],"values":[]}. Put operation fields beside "op", never inside a nested "layout" or operation-name object.',
   "A field (fields[].id) is a source column. It is never placed directly: make a category or a measure from it first.",
   `category.add {${req("category.add")}, alias} makes a category (a grouping) from the field source_field_id; transform comes from category_transforms ("${NATIVE}" groups by the field's own values).`,
-  `measure.add {${req("measure.add")}, aggregation, alias} makes a measure (one number per group) from the field source_field_id; aggregation must be listed in aggregations_by_field for that field; on a field with a provider hint, leave it out and arrange_table applies the provider's operator when the arrangement meets its rule. A field with no "sum" there cannot be summed: say so instead of arranging.`,
+  `measure.add {${req("measure.add")}, aggregation, alias} makes a measure (one number per group) from the field source_field_id; aggregation must be listed in aggregations_by_field for that field; on a field with a provider hint, leave it out and arrange_table applies the provider's operator when the arrangement meets its rule. A field with no "sum" there cannot be summed: decline that request instead of arranging. Never substitute count, min/max, or a preview for an unsupported requested operation unless the user explicitly asks for that alternative.`,
   `A conflicting conditional provider operator is refused with provider-override-required unless this measure.add, measure.update or measure.duplicate has aggregation_intent: "${AGGREGATION_INTENTS[0]}". Set that intent only for an operator explicitly requested by the user, never just to bypass a refusal; otherwise add the required categories and omit aggregation. Intent applies only to that measure/operator in this request and is not saved.`,
-  'Choose the requested grouping: calendar year: "Y", calendar quarter: "Q", calendar month: "M". The source field name (for example Quarter end) does not choose the grouping; calendar year of Quarter end still uses "Y". FY/FQ require the listed fiscal binding.',
   "first/last become available when the arrangement's date categories (Y/Q/M/FY/FQ) all sit on exactly one field, with at most one fiscal company; add that category in the same call.",
   "layout.set places objects: rows and columns take categories, values take measures or formulas. Each entry is {\"alias\":\"...\"} for an object created earlier in the same request or {\"id\":\"...\"} for an existing one listed in the model summary (its categories, measures and formulas), never a field id.",
+  "Example: " + JSON.stringify({ contract: TABLE_MODEL_CONTRACT, operations: [
+    { op: "category.add", alias: "group", name: "Group", source_field_id: "<group field id from fields>", transform: NATIVE },
+    { op: "measure.add", alias: "value", source_field_id: "<numeric field id from fields>", aggregation: "sum" },
+    { op: "layout.set", rows: [{ alias: "group" }], values: [{ alias: "value" }] },
+  ] }),
   "Send every operation in one arrange_table call. Quote only numbers that are values in the result's preview.rows. The grand total and the row count are not there: never work them out; state the source table's row count only as describe_table's exact completeness.totalRowCount. For a read-only ask pass mode \"preview\": nothing is committed.",
 ];
 

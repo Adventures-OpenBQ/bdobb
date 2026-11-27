@@ -240,12 +240,16 @@ type DashboardState = {
   addCard: (
     widget: WidgetDef,
     paramsOverride?: Record<string, string>,
+    title?: string,
+    managedSource?: DashboardCard["managedSource"],
   ) => Promise<string | null>;
   addCardTo: (
     dashboardId: string | null,
     tabId: string | null,
     widget: WidgetDef,
     paramsOverride?: Record<string, string>,
+    title?: string,
+    managedSource?: DashboardCard["managedSource"],
   ) => Promise<string | null>;
   addLinkedCard: (input: { dashboardId: string; tabId: string; sourceWidgetId: string; presentation: LinkedPresentation }) => Promise<string | null>;
   commitLinkedChartSettings: (dashboardId: string, cardId: string, settings: LinkedChartSettings, guard?: () => boolean) => Promise<boolean>;
@@ -1283,7 +1287,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
       });
     },
 
-    addCardTo: async (dashboardId, tabId, widget, paramsOverride) => {
+    addCardTo: async (dashboardId, tabId, widget, paramsOverride, title, managedSource) => {
+      if (dashboardId === null || removing.has(dashboardId)) return null;
       const dashboard = dashboardById(dashboardId);
       const tab = dashboard?.tabs.find((t) => t.id === tabId);
       if (!dashboard || !tab) return null;
@@ -1312,6 +1317,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
                     widgetId: widget.id,
                     backendId: widget.backendId,
                     params: seededParams,
+                    ...(title !== undefined ? { title } : {}),
+                    ...(managedSource !== undefined ? { managedSource } : {}),
                     layout,
                     // chartView.enabled opens a NEW card on its chart; an
                     // imported or existing card keeps the view it saved.
@@ -1322,7 +1329,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
             : t,
         ),
       }));
-      return updated ? cardId : null;
+      return updated && dashboardById(dashboardId)?.tabs
+        .find(t => t.id === tabId)?.cards.some(c => c.id === cardId) ? cardId : null;
     },
 
     // Delegates so the persist ordering lives in exactly one place; two copies
@@ -1357,7 +1365,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
           if (edge) copy.layout = firstFreeSpot(t.cards.map((c) => c.layout), copy.layout.w, copy.layout.h, GRID_COLS, (d.dockRows ?? DEFAULT_DOCK_ROWS)[edge]);
           // A link names a card on its own dashboard; elsewhere it would be a
           // foreign reference that blocks every table there.
-          if (found.dashboard.id !== dashboardId) { delete copy.linkedSource; delete copy.linkedChart; }
+          if (found.dashboard.id !== dashboardId) { delete copy.linkedSource; delete copy.linkedChart; delete copy.linkedMetric; }
           newId = copy.id;
           return { ...t, cards: [...t.cards, copy] };
         }),

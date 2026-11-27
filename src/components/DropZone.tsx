@@ -143,7 +143,12 @@ export function DropZone({
   }
 
   /** The local-table half: store the bytes, then add a card that reads them. */
-  async function addFileCard(file: File, widget: WidgetDef): Promise<string | null> {
+  async function addFileCard(
+    file: File,
+    widget: WidgetDef,
+    dashboardId: string | null,
+    tabId: string | null,
+  ): Promise<string | null> {
     if(execution!=='local') {
       const managed=managedWidgets.find(w=>JSON.stringify([w.backendId,w.id])===execution);
       const backend=useBackendsStore.getState().backends.find(b=>b.id===managed?.backendId);
@@ -151,17 +156,14 @@ export function DropZone({
       const client=createSourceClient(backend),source=await client.uploadFile(file);
       let ownedByCard=false;
       try {
-        const store=useDashboardStore.getState(),id=await store.addCard(managed,{});
+        const id=await useDashboardStore.getState().addCardTo(dashboardId,tabId,managed,{},file.name,source);
         if(!id)throw new Error('No dashboard available');
-        await store.patchCardField(id,'managedSource',source);
         ownedByCard=true;
-        await store.patchCardField(id,'title',file.name);
         return null;
       }catch(e){if(!ownedByCard)await client.deleteSource(source.sourceId).catch(()=>{});throw e;}
     }
     const stored = await saveLocalFile(file);
-    const { addCard, patchCardField } = useDashboardStore.getState();
-    const cardId = await addCard(widget, { file: stored });
+    const cardId = await useDashboardStore.getState().addCardTo(dashboardId, tabId, widget, { file: stored }, file.name);
     if (cardId === null) {
       // No dashboard or tab to add to. The stored copy is deleted rather
       // than left behind: nothing would ever reach it again, and removeCard
@@ -169,10 +171,6 @@ export function DropZone({
       await deleteLocalFile(stored);
       return `Could not add ${file.name}`;
     }
-    // The original name becomes the card's title. A second write: a card is
-    // created with the widget's name and renamed after, which is the same
-    // two steps a rename from the card menu takes.
-    await patchCardField(cardId, "title", file.name);
     return null;
   }
 
@@ -181,6 +179,7 @@ export function DropZone({
    * notice line -- a drop of ten files must not leave ten of them.
    */
   async function handleFiles(files: File[]): Promise<void> {
+    const { activeId, activeTabId } = useDashboardStore.getState();
     const messages: string[] = [];
     const widget = useWidgetRegistryStore.getState().find(BUILTIN_BACKEND_ID, LOCAL_TABLE_ID);
     if (!widget) {
@@ -237,7 +236,7 @@ export function DropZone({
         // Below everything already on the tab, like every other add path --
         // and each further file below the last, because the card the previous
         // pass added is already there when nextY runs again.
-        const failure = await addFileCard(file, widget);
+        const failure = await addFileCard(file, widget, activeId, activeTabId);
         if (failure !== null) messages.push(failure);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
