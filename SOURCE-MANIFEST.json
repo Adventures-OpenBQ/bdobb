@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "54ed7428960c3e28c636ef8cab116354dda80562",
-  "sourceId": "cb26d875107a7773dffe7aa717fddd93742401ba622bcdde80a34c26e8ea84b7",
+  "baseCommit": "7ac4efd59e659e784e3636d3a39b592301912004",
+  "sourceId": "05e997ae64d1d905dca794aea94aa4627380be8782d3d36bc7d203bf8875a62a",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -21125,8 +21125,8 @@
       "path": "e2e/chart-recipes.spec.ts",
       "type": "file",
       "mode": 420,
-      "size": 16729,
-      "sha256": "947ba23232a0af37b087cd4309eb8bc70411e6816468f4e226a67cdc28442cda"
+      "size": 17277,
+      "sha256": "0cf7d746c8fc84db5fac5e46b0c722bafeeaaa5e1f44f8305e12f59943c3d6a9"
     },
     {
       "path": "e2e/column-resize.spec.ts",
@@ -22736,7 +22736,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "81a244c1318eba92cd4a7521c3d4bbdb4f7e32a7c5dea91fe4a53a491c8b9df2"
+      "sha256": "7893276b65a14eb1dd18129e144d9b02c6ab7380a73eb332521073e17dc00035"
     },
     {
       "path": "source_bundle.py",
