@@ -159,7 +159,10 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
       body = await jsonBody(req, 262144);
       if (typeof body === "number") return reply(res, body);
     }
-    const response = await fetchUpstream(`${cfg.backend}/state/${who.id}/${name}`, {
+    // Keep admitted names as path components, never URL syntax. The configured
+    // bare gateway origin and the literal /state/ prefix own the destination.
+    const statePath = name.split("/").map(part => encodeURIComponent(part)).join("/");
+    const response = await fetchUpstream(`${cfg.backend}/state/${encodeURIComponent(who.id)}/${statePath}`, {
       method: req.method, body, redirect: "error", signal: AbortSignal.timeout(12000),
       headers: { ...gatewayHeaders(cfg), ...fence, ...(body ? { "Content-Type": "application/json" } : {}) },
     });
