@@ -287,7 +287,8 @@ function calculateAnalyticalView(input: WidgetDataset, definition: TableDefiniti
   if (effective && statement) {
     const proof = effective.incomeBindings && incomeChartProof(input, statement, effective.incomeBindings, result.pool, result.columns);
     result.provenance = { ...result.provenance, metadata: { ...result.provenance.metadata,
-      statementPresentation: statementPresentation(statement, effective.model.layout), ...(proof ? { [INCOME_CHART_PROOF]: proof } : {}) } };
+      // The Statement view draws lines by period only; any other layout is the pivot grid's to draw.
+      ...(statement.layout === undefined ? { statementPresentation: statementPresentation(statement, effective.model.layout) } : {}), ...(proof ? { [INCOME_CHART_PROOF]: proof } : {}) } };
   }
   const diagnosticMap = new Map<string, CalculatedView['diagnostics'][number]>();
   for (const error of result.errors) diagnosticMap.set(JSON.stringify([error.code,error.message]),{code:error.code,message:error.message,severity:'error'});

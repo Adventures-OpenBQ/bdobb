@@ -75,6 +75,13 @@ export function compileStatement(raw: StatementIntent, columns: readonly Dataset
     const lines = orderedSections.flatMap(id => { const section = sections.find(s => s.id === id)!; const order = intent.overrides.lineOrder[id] ?? section.lineIds; return [...order, ...section.lineIds.filter(l => !order.includes(l))]; });
     const memberOrders = { [sectionId]: orderedSections.map(pivotValueKey), [ids.item]: lines.map(pivotValueKey) };
     const linePolicies = Object.fromEntries(intent.template.lines.map(l => [pivotValueKey(l.id), l.policy]));
+    // Two of the three dimensions go on the grid; `page` selects one member of the third. Companies side by side
+    // are compared period for period, so with no period paged every period gets its own group of company columns.
+    if (intent.layout === 'lines-by-company' && !b.fiscal.fiscalYearFieldId)
+        problem('Companies side by side are compared by fiscal period; bind each row\'s fiscal year and period dates first.', 'layout');
+    const axes = intent.layout === 'lines-by-company'
+        ? { rows: [sectionId, ids.item], columns: intent.page?.categoryId === ids.period ? [ids.company] : [ids.period, ids.company] }
+        : { rows: [sectionId, ids.item], columns: [ids.period] };
     const model: TableModelV1 = {
         schemaVersion: 1,
         enabled: true,
@@ -88,7 +95,7 @@ export function compileStatement(raw: StatementIntent, columns: readonly Dataset
         measures: [{ id: ids.value, sourceFieldId: valueField, aggregation: 'sum', customLabel: 'Value' }],
         formulas,
         layout: {
-            rows: [sectionId, ids.item], columns: [ids.period], values: [ids.value],
+            ...axes, values: [ids.value],
             ...(intent.page ? { page: intent.page } : {}),
         },
         checklists: intent.checklists.map(selection => ({ ...selection, memberKeys: selection.categoryId === ids.item ? selection.memberKeys.map(pivotValueKey) : [...selection.memberKeys] })),
