@@ -135,7 +135,7 @@ describe("buildCandidate", () => {
     const bad = buildCandidate({ table: {}, search: "" }, columns, arrange([{ op: "presentation.set", hidden: ["cost"] }, apply, { op: "statement.update_template", template_version: "2.0.0" }]), allocate);
     expect(bad.definition).toBeUndefined();
     expect(bad.errors).toHaveLength(1);
-    expect(bad.errors[0]).toMatchObject({ code: "validation", operation_index: 2, alternatives: ["income@1.0.0"] });
+    expect(bad.errors[0]).toMatchObject({ code: "validation", operation_index: 2, alternatives: ["income@1.0.0", "income@1.1.0"] });
     const first = buildCandidate({ table: {}, search: "" }, columns, arrange([{ op: "statement.reset" }]), allocate);
     expect(first.errors[0]).toMatchObject({ code: "validation", operation_index: 0, message: "apply a Statement template first" });
   });

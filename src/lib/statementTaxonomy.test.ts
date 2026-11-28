@@ -26,8 +26,8 @@ describe("TAXONOMY", () => {
     expect(EODHD_CASH.filter((f) => !placed("cash").has(f))).toEqual([]);
   });
 
-  it("orders the income sections Income, Expenses, Profit", () => {
-    expect(Object.keys(TAXONOMY.income)).toEqual(["Income", "Expenses", "Profit"]);
+  it("orders the income sections Income, Expenses, Profit, Per share", () => {
+    expect(Object.keys(TAXONOMY.income)).toEqual(["Income", "Expenses", "Profit", "Per share"]);
     expect(Object.keys(TAXONOMY.balance)).toEqual(["Assets", "Liabilities", "Equity"]);
     expect(Object.keys(TAXONOMY.cash)).toEqual(["Operating", "Investing", "Financing", "Cash position"]);
   });

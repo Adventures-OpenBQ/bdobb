@@ -69,7 +69,9 @@ export function validateStatementIntent(raw: unknown): StatementValidation {
         || !text(line.label)
         || typeof line.required !== 'boolean'
         || !choice(line.policy, ['single', 'flow', 'stock', 'formula'])
-        || !exact(line, ['id', 'label', 'required', 'policy', 'formula', 'format', 'unit'])
+        // 1.0.0 is pinned: it never carried emphasis, and a snapshot claiming it is not 1.0.0.
+        || !exact(line, t.version === '1.0.0' ? ['id', 'label', 'required', 'policy', 'formula', 'format', 'unit'] : ['id', 'label', 'required', 'policy', 'formula', 'format', 'unit', 'emphasis'])
+        || (line.emphasis !== undefined && !choice(line.emphasis, ['subtotal', 'total']))
         || ['format', 'unit'].some(k => line[k] !== undefined && !text(line[k]))) {
       issue(path, 'Invalid owned line.');
       return;
