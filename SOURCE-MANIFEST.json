@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v5.0.0",
-  "baseCommit": "a399d54353ab0c41eb5c270779a9e2035af37cd4",
-  "sourceId": "de991772ee8044b9cc1f439eb3950a698253bf17dc2ade44c39e262ad2440ba2",
+  "baseCommit": "318d194ccf072c48db85981cd4ca3565a84762ab",
+  "sourceId": "468321428e7b4f00c11055ec03e7b969a8bce9104f62f65c39dc7928f72296da",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -3605,7 +3605,7 @@
       "type": "file",
       "mode": 420,
       "size": 5811,
-      "sha256": "0949a01b623512c549dd2ab8c83d1e4a0e5f6b1f1070b044dd1b081cd9a06585"
+      "sha256": "8f9c18b7e57a721e998a1a8f5b2ea4321ebc390a6d7f484af189a0ba7017fcd2"
     },
     {
       "path": "SUPPLEMENTAL_THIRD_PARTY_NOTICES.md",
@@ -13860,7 +13860,7 @@
       "type": "file",
       "mode": 420,
       "size": 4583,
-      "sha256": "f0a9521de7a1ac27e322ab485100a3ec1bb018ae25a97c89529e6b12f5a8fdc5"
+      "sha256": "99e3ae0a8895692b487563b38ff5d017dca27c4afa5639a52f7774a13fcdfc4e"
     },
     {
       "path": "patches/@tanstack__table-core@8.21.3.patch",
@@ -15008,7 +15008,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "d7bd12b2f4362a3d654fcb826a80525c0d8efb4e598d34e042555c37e0c88fb3"
+      "sha256": "775592b8a69adeea655f82b5c2620789de25f79b335594389a03fe8a3efe82f6"
     },
     {
       "path": "source_bundle.py",
@@ -22456,7 +22456,7 @@
       "type": "file",
       "mode": 420,
       "size": 267,
-      "sha256": "ff3130fda6fde04670bde76a7792c4dee8e662a4bbec2a66615c43f0d5295f32"
+      "sha256": "0a41af3a434100a010d4e96a2eed46b187ee149c4d1378dc415a900a04702b17"
     },
     {
       "path": "web/refdemo-pin.test.mjs",
