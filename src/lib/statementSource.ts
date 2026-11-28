@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { fetchWidgetData } from "./dataClient";
-import { isStatementPeriodParam } from "./statementFiscal";
+import { fiscalPeriodLabel, isStatementPeriodParam } from "./statementFiscal";
 import { tableRows } from "./tableRowValues";
 import type { Row } from "./tableColumns";
 import type { WidgetDef } from "./types";
@@ -40,7 +40,8 @@ export function stampStatementRows(rows: Row[], symbol: string, period: string |
   return rows.map((row) => {
     const own = typeof row.symbol === "string" && row.symbol !== "";
     const stamped: Row = own ? { ...row } : { symbol, ...row };
-    if (period !== undefined && period !== "" && !Object.hasOwn(stamped, "period_kind")) stamped.period_kind = period;
+    // FY / FQ, the app's names for a statement period: what a Statement template's period kind is matched against.
+    if (period !== undefined && period !== "" && !Object.hasOwn(stamped, "period_kind")) stamped.period_kind = fiscalPeriodLabel(period) ?? period;
     return stamped;
   });
 }

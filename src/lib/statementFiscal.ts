@@ -193,7 +193,15 @@ export function correctStatementRows(
     // view's period header still prefixes FY, because "2026" does not start with FY.
     const year = m === 12 ? String(fy) : `FY${fy}`;
     const labelled = { ...row, fiscal_period: kind === "annual" ? "FY" : `${m === 12 ? "Q" : "FQ"}${q}`, fiscal_year: year };
-    return bounds ? { ...labelled, ...periodBounds(kind === "annual" ? fiscalYearSpan(fy, m) : quarterSpan({ fy, q }, m), end) } : labelled;
+    if (!bounds) return labelled;
+    // What a Statement template binds: who reported, which kind of period, and its two dates.
+    const symbol = symbolOf(row);
+    return {
+      ...(typeof row.symbol === "string" && row.symbol !== "" || symbol === undefined ? {} : { symbol }),
+      ...labelled,
+      period_kind: kind === "annual" ? "FY" : "FQ",
+      ...periodBounds(kind === "annual" ? fiscalYearSpan(fy, m) : quarterSpan({ fy, q }, m), end),
+    };
   });
   return { rows: out, asReported: false };
 }

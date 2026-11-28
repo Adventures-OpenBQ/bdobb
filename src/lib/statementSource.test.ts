@@ -53,7 +53,8 @@ describe("stampStatementRows", () => {
   it("puts the company first and records the period that was asked", () => {
     const [row] = stampStatementRows([{ period_ending: "2026-01-31", total_revenue: 1 }], "WMT", "annual");
     expect(Object.keys(row)).toEqual(["symbol", "period_ending", "total_revenue", "period_kind"]);
-    expect(row).toMatchObject({ symbol: "WMT", period_kind: "annual" });
+    expect(row).toMatchObject({ symbol: "WMT", period_kind: "FY" });
+    expect(stampStatementRows([{ total_revenue: 1 }], "WMT", "quarterly")[0].period_kind).toBe("FQ");
   });
   it("keeps a symbol and a period kind the backend sent, and never edits its input", () => {
     const served = [{ symbol: "wmt", period_kind: "FY", total_revenue: 1 }];
@@ -85,7 +86,7 @@ describe("fetchStatementData", () => {
     expect(asked).toEqual(["WMT,AAPL", "WMT", "AAPL"]);
     expect(out).toHaveLength(annual("WMT").length + annual("AAPL").length);
     expect(out.map((r) => r.symbol)).toEqual([...annual("WMT").map(() => "WMT"), ...annual("AAPL").map(() => "AAPL")]);
-    expect(out.every((r) => r.period_kind === "annual")).toBe(true);
+    expect(out.every((r) => r.period_kind === "FY")).toBe(true);
   });
 
   it("asks each symbol by itself when the list is refused", async () => {
