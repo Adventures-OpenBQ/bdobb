@@ -74,6 +74,10 @@ Each under its own licence, and each reproduced in the notices file:
 OpenBB and the OpenBB "BB" mark are trademarks of OpenBB Inc.; the mark is
 used only to identify OpenBB connections.
 
+**Libre Terminal**, <https://github.com/samlazs/libre-terminal>, is a backend
+BDOBB can connect to (see **Connections**). It is a separate project under its
+own licence; none of its code is part of BDOBB.
+
 *Source: BDOBB 6.0.0 `NOTICE`, `THIRD_PARTY_NOTICES.md`, `package.json`,
 `src-tauri/Cargo.toml` and `src/components/renderers/TradingViewRenderer.tsx`.*
 
