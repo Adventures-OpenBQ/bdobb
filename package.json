@@ -100,7 +100,7 @@
     "vitest": "4.1.12"
   },
   "openbbDocker": "v3.0.1",
-  "openbqDocker": "d6159690abb552d15d72f1ef17464a94197c261b",
+  "openbqDocker": "1c06ace6df99327dd3c04fc68ce794ff02a05f8d",
   "pnpm": {
     "overrides": {
       "source-map-js@<1.2.2": "1.2.2",
