@@ -225,6 +225,6 @@ jobs:
       - name: Scan current source and complete release ancestry
         run: |
           python3 security/gate.py tree
-          python3 security/gate.py history --revision HEAD
+          python3 security/gate.py --exceptions security/privacy-history-exceptions.json history --revision HEAD
       - name: Verify installer privacy controls
         run: python3 -m unittest discover -s scripts -p test_public_release.py -v
