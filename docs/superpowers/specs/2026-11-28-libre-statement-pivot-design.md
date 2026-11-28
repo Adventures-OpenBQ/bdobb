@@ -104,8 +104,15 @@ Fiscal awareness:
   lookup `GET api/v1/fundamentals/fiscal_year_end?symbol=` on the card's backend
   (`useFiscalYearEnd`, called from `useCardRequest`; a 404 is remembered as "no
   answer"), then December.
-- The lookup only runs for exactly one ticker (`singleTicker`): a comma in the
-  value stands it down.
+- For a date parameter's fiscal control the lookup only runs for exactly one
+  ticker (`singleTicker`). Statement **rows** are different and already work
+  per symbol: `useStatementRows` splits the card's `symbol` on commas
+  (`statementSymbolsOf`), asks each one's year end (`statementYearEnds`, sharing
+  the lookup's per-session cache) and relabels each row from its own `symbol`
+  column (`correctStatementRows`). `WidgetCard`, `DashboardGrid`'s headless
+  source runner and Rita's `correctStatementData` all go through it.
+- That relabelling needs a `symbol` on each row when the card has more than one
+  symbol. Without it the whole card stays as reported.
 - When the year end is unknown, a date cannot be read, or several symbols share
   rows with no symbol column, rows stay as served and the card says *Fiscal
   labels as reported*.
@@ -174,10 +181,9 @@ Fiscal-year matching needs every company's rows labelled with its own fiscal
 year. That is what the relabelling step already does; this section makes it
 reach a fanned-out card and a backend with no lookup route.
 
-- **Per symbol.** A fanned-out card resolves the chain once per symbol.
-  `singleTicker` keeps its meaning for single-symbol cards; the fan-out calls
-  the lookup itself for each symbol. The lookup's cache is already per
-  upper-cased ticker.
+- **Per symbol, already.** `useStatementRows` asks each symbol's year end and
+  relabels row by row. The fan-out's stamped `symbol` column is the one thing
+  it was missing for Libre's rows, so no new per-symbol lookup is written.
 - **The card's FY ends override** still wins, and applies to every symbol on
   the card. It is the user's statement that they all share a year end.
 - **A new rung, `rows`,** after the lookup and before the December default, for
@@ -333,11 +339,13 @@ goes across, and what is paged. Three presets:
 
 ## Open items for the plan
 
-1. **Where the per-symbol requests are made.** Not ruled; the design default is
-   the card's own request path (`useCardRequest`), where fiscal relabelling
-   already runs, so Table, Statement, charts and exports all read the merged
-   rows. The plan confirms this against the code. A server-managed table bound
-   to the same widget does not fan out in this version.
+1. **Where the per-symbol requests are made (settled by reading the code,
+   2026-11-28).** Around the one `fetchWidgetData` call in `useWidgetData.ts`,
+   which sits beneath `useStatementRows`. The merged, symbol-stamped rows then
+   flow through the existing relabelling to Table, Statement, charts, exports
+   and the headless source runner. Rita's `correctStatementData` takes the same
+   helper. A server-managed table bound to the same widget does not fan out in
+   this version.
 2. **Page selector placement.** Whether the Company or Period selector sits in
    the card header beside View or in the pivot's existing page strip.
 3. **Release artefacts.** `SOURCE-MANIFEST.json` hashes every file and
