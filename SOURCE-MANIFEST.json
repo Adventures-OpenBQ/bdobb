@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "7ac4efd59e659e784e3636d3a39b592301912004",
-  "sourceId": "05e997ae64d1d905dca794aea94aa4627380be8782d3d36bc7d203bf8875a62a",
+  "baseCommit": "a36f225a6f89cce1ec2b4c821c0e790cb75eaf75",
+  "sourceId": "882fbc511ee6c4528d66684c51bc5e49676208588a13f9c77f55c80251b12692",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -48,8 +48,8 @@
       "path": ".github/workflows/ci.yml",
       "type": "file",
       "mode": 420,
-      "size": 8075,
-      "sha256": "09113f2c81f9bb56daa9a29f1a1150d4adc3645f9179d8a2fb682b57f2503502"
+      "size": 8147,
+      "sha256": "fc3447e992a49ca649f425ed4a80611a2ae53ad60ce13e3a9d4085abe16dc18c"
     },
     {
       "path": ".github/workflows/windows-build.yml",
@@ -22736,7 +22736,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "7893276b65a14eb1dd18129e144d9b02c6ab7380a73eb332521073e17dc00035"
+      "sha256": "d6e4edfbc24b08a646962a4af00587f1c9d7ff0ad144e9818b49f1aba018f09c"
     },
     {
       "path": "source_bundle.py",
@@ -22756,15 +22756,15 @@
       "path": "src/App.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 42791,
-      "sha256": "560f497b7eb31f50a4465babaf99522366fd4941ff7b9adf5f199a7c612eac83"
+      "size": 46703,
+      "sha256": "7f0f67400ea5f1fec51bb84151d5dfa4925368a3e391840511e736c1a59b1b76"
     },
     {
       "path": "src/App.tsx",
       "type": "file",
       "mode": 420,
-      "size": 40963,
-      "sha256": "a2adc3c08927ed82f90afd519e8c37dfdcf19fc8141ff02b23fa36c5d2e9db97"
+      "size": 41414,
+      "sha256": "750a229d863e22d486b30770b4dab7cf66f7eeed13a497be7c3a3f745c9bd013"
     },
     {
       "path": "src/assets/branding/bdobb-app-light.svg",
