@@ -7,6 +7,7 @@ import type { BackendAcquisition } from "../lib/widgetData/chartRecipes/financia
 import { fetchesData } from "../lib/builtins";
 import { peekWidgetCalendars } from "../lib/calendars/bundles";
 import { fetchWidgetData, retryAfterSeconds, THEMED_TYPES } from "../lib/dataClient";
+import { fetchStatementData } from "../lib/statementSource";
 import { cronMatches, cronNext, parseCron, type Cron } from "../lib/cron";
 import { logError } from "../lib/logger";
 import { paramsKey, wireParams } from "../lib/params";
@@ -716,7 +717,8 @@ export function useWidgetData(
       try {
         let received: string[] = [];
         let completedAcquisition: BackendAcquisition | undefined;
-        const result = await fetchWidgetData(backend, widget, fetchParams, {
+        // A statement card naming several symbols may need one request each (statementSource.ts); anything else is the one request.
+        const result = await fetchStatementData(fetchWidgetData, backend, widget, fetchParams, {
           fiscalYearEnd: fetchFiscal,
           // A bound card's map is useBundleCalendars' (useCardRequest), so the GET resolves on what preview showed.
           calendars: sendMap,
