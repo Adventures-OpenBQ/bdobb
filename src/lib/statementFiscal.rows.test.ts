@@ -74,6 +74,45 @@ describe("a backend with no year-end lookup", () => {
   });
 });
 
+describe("period bounds, when a Statement template asks for them", () => {
+  const bounded = (name: string, period: string, yearEnds: Record<string, number | null>, symbol: string) =>
+    correctStatementRows(rows(name), period, yearEnds, [symbol], false, true).rows;
+
+  it("adds nothing unless asked", () => {
+    const out = correctStatementRows(rows("libre/wmt-yfinance-income-annual"), "annual", { WMT: 1 }, ["WMT"]).rows;
+    expect(out.some((r) => Object.hasOwn(r, "period_start") || Object.hasOwn(r, "period_end"))).toBe(false);
+  });
+
+  it("gives an annual row its fiscal year's two dates", () => {
+    const [latest] = bounded("libre/wmt-yfinance-income-annual", "annual", { WMT: 1 }, "WMT");
+    expect(latest).toMatchObject({ period_ending: "2026-01-31", fiscal_year: "FY2026", period_start: "2025-02-01", period_end: "2026-01-31" });
+  });
+
+  it("gives a quarterly row its fiscal quarter's two dates", () => {
+    const july = bounded("libre/wmt-yfinance-income-quarter", "quarter", { WMT: 1 }, "WMT").find((r) => r.period_ending === "2026-07-31")!;
+    expect(july).toMatchObject({ fiscal_year: "FY2027", fiscal_period: "FQ2", period_start: "2026-05-01", period_end: "2026-07-31" });
+  });
+
+  it("always holds the row's own closing date, for a filer that closes off the month's end", () => {
+    const early = correctStatementRows([{ period_ending: "2026-09-26" }], "annual", { X: 9 }, ["X"], false, true).rows[0];
+    expect(early).toMatchObject({ period_start: "2025-10-01", period_end: "2026-09-30" });
+    const late = correctStatementRows([{ period_ending: "2026-10-03" }], "annual", { X: 9 }, ["X"], false, true).rows[0];
+    expect(late).toMatchObject({ fiscal_year: "FY2026", period_start: "2025-10-01", period_end: "2026-10-03" });
+  });
+
+  it("gives a row it could not label no dates either", () => {
+    const out = correctStatementRows(rows("libre/wmt-yfinance-income-quarter"), "quarter", { WMT: null }, ["WMT"], false, true);
+    expect(out.asReported).toBe(true);
+    expect(out.rows.some((r) => Object.hasOwn(r, "period_start"))).toBe(false);
+  });
+
+  it("gives a trailing-twelve-month row none", () => {
+    const [ttm] = correctStatementRows([{ period_ending: "2026-07-31" }], "ttm", { X: 1 }, ["X"], false, true).rows;
+    expect(ttm.fiscal_period).toBe("TTM");
+    expect(Object.hasOwn(ttm, "period_start")).toBe(false);
+  });
+});
+
 describe("period helpers", () => {
   it("knows a quarter period by any of its spellings", () => {
     expect(["quarter", "quarterly", "Q"].every(isQuarterPeriod)).toBe(true);

@@ -3,7 +3,7 @@
 
 import { CalendarDate } from "@internationalized/date";
 import type { ParamOption } from "./types";
-import { fiscalPeriod } from "./periods";
+import { fiscalPeriod, fiscalYearSpan, quarterSpan } from "./periods";
 
 /**
  * The app's names for a statement widget's period choices. FQ, not Q: a statement's quarter is the
@@ -133,6 +133,19 @@ export function inferYearEnds(rows: Row[], period: string, cardSymbols: string[]
   return out;
 }
 
+/**
+ * A relabelled row's fiscal period as two dates, for a Statement template's
+ * explicit fiscal binding (tableModel/fiscalContext.ts needs the report date
+ * inside them). The span is the fiscal calendar's; a 52/53-week filer closes a
+ * few days either side of the month's end, so the span stretches to hold the
+ * row's own closing date.
+ */
+function periodBounds(span: { start: CalendarDate; end: CalendarDate }, closed: CalendarDate): { period_start: string; period_end: string } {
+  const start = closed.compare(span.start) < 0 ? closed : span.start;
+  const end = closed.compare(span.end) > 0 ? closed : span.end;
+  return { period_start: start.toString(), period_end: end.toString() };
+}
+
 /** The lookup's answers, and the rows' own where the lookup had none. */
 export function knownYearEnds(lookup: Record<string, number | null>, inferred: Record<string, number | null>): Record<string, number | null> {
   const out = { ...inferred };
@@ -153,7 +166,7 @@ export function knownYearEnds(lookup: Record<string, number | null>, inferred: R
  * names its kind; rows that name none are left unchanged and need no year end.
  */
 export function correctStatementRows(
-  rows: Row[], period: string, yearEnds: Record<string, number | null>, cardSymbols: string[], perRow = false,
+  rows: Row[], period: string, yearEnds: Record<string, number | null>, cardSymbols: string[], perRow = false, bounds = false,
 ): { rows: Row[]; asReported: boolean } {
   const kinds = rows.map((r) => (perRow ? rowKind(r) : KIND[period]));
   if (perRow && kinds.every((k) => k === undefined)) return { rows, asReported: false };
@@ -179,7 +192,8 @@ export function correctStatementRows(
     // corrected column would mix "FY2027" strings with numbers. The Statement
     // view's period header still prefixes FY, because "2026" does not start with FY.
     const year = m === 12 ? String(fy) : `FY${fy}`;
-    return { ...row, fiscal_period: kind === "annual" ? "FY" : `${m === 12 ? "Q" : "FQ"}${q}`, fiscal_year: year };
+    const labelled = { ...row, fiscal_period: kind === "annual" ? "FY" : `${m === 12 ? "Q" : "FQ"}${q}`, fiscal_year: year };
+    return bounds ? { ...labelled, ...periodBounds(kind === "annual" ? fiscalYearSpan(fy, m) : quarterSpan({ fy, q }, m), end) } : labelled;
   });
   return { rows: out, asReported: false };
 }

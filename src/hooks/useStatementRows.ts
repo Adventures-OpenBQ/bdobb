@@ -28,6 +28,8 @@ export function useStatementRows(
   backend: BackendConfig | undefined,
   query: Record<string, string>,
   rawData: unknown,
+  /** A card bound to a Statement template also wants each row's fiscal period as two dates. */
+  bounds = false,
 ): { data: unknown; asReported: boolean } {
   const periodParam = widget?.params.find((p) => p.paramName === "period");
   const statement = periodParam !== undefined && isStatementPeriodParam(periodParam);
@@ -53,8 +55,8 @@ export function useStatementRows(
   const annual = useAnnualYearEnds(statement ? backend : undefined, widget, query, unresolved);
   return useMemo(() => {
     if (rows === null || known === null || annual.pending) return { data: rawData, asReported: false };
-    const out = correctStatementRows(rows, period, knownYearEnds(annual.months, known), statementSymbols);
+    const out = correctStatementRows(rows, period, knownYearEnds(annual.months, known), statementSymbols, false, bounds);
     return { data: envelope ? { ...envelope, rows: out.rows } : out.rows, asReported: out.asReported };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawData, rows, envelope, known, annual.months, annual.pending, period, symbolsKey]);
+  }, [rawData, rows, envelope, known, annual.months, annual.pending, period, symbolsKey, bounds]);
 }
