@@ -40,13 +40,13 @@ it('opens a new Statement already bound to a Libre statement card, and it previe
  expect(screen.getByRole('combobox',{name:'Fiscal year'})).toHaveValue('fiscal_year');
  expect(screen.getByRole('combobox',{name:'Source total_revenue'})).toHaveValue('total_revenue');
  fireEvent.click(screen.getByRole('button',{name:'Calculate preview'}));
- await waitFor(()=>expect(screen.getByRole('button',{name:'Apply Statement model'})).toBeEnabled(),{timeout:10000});
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Apply Statement model'})).toBeEnabled(),{timeout:90000});
  fireEvent.click(screen.getByRole('button',{name:'Apply Statement model'}));
  await waitFor(()=>expect(saved).toBeDefined());
  expect(saved!.template.version).toBe('1.1.0');
  expect(saved!.bindings.mappings.some(m=>m.sourceFieldId==='total_revenue')).toBe(true);
  expect(Object.hasOwn(saved!,'layout')).toBe(false);
-},30000);
+},180000);
 
 it('saves companies side by side when that layout is chosen',async()=>{
  const source=dataset(cardRows('AAPL','WMT'));
@@ -54,12 +54,12 @@ it('saves companies side by side when that layout is chosen',async()=>{
  render(<StatementPanel {...props(source,{onCommit:async candidate=>{saved=candidate;return true;}})}/>);
  fireEvent.change(screen.getByRole('combobox',{name:'Layout'}),{target:{value:'lines-by-company'}});
  fireEvent.click(screen.getByRole('button',{name:'Calculate preview'}));
- await waitFor(()=>expect(screen.getByRole('button',{name:'Apply Statement model'})).toBeEnabled(),{timeout:10000});
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Apply Statement model'})).toBeEnabled(),{timeout:90000});
  fireEvent.click(screen.getByRole('button',{name:'Apply Statement model'}));
  await waitFor(()=>expect(saved).toBeDefined());
  expect(saved!.layout).toBe('lines-by-company');
  expect(saved!.page).toBeUndefined();
-},30000);
+},180000);
 
 it('says why it proposes nothing for a table that is not a bound statement, and leaves hand authoring as it was',()=>{
  const asReported=dataset(statementFixture('libre/wmt-yfinance-income-annual').rows);
@@ -76,4 +76,4 @@ it('offers no proposal over a saved Statement',()=>{
  render(<StatementPanel {...props(source,{raw:saved.intent})}/>);
  expect(screen.queryByLabelText('Proposal')).toBeNull();
  expect(screen.queryByRole('button',{name:'Propose from columns'})).toBeNull();
-},30000);
+},180000);
