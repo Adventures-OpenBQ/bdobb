@@ -175,6 +175,10 @@ export default function App() {
   // order. Empty until the mount effect below resolves, which is also the
   // ordinary end state.
   const [startupErrors, setStartupErrors] = useState<string[]>([]);
+  // StrictMode replays effects on one mounted App. Reuse its startup work so
+  // a second disk snapshot cannot overwrite an import made after the first.
+  // A real unmount/remount creates a new ref and reads startup files again.
+  const startup = useRef<Promise<string[]> | null>(null);
   // The RESOLVED theme, never the raw setting: "system" is not a value the
   // stylesheet knows, and this hook is what turns it into dark/light and
   // re-renders when the OS appearance changes (D5).
@@ -505,9 +509,12 @@ export default function App() {
     // Never rejects: every loader logs its own failure from inside and the
     // labels come back as a value, which is what the banner above the
     // dashboard prints.
-    void bootstrap().then(setStartupErrors);
+    let live = true;
+    startup.current ??= bootstrap();
+    void startup.current.then((labels) => { if (live) setStartupErrors(labels); });
+    return () => { live = false; };
     // viewerId comes from useState, so it is stable for the component's life
-    // and this effect still runs exactly once.
+    // and each live effect subscribes to this mount's one startup promise.
   }, [viewerId]);
 
   // The viewer's only way to hear about the main window's writes. Without it
