@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "2bf839568cd90c94790ae1c2300df9c35855fbf6",
-  "sourceId": "fa0abf300570d789439c262efb49c915929eff494acf055bd430b6fe773f06bc",
+  "baseCommit": "54ed7428960c3e28c636ef8cab116354dda80562",
+  "sourceId": "cb26d875107a7773dffe7aa717fddd93742401ba622bcdde80a34c26e8ea84b7",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -22736,7 +22736,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "5061d1dae7415b961c1a3ae21748afe544b12db0137b9b4564cc045d4f5857e6"
+      "sha256": "81a244c1318eba92cd4a7521c3d4bbdb4f7e32a7c5dea91fe4a53a491c8b9df2"
     },
     {
       "path": "source_bundle.py",
@@ -34803,8 +34803,8 @@
       "path": "web/server.mjs",
       "type": "file",
       "mode": 420,
-      "size": 39537,
-      "sha256": "04278c31b1dfbd80262e4f898585452b8a9ecf444148ced6c26127afcab20960"
+      "size": 39808,
+      "sha256": "fb91081be4391590c04314206d588343fd8c2db34cea52aa8efd5c1b1b2ac534"
     },
     {
       "path": "web/ssrm-routes.test.mjs",
@@ -34833,6 +34833,13 @@
       "mode": 420,
       "size": 3728,
       "sha256": "d0ebe2890c66e2dd5b0e1b35cc2943416fff1d6c49932a1f0fdc810e52c10f83"
+    },
+    {
+      "path": "web/state-target.test.mjs",
+      "type": "file",
+      "mode": 420,
+      "size": 6091,
+      "sha256": "003502d465a46bc10ead6966b3884fa3e650c21834358d8bbbf12dcf3e2324fa"
     },
     {
       "path": "web/temporal-policy.mjs",
