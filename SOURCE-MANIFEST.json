@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v6.0.0",
-  "baseCommit": "650e17403a2740e3a8eedc5f5aabc803deb6371d",
-  "sourceId": "17a90fb916a679807f8d0e5975833d1cfdd40f6be711e81b883981714ca2ea5d",
+  "baseCommit": "0c12560a178f5d6586537be76b0bfb64beb5c7fe",
+  "sourceId": "396cb448ca93b1a78c4d97b82502eff77ae80cae5fc326816b010787541ed793",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -48,8 +48,8 @@
       "path": ".github/workflows/ci.yml",
       "type": "file",
       "mode": 420,
-      "size": 9239,
-      "sha256": "b1995dd49638a0fc7051652276d7fb9385e20e9d25d33716c59a4e7ba151b0e8"
+      "size": 9293,
+      "sha256": "873410156a005c46432bdd0e68e3218177e242109892603b6d9658f445dae024"
     },
     {
       "path": ".github/workflows/pivot-qualification.yml",
@@ -3612,7 +3612,7 @@
       "type": "file",
       "mode": 420,
       "size": 5757,
-      "sha256": "9630c072d80e37f252856896469d513b1d908299bb77c71c9ff99c2bd7e99fbd"
+      "sha256": "2877f8547cc6e8a940312888df0f8b6ba9c1e3dcf62acca9738d1f4c4bd6d27c"
     },
     {
       "path": "SUPPLEMENTAL_THIRD_PARTY_NOTICES.md",
@@ -19054,7 +19054,7 @@
       "type": "file",
       "mode": 420,
       "size": 4758,
-      "sha256": "d63a0f2145a5edde73a440d163f4d8164cede7d45702d4ea03261e5de5c8fb3a"
+      "sha256": "9630d8ef325ccd9de8928ba0ee59c5ab5ae3991c1269666413c93762e46e6a23"
     },
     {
       "path": "patches/@tanstack__table-core@8.21.3.patch",
@@ -20258,7 +20258,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "acd119e543592a620baea2271b69eca7b681547114ad211362aa1f2169ada82d"
+      "sha256": "bd5da73017f1aec867b7780c15671e6ba1d1a40ca08699e599357b4f46de746d"
     },
     {
       "path": "source_bundle.py",
@@ -28875,7 +28875,7 @@
       "type": "file",
       "mode": 420,
       "size": 267,
-      "sha256": "98aa796879e5f94e8927c4bbfb5ae77cc45970a8b60d4b65ae4dfac2d84ff057"
+      "sha256": "c9db29d5bc2bb9c8e4b6e10fe6a3cb137f1675e913ab1c051423ab0705b6b504"
     },
     {
       "path": "web/refdemo-pin.test.mjs",
