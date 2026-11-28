@@ -12,7 +12,7 @@ import {
   type CandleChartHandle,
 } from "../../lib/lwChart";
 import type { BackendConfig, UdfChartSpec, WidgetDef } from "../../lib/types";
-import { parseUdfHistory, udfHistoryEndpoint, udfHistoryParams, type UdfBar } from "../../lib/udf";
+import { hasOhlc, parseUdfHistory, udfHistoryEndpoint, udfHistoryParams, type UdfBar } from "../../lib/udf";
 import { useResolvedTheme } from "../../hooks/useResolvedTheme";
 import { ErrorState } from "./ErrorState";
 
@@ -60,6 +60,7 @@ export function TradingViewRenderer({ widget, backend, spec, refreshKey }: Props
   const theme = useResolvedTheme();
   const [bars, setBars] = useState<UdfBar[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const closeOnly = bars?.some(bar => !hasOhlc(bar)) ?? false;
   /** Bumped by Retry and by the refetch timer, to re-run the fetch effect. */
   const [attempt, setAttempt] = useState(0);
   const [plotEl, setPlotEl] = useState<HTMLDivElement | null>(null);
@@ -75,20 +76,21 @@ export function TradingViewRenderer({ widget, backend, spec, refreshKey }: Props
   const themeRef = useRef(theme);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+    const { signal } = controller;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const history = { ...widget, endpoint: udfHistoryEndpoint(widget.endpoint) };
 
     void (async () => {
       try {
-        const payload = await fetchWidgetData(backend, history, udfHistoryParams(spec.defaultSymbol, Date.now()));
+        const payload = await fetchWidgetData(backend, history, udfHistoryParams(spec.defaultSymbol, Date.now()), undefined, signal);
         const next = parseUdfHistory(payload);
-        if (cancelled) return;
+        if (signal.aborted) return;
         hasBars.current = next.length > 0;
         setBars(next);
         setError(null);
       } catch (err) {
-        if (cancelled) return;
+        if (signal.aborted) return;
         const message = err instanceof Error ? err.message : String(err);
         if (hasBars.current) {
           void logOnce(
@@ -99,12 +101,12 @@ export function TradingViewRenderer({ widget, backend, spec, refreshKey }: Props
           setError(message);
         }
       } finally {
-        if (!cancelled) timer = setTimeout(() => setAttempt((n) => n + 1), spec.updateFrequency);
+        if (!signal.aborted) timer = setTimeout(() => setAttempt((n) => n + 1), spec.updateFrequency);
       }
     })();
 
     return () => {
-      cancelled = true;
+      controller.abort();
       if (timer !== null) clearTimeout(timer);
     };
   }, [widget, backend, spec, refreshKey, attempt]);
@@ -122,7 +124,7 @@ export function TradingViewRenderer({ widget, backend, spec, refreshKey }: Props
     if (!plotEl) return;
     let disposed = false;
     let handle: CandleChartHandle | null = null;
-    mountCandleChart(plotEl, { theme: themeRef.current, colors: spec.colors, showVolume: spec.showVolume }).then(
+    mountCandleChart(plotEl, { theme: themeRef.current, colors: spec.colors, showVolume: spec.showVolume, ...(closeOnly ? { closeOnly: true } : {}) }).then(
       (h) => {
         if (disposed) {
           h.dispose();
@@ -144,7 +146,7 @@ export function TradingViewRenderer({ widget, backend, spec, refreshKey }: Props
       handle?.dispose();
       setChart(null);
     };
-  }, [plotEl, spec]);
+  }, [plotEl, spec, closeOnly]);
 
   useEffect(() => {
     if (chart && bars) chart.setBars(bars);
@@ -157,6 +159,7 @@ export function TradingViewRenderer({ widget, backend, spec, refreshKey }: Props
   return (
     <div className="tv-chart">
       <div className="tv-chart-plot" ref={setPlotEl} data-testid="tv-chart-plot" />
+      {closeOnly ? <p className="card-notice">Close prices (OHLC not supplied).</p> : null}
       <a className="tv-credit" href={TRADINGVIEW_CREDIT_URL} onClick={openCredit}>
         {TRADINGVIEW_CREDIT_LABEL}
       </a>

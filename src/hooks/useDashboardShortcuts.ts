@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { primaryShortcut } from "../lib/platformShortcuts";
 import { isTauri } from "@tauri-apps/api/core";
 import { useEffect, useRef } from "react";
 import { useChatStore } from "../stores/chatStore";
@@ -56,7 +57,7 @@ export function useDashboardShortcuts(
     function onKeyDown(event: KeyboardEvent) {
       if (isTypingTarget(event.target)) return;
       // Command with no other modifier: ⌘K and ⌘R.
-      const cmdOnly = event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
+      const cmdOnly = primaryShortcut(event) && !event.altKey && !event.shiftKey;
 
       // An open modal covers the dashboard, so nothing here may act behind
       // it: ⌥N would switch the dashboard out of sight, and ⌘K would open
@@ -77,10 +78,10 @@ export function useDashboardShortcuts(
       // menu event (useWindowMenuPins). wry's WKWebView hands ⌘-keys to JS
       // first and forwards only UNHANDLED ones to the main menu, so the event
       // is left alone there: preventDefault would stop the accelerator firing.
-      // The browser build has no native menu, so the toggle stays here for it.
+      // Browser and mobile builds have no native menu, so they handle the toggle here.
       if ((event.metaKey || event.ctrlKey) && event.shiftKey && !event.altKey && event.code === "KeyA") {
         if (event.repeat) return;
-        if (isTauri()) return;
+        if (isTauri() && !["ios", "android", "androideabi"].includes(import.meta.env.TAURI_ENV_PLATFORM ?? "")) return;
         event.preventDefault();
         useChatStore.getState().togglePinned();
         return;
@@ -95,9 +96,8 @@ export function useDashboardShortcuts(
       // content with no store writes, so it behaves identically in a viewer
       // window.
       if (
-        event.metaKey &&
+        primaryShortcut(event) &&
         event.shiftKey &&
-        !event.ctrlKey &&
         !event.altKey &&
         event.code === "Slash"
       ) {

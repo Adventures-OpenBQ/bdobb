@@ -187,6 +187,58 @@ describe("keyless providers", () => {
   });
 });
 
+describe("optional-key providers", () => {
+  it("are never probed: no route of theirs can answer 'Missing credential'", async () => {
+    useWidgetRegistryStore.setState({
+      widgets: [
+        widget({ id: "cot", source: ["CFTC"] }),
+        widget({ id: "econ", source: ["EconDB"] }),
+        widget({ id: "p", source: ["FMP"] }),
+      ],
+    });
+    fetchWidgetData.mockResolvedValue({ results: [] });
+
+    await useProviderKeysStore.getState().refresh();
+
+    // Only the provider that requires a key was put to its vendor.
+    expect(fetchWidgetData.mock.calls.map((c) => (c[1] as WidgetDef).id)).toEqual(["p"]);
+    // Read exactly as a keyless provider is.
+    expect(useProviderKeysStore.getState().status).toEqual({ cftc: "keyed", econdb: "keyed", fmp: "keyed" });
+    expect(useProviderKeysStore.getState().probe).not.toHaveProperty("cftc");
+    expect(useProviderKeysStore.getState().probe).not.toHaveProperty("econdb");
+  });
+
+  it("leave BLS probed: its series route does require the key", async () => {
+    useWidgetRegistryStore.setState({ widgets: [widget({ id: "cpi", source: ["BLS"] })] });
+    fetchWidgetData.mockRejectedValue(new Error("HTTP 400 — Missing credential 'bls_api_key'."));
+
+    await useProviderKeysStore.getState().refresh();
+
+    expect(fetchWidgetData).toHaveBeenCalledTimes(1);
+    expect(useProviderKeysStore.getState().status.bls).toBe("unkeyed");
+  });
+
+  it("still take key-maint's own answer when a key service is connected", async () => {
+    useWidgetRegistryStore.setState({
+      widgets: [
+        widget({ id: "provider_api_keys", endpoint: "keys" }),
+        widget({ id: "cot", source: ["CFTC"] }),
+      ],
+    });
+    fetchWidgetData.mockResolvedValue([
+      keysRow({ provider: "CFTC", env_var: "CFTC_APP_TOKEN" }),
+      keysRow({ provider: "EconDB", env_var: "ECONDB_API_KEY", status: "empty" }),
+    ]);
+
+    await useProviderKeysStore.getState().refresh();
+
+    expect(fetchWidgetData).toHaveBeenCalledTimes(1);
+    const { status, source } = useProviderKeysStore.getState();
+    expect(source).toBe("key-maint");
+    expect(status).toEqual({ cftc: "keyed", econdb: "unkeyed" });
+  });
+});
+
 describe("probe fallback", () => {
   it("is used when no backend serves key-maint", async () => {
     useWidgetRegistryStore.setState({

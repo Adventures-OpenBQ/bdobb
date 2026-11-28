@@ -411,3 +411,60 @@ describe("frameRows", () => {
     expect(frameRows(null)).toEqual([]);
   });
 });
+
+it('LiveGrid reconnects under changed header credentials',async()=>{
+ const first={...backend,authLocation:'header' as const,headerName:'Authorization',headerValue:'Bearer first'};
+ const {rerender}=render(<LiveGridRenderer widget={widget} backend={first} params={{symbol:'TSLA'}}/>);
+ await waitFor(()=>expect(FakeSocket.all).toHaveLength(1));await waitFor(()=>expect(screen.getByText('10')).toBeInTheDocument());
+ const old=socket();act(()=>old.open());
+ rerender(<LiveGridRenderer widget={widget} backend={{...first,headerValue:'Bearer second'}} params={{symbol:'TSLA'}}/>);
+ await waitFor(()=>expect(fetchWidgetData).toHaveBeenCalledTimes(2));
+ expect(old.closed).toBe(true);
+});
+
+it.each([
+  ['backend id', {id: 'replacement'}],
+  ['base URL', {baseUrl: 'http://replacement'}],
+  ['auth placement', {authLocation: 'query' as const}],
+  ['header name', {headerName: 'X-Api-Key'}],
+  ['header credential', {headerValue: 'Bearer second'}],
+])('fences old-scope rows when %s changes without reconnecting a same-scope refresh', async (_field, change) => {
+  const first = {...backend, authLocation: 'header' as const, headerName: 'Authorization', headerValue: 'Bearer first'};
+  const second = {...first, ...change};
+  const {rerender} = render(<LiveGridRenderer widget={widget} backend={first} params={{symbol: 'TSLA'}} />);
+  await waitFor(() => expect(screen.getByText('10')).toBeInTheDocument());
+  const old = socket(); act(() => old.open());
+  act(() => old.emit({symbol: 'TSLA', price: 99}));
+  await waitFor(() => expect(screen.getByText('99')).toBeInTheDocument());
+  let finish!: (value: unknown) => void;
+  vi.mocked(fetchWidgetData).mockImplementationOnce(() => new Promise(resolve => {finish = resolve;}));
+  rerender(<LiveGridRenderer widget={widget} backend={second} params={{symbol: 'TSLA'}} />);
+  expect(old.closed).toBe(true);
+  expect(screen.queryByText('99')).toBeNull();
+  act(() => old.emit({symbol: 'TSLA', price: 98}));
+  expect(screen.queryByText('98')).toBeNull();
+  await act(async () => finish([{symbol: 'TSLA', price: 20}]));
+  await waitFor(() => expect(screen.getByText('20')).toBeInTheDocument());
+  await waitFor(() => expect(FakeSocket.all).toHaveLength(2));
+  const current = socket();
+  rerender(<LiveGridRenderer widget={widget} backend={{...second}} params={{symbol: 'TSLA'}} refreshKey={1} />);
+  expect(current.closed).toBe(false);
+  expect(FakeSocket.all).toHaveLength(2);
+});
+
+
+it('aborts an obsolete snapshot on scope replacement and ignores its delayed rows', async () => {
+  let finish!: (value: unknown) => void;
+  vi.mocked(fetchWidgetData).mockImplementationOnce(() => new Promise(resolve => {finish = resolve;}));
+  const {rerender, unmount} = render(<LiveGridRenderer widget={widget} backend={backend} params={{symbol: 'TSLA'}} />);
+  const firstSignal = vi.mocked(fetchWidgetData).mock.calls[0][4];
+  rerender(<LiveGridRenderer widget={widget} backend={{...backend, baseUrl: 'http://replacement'}} params={{symbol: 'TSLA'}} />);
+  expect(firstSignal).toBeInstanceOf(AbortSignal);
+  expect(firstSignal?.aborted).toBe(true);
+  await waitFor(() => expect(screen.getByText('10')).toBeInTheDocument());
+  await act(async () => finish([{symbol: 'TSLA', price: 88}]));
+  expect(screen.queryByText('88')).toBeNull();
+  const currentSignal = vi.mocked(fetchWidgetData).mock.calls.at(-1)?.[4];
+  unmount();
+  expect(currentSignal?.aborted).toBe(true);
+});

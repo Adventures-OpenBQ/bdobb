@@ -35,6 +35,17 @@ describe("parseUdfHistory", () => {
     ]);
   });
 
+  it("preserves a valid close-only UDF series without inventing OHLC", () => {
+    expect(parseUdfHistory({ s: "ok", t: [20, 10, 30], c: [101.5, 100, null] })).toEqual([
+      { time: 10, close: 100, volume: 0 },
+      { time: 20, close: 101.5, volume: 0 },
+    ]);
+  });
+
+  it("still rejects a partially supplied OHLC structure", () => {
+    expect(() => parseUdfHistory({ s: "ok", t: [1], c: [2], o: [1] })).toThrow("not a UDF history payload");
+  });
+
   it("is empty for no_data", () => {
     expect(parseUdfHistory({ s: "no_data", nextTime: 5 })).toEqual([]);
   });

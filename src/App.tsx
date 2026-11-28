@@ -8,6 +8,7 @@ import type { HelpSet } from "./help/index";
 import { CardRemovalUndo } from "./components/CardRemovalUndo";
 import { DashboardGrid } from "./components/DashboardGrid";
 import { DockBand, DockEditor } from "./components/DockBand";
+import { TabBar } from "./components/TabBar";
 import { AILibrary } from "./components/ai/AILibrary";
 import { AppsDialog } from "./components/dialogs/AppsDialog";
 import { ConnectionsDialog } from "./components/dialogs/ConnectionsDialog";
@@ -174,6 +175,10 @@ export default function App() {
   // order. Empty until the mount effect below resolves, which is also the
   // ordinary end state.
   const [startupErrors, setStartupErrors] = useState<string[]>([]);
+  // StrictMode replays effects on one mounted App. Reuse its startup work so
+  // a second disk snapshot cannot overwrite an import made after the first.
+  // A real unmount/remount creates a new ref and reads startup files again.
+  const startup = useRef<Promise<string[]> | null>(null);
   // The RESOLVED theme, never the raw setting: "system" is not a value the
   // stylesheet knows, and this hook is what turns it into dark/light and
   // re-renders when the OS appearance changes (D5).
@@ -204,7 +209,7 @@ export default function App() {
   // the bar is re-measured and the new band re-observed.
   const dockTopKey = useDashboardStore(
     (s) =>
-      `${s.docks.tabs.find((t) => t.id === "top")?.cards.length ?? 0}:${s.docks.dockRows?.top ?? ""}:${s.dockEdit?.edge === "top"}`,
+      `${s.docks.tabs.find((t) => t.id === "top")?.cards.length ?? 0}:${s.docks.dockRows?.top ?? ""}:${s.dockEdit?.edge === "top"}:${s.docks.dockSeeThrough?.top === true}`,
   );
   const dashboardArea = useRef<HTMLElement | null>(null);
   // Only for the effect below: the tab bar it measures does not exist until a
@@ -464,16 +469,13 @@ export default function App() {
     // this at all: it fills its own tile, from insets WorkspaceTile publishes
     // on the tile. The area's own top is what is left for --dashboard-top to
     // mean there.
-    const bar = activeWorkspaceId === null ? area.querySelector<HTMLElement>(".tab-bar") : null;
+    const bar = viewerId !== null || activeWorkspaceId === null ? area.querySelector<HTMLElement>(":scope > .tab-bar") : null;
+    const band = area.querySelector<HTMLElement>(":scope > .dock-band-top");
     const measure = () => {
-      // The bar's own viewport bottom (v8 locked widgets, donor d76d2ec6).
-      // It used to be the area's top plus the bar's HEIGHT, which assumed the
-      // bar was the area's first child; a top dock band now mounts ABOVE it,
-      // and that sum would name a line inside the band -- so a maximized card
-      // would cover the dock the design keeps visible above it. The area
-      // itself never scrolls since v8 (.dashboard-scroll does), so this rect
-      // cannot go stale between observations.
-      const top = bar ? bar.getBoundingClientRect().bottom : area.getBoundingClientRect().top;
+      // Tabs precede the persistent top band. Ordinary bands remain visible
+      // above maximized cards; see-through bands keep their overlay behavior.
+      const bandBottom = band && !band.classList.contains("dock-band-float") ? band.getBoundingClientRect().bottom : 0;
+      const top = Math.max(area.getBoundingClientRect().top, bar?.getBoundingClientRect().bottom ?? 0, bandBottom);
       area.style.setProperty("--dashboard-top", `${Math.round(top)}px`);
     };
     // The FIRST measurement is the observer's, never a synchronous call here.
@@ -492,14 +494,12 @@ export default function App() {
     }
     const observer = new ResizeObserver(measure);
     observer.observe(bar ?? area);
-    // The top band pushes the bar down, so its height is part of the bar's
-    // bottom. Its own resizes come through here; the ones that add or remove
+    // The top band's own resizes come through here; the ones that add or remove
     // the ELEMENT -- a first card, the last one removed, the editor taking
     // its edge -- change dockTopKey and re-run the effect, which re-observes.
-    const band = area.querySelector<HTMLElement>(".dock-band-top");
     if (band) observer.observe(band);
     return () => observer.disconnect();
-  }, [activeId, activeWorkspaceId, dockTopKey]);
+  }, [activeId, activeWorkspaceId, dockTopKey, viewerId]);
 
   useEffect(() => {
     // The whole sequence, viewer flag included, lives in lib/bootstrap.ts:
@@ -509,9 +509,12 @@ export default function App() {
     // Never rejects: every loader logs its own failure from inside and the
     // labels come back as a value, which is what the banner above the
     // dashboard prints.
-    void bootstrap().then(setStartupErrors);
+    let live = true;
+    startup.current ??= bootstrap();
+    void startup.current.then((labels) => { if (live) setStartupErrors(labels); });
+    return () => { live = false; };
     // viewerId comes from useState, so it is stable for the component's life
-    // and this effect still runs exactly once.
+    // and each live effect subscribes to this mount's one startup promise.
   }, [viewerId]);
 
   // The viewer's only way to hear about the main window's writes. Without it
@@ -585,6 +588,9 @@ export default function App() {
           <ErrorBoundary label="the dashboard area">
             <DropZone mainRef={dashboardArea} viewer>
               <StartupErrorBanner labels={startupErrors} />
+              <ErrorBoundary label="the dashboard tabs">
+                <TabBar dashboardId={viewerId} onOpenLibrary={NOOP} viewer />
+              </ErrorBoundary>
               {/* The locked widgets, read-only: the viewer can neither edit a
                   dock nor open the library (beginDockEdit refuses here). */}
               <ErrorBoundary label="the locked widgets">
@@ -595,7 +601,7 @@ export default function App() {
                   card layout hit, and there would be nothing left to look
                   at. */}
               <ErrorBoundary label="the dashboard">
-                <DashboardGrid dashboardId={viewerId} onOpenLibrary={NOOP} viewer />
+                <DashboardGrid dashboardId={viewerId} onOpenLibrary={NOOP} viewer showTabs={false} />
               </ErrorBoundary>
               <ErrorBoundary label="the locked widgets">
                 <DockBand edge="bottom" viewer />
@@ -675,19 +681,22 @@ export default function App() {
                 is what a user reads past to reach them. */}
             <AgentEditBar />
             <StartupErrorBanner labels={startupErrors} />
+            <ErrorBoundary label="the dashboard tabs">
+              {activeWorkspaceId === null ? <TabBar dashboardId={activeId ?? undefined} onOpenLibrary={openLibrary} /> : null}
+            </ErrorBoundary>
             {/* v8 locked widgets: siblings of the grid in .dashboard-area's
                 column, mounted once for the window's whole life, so a locked
                 card keeps its data and scroll across every dashboard, tab and
-                local workspace switch. The top band is ABOVE the tab bar, so a
-                maximized card -- which covers from the tab bar down -- leaves
-                it visible. Each band has its own boundary: a throw in one
+                local workspace switch. The dashboard tab bar stays above the
+                top band; maximized cards start below both. Each band has its
+                own boundary: a throw in one
                 must not take the grid, or the other band, with it. */}
             <ErrorBoundary label="the locked widgets">
               <DockBand edge="top" />
             </ErrorBoundary>
             <ErrorBoundary label="the dashboard">
               {activeWorkspaceId === null ? (
-                <DashboardGrid dashboardId={activeId} onOpenLibrary={openLibrary} />
+                <DashboardGrid dashboardId={activeId} onOpenLibrary={openLibrary} showTabs={false} />
               ) : (
                 <WorkspaceGrid workspaceId={activeWorkspaceId} onOpenLibrary={openLibrary} />
               )}

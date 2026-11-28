@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { detectTimeColumn, rowsOf } from "./chartShapes";
+import { isTableSnapshotEnvelope } from "./tableRowValues";
 
 /**
  * v5.3.0 §3 `data_bounds`: the first and last instant of the data a widget has
@@ -27,8 +28,8 @@ function instantOf(value: string): number {
 }
 
 export function dataBounds(data: unknown): { min: Date; max: Date } | undefined {
-  // Rows as they are, or OpenBB's `{ results: [...] }` envelope around them.
-  const rows = rowsOf(data) ?? rowsOf((data as { results?: unknown } | null)?.results);
+  // Read the selected rows without discarding the snapshot's acquisition evidence.
+  const rows = rowsOf(data) ?? rowsOf(isTableSnapshotEnvelope(data) ? data.rows : (data as { results?: unknown } | null)?.results);
   if (rows === null || rows.length === 0) return undefined;
   const column = detectTimeColumn(rows);
   if (column === null) return undefined;

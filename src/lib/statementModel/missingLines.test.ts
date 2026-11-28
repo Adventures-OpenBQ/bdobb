@@ -36,13 +36,13 @@ function longShape(required: boolean) {
 }
 
 it('long shape: an optional line with no facts is blank, not #ERROR', () => {
-    const cost = longShape(false).line('cost_of_revenue');
+    const cost = longShape(false).line('Cost of Revenue');
     expect(Object.hasOwn(cost.values, FY2026)).toBe(false);
     expect(cost.cellErrors?.[FY2026]).toBeUndefined();
 });
 
 it('long shape: a required line with no facts stays #ERROR', () => {
-    const cost = longShape(true).line('cost_of_revenue');
+    const cost = longShape(true).line('Cost of Revenue');
     expect(cost.values[FY2026]).toBe('#ERROR');
     expect(cost.cellErrors?.[FY2026]).toMatchObject({ code: 'missing-input', message: 'The required line has no facts.' });
 });
@@ -62,8 +62,8 @@ function wideShape(cost: unknown) {
 
 it('wide shape: a blank cell on an optional line is blank, not #ERROR', () => {
     const { line } = wideShape(null);
-    expect(Object.hasOwn(line('cost_of_revenue').values, FY2026)).toBe(false);
-    expect(line('cost_of_revenue').cellErrors?.[FY2026]).toBeUndefined();
+    expect(Object.hasOwn(line('Cost of Revenue').values, FY2026)).toBe(false);
+    expect(line('Cost of Revenue').cellErrors?.[FY2026]).toBeUndefined();
     expect(line('Calculated gross profit').values[FY2026]).toBe('#ERROR');
 });
 
@@ -76,18 +76,18 @@ it('long shape: a nonnumeric value on an optional line stays #ERROR', () => {
         { id: 'r26', values: { ...period(2026), item: f.ids.line('revenue'), amount: 120 } },
         { id: 'c26', values: { ...period(2026), item: f.ids.line('cost_of_revenue'), amount: 'n/a' } },
     ]);
-    expect(line('cost_of_revenue').values[FY2026]).toBe('#ERROR');
-    expect(line('cost_of_revenue').cellErrors?.[FY2026]).toMatchObject({ message: 'Line value is missing or nonnumeric.' });
+    expect(line('Cost of Revenue').values[FY2026]).toBe('#ERROR');
+    expect(line('Cost of Revenue').cellErrors?.[FY2026]).toMatchObject({ message: 'Line value is missing or nonnumeric.' });
 });
 
 it('exports the blank as empty in CSV, JSON and XLSX', async () => {
     const { view } = wideShape(null);
     const rows = view.logicalRows.map(r => r.values);
     const columns = view.columns.map(c => c.id);
-    const costIndex = rows.findIndex(r => r['\u001egroup'] === 'cost_of_revenue');
+    const costIndex = rows.findIndex(r => r['\u001egroup'] === 'Cost of Revenue');
 
     const csv = toCsv(rows, columns).split('\r\n');
-    expect(csv[costIndex + 1]).toBe('cost_of_revenue,60,');
+    expect(csv[costIndex + 1]).toBe('Cost of Revenue,60,');
 
     const json = JSON.parse(toJsonRows(rows, columns)) as Record<string, unknown>[];
     expect(json[costIndex]).not.toHaveProperty([FY2026]);

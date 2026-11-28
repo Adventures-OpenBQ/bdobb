@@ -1,5 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
+import { openParameters } from './fixtures/chart-recipes';
 import { expect, test, type Page, type Locator } from '@playwright/test';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -94,8 +95,12 @@ for(const [shape,extension] of [['wide','xls'],['wide','csv'],['long','xls'],['l
   const child=page.locator('.widget-card').nth(2);await expect(child.locator('tbody')).toContainText('40');
   await child.getByRole('button',{name:'Card menu',exact:true}).click();await page.getByRole('menuitem',{name:'Create linked chart',exact:true}).click();
   const chart=page.locator('.linked-chart-renderer');
-  await chart.getByLabel('Category',{exact:true}).selectOption(result.columns![0].id);
-  await chart.getByRole('checkbox',{name:/Value/}).click();
+  const parameters=await openParameters(page.locator('.widget-card').filter({has:chart}));
+  await parameters.getByLabel('Category',{exact:true}).selectOption(result.columns![0].id);
+  await parameters.getByRole('button',{name:/^Measures/}).click();
+  const measures=page.getByRole('dialog',{name:'Measures',exact:true});
+  await measures.getByRole('checkbox',{name:/Value/}).check();
+  await measures.getByRole('button',{name:'Apply',exact:true}).click();
   await expect.poll(()=>chart.locator('.js-plotly-plot').evaluate(e=>(e as unknown as {data:{y:number[]}[]}).data[0].y)).toEqual([40]);
   await statement.getByRole('button',{name:'Collapse Profit',exact:true}).click();
   await expect.poll(()=>chart.locator('.js-plotly-plot').evaluate(e=>(e as unknown as {data:{y:number[]}[]}).data[0].y)).toEqual([40]);
@@ -240,6 +245,10 @@ test('formatted XLS Statement keeps ratio numeric across actual worker linked ta
  await statement.getByRole('button',{name:'Card menu',exact:true}).click();await page.getByRole('menuitem',{name:'Create linked table',exact:true}).click();
  const child=page.locator('.widget-card').nth(2);await expect(child.locator('tbody')).toContainText('40 %');
  await child.getByRole('button',{name:'Card menu',exact:true}).click();await page.getByRole('menuitem',{name:'Create linked chart',exact:true}).click();const chart=page.locator('.linked-chart-renderer');
- await chart.getByLabel('Category',{exact:true}).selectOption(result.columns![0].id);await chart.getByRole('checkbox',{name:/Value/}).click();
+ const parameters=await openParameters(page.locator('.widget-card').filter({has:chart}));
+  await parameters.getByLabel('Category',{exact:true}).selectOption(result.columns![0].id);await parameters.getByRole('button',{name:/^Measures/}).click();
+  const measures=page.getByRole('dialog',{name:'Measures',exact:true});
+  await measures.getByRole('checkbox',{name:/Value/}).check();
+  await measures.getByRole('button',{name:'Apply',exact:true}).click();
  await expect.poll(()=>chart.locator('.js-plotly-plot').evaluate(e=>(e as unknown as {data:{y:number[]}[]}).data[0].y)).toEqual([0.4]);
 });

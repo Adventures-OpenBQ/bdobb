@@ -1,7 +1,8 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { StrictMode } from "react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // plotly.js does not run under jsdom — it needs canvas and layout APIs jsdom
@@ -13,12 +14,15 @@ const renderPlot = vi.fn((_node: HTMLElement, _figure: unknown, _uirevision?: un
 );
 const purgePlot = vi.fn();
 const resizePlot = vi.fn();
+const followPlotYAxisTicks = vi.fn<(
+  node: HTMLElement, formatter: unknown, initial: unknown, onError?: (error: unknown) => void,
+) => () => void>();
 vi.mock("../../lib/plotly", () => ({
   renderPlot: (n: HTMLElement, f: unknown, u?: unknown) => renderPlot(n, f, u),
   purgePlot: (n: HTMLElement) => purgePlot(n),
   resizePlot: (n: HTMLElement) => resizePlot(n),
-  // Mirrors the real module's derivation: only what chartShapes can produce.
-  REGISTERED_TRACE_TYPES: new Set(["scatter", "candlestick", "bar"]),
+  followPlotYAxisTicks: (...args: Parameters<typeof followPlotYAxisTicks>) => followPlotYAxisTicks(...args),
+  REGISTERED_TRACE_TYPES: new Set(["scatter", "candlestick", "bar", "heatmap", "pie", "indicator", "waterfall", "sankey"]),
 }));
 
 const logError = vi.fn((_message: string) => Promise.resolve());
@@ -58,6 +62,7 @@ beforeEach(() => {
   renderPlot.mockClear();
   purgePlot.mockClear();
   resizePlot.mockClear();
+  followPlotYAxisTicks.mockReset().mockReturnValue(() => {});
   logError.mockClear();
   ResizeObserverStub.instances = [];
   vi.stubGlobal("ResizeObserver", ResizeObserverStub);
@@ -80,10 +85,6 @@ function figureFromLastCall() {
 
 describe("ChartRenderer", () => {
   it("draws a native figure payload as-is", async () => {
-    // Was `type: "bar"`. The fixture was switched to a registered type
-    // ("scatter") so this test exercises the draw-as-is path; refusal of an
-    // unregistered trace type is covered separately by "refuses a native
-    // figure with an unregistered trace type" using `pie`.
     const native = { data: [{ type: "scatter", x: [1], y: [2] }], layout: { title: "t" } };
     render(<ChartRenderer data={native} />);
     expect(renderPlot).toHaveBeenCalledTimes(1);
@@ -104,11 +105,11 @@ describe("ChartRenderer", () => {
   });
 
   it("refuses a native figure with an unregistered trace type", () => {
-    const native = { data: [{ type: "pie", x: [1], y: [2] }], layout: {} };
+    const native = { data: [{ type: "surface", z: [[1, 2], [3, 4]] }], layout: {} };
     render(<ChartRenderer data={native} />);
     expect(renderPlot).not.toHaveBeenCalled();
     expect(screen.getByText(/does not include/i)).toBeInTheDocument();
-    expect(screen.getByText(/pie/)).toBeInTheDocument();
+    expect(screen.getByText(/surface/)).toBeInTheDocument();
   });
 
   it("draws a native figure trace that omits `type`, since plotly defaults it to scatter", () => {
@@ -122,14 +123,14 @@ describe("ChartRenderer", () => {
     const native = {
       data: [
         { type: "scatter", x: [1], y: [2] },
-        { type: "pie", x: [1], y: [2] },
+        { type: "surface", z: [[1, 2], [3, 4]] },
       ],
       layout: {},
     };
     render(<ChartRenderer data={native} />);
     expect(renderPlot).not.toHaveBeenCalled();
     expect(screen.getByText(/does not include/i)).toBeInTheDocument();
-    expect(screen.getByText(/pie/)).toBeInTheDocument();
+    expect(screen.getByText(/surface/)).toBeInTheDocument();
   });
 
   it("converts rows carrying a time column into a figure", () => {
@@ -182,10 +183,10 @@ describe("ChartRenderer", () => {
     expect(figureFromLastCall().data[0].type).toBe("candlestick");
   });
 
-  it("purges the plot on unmount so plotly does not leak the node", () => {
+  it("purges the plot on unmount so plotly does not leak the node", async () => {
     const { unmount } = render(<ChartRenderer data={ohlc} />);
     unmount();
-    expect(purgePlot).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(purgePlot).toHaveBeenCalledTimes(1));
   });
 
   it("logs rather than throwing when renderPlot rejects", async () => {
@@ -321,4 +322,197 @@ describe("ChartRenderer", () => {
     );
     expect(figureFromLastCall().data).toEqual([{ type: "bar", name: "tvl", x: ["ETH"], y: [1] }]);
   });
+});
+
+it('sizes only a scoped scroll plot and reconciles its height without purging it', async () => {
+  const data = { data: [{ type: 'scatter' }], layout: { height: 9999 } };
+  const { rerender, container, unmount } = render(<ChartRenderer data={data}/>);
+  expect(screen.getByTestId('chart-plot').parentElement).toBe(container);
+  expect(screen.getByTestId('chart-plot').style.height).toBe('');
+  rerender(<ChartRenderer data={data} scrollHeight={940}/>);
+  const node = screen.getByTestId('chart-plot');
+  expect(node.parentElement).toHaveClass('chart-scroll-viewport');
+  expect(node.style.height).toBe('940px');
+  const purgeCount = purgePlot.mock.calls.length;
+  rerender(<ChartRenderer data={data} scrollHeight={500}/>);
+  expect(screen.getByTestId('chart-plot')).toBe(node);
+  expect(node.style.height).toBe('500px');
+  expect(purgePlot).toHaveBeenCalledTimes(purgeCount);
+  unmount();
+  await waitFor(() => expect(purgePlot).toHaveBeenCalledWith(node));
+});
+
+it('releases vertical drag only for a touch-scroll plot on a coarse pointer', () => {
+  let coarse = false;
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: query === '(pointer: coarse)' && coarse, addEventListener: vi.fn(), removeEventListener: vi.fn(),
+  }));
+  const data = { data: [{ type: 'scatter' }], layout: { dragmode: 'zoom' } };
+  const { rerender } = render(<ChartRenderer data={data} scrollHeight={800} touchScroll/>);
+  expect(figureFromLastCall()).toEqual(data);
+  coarse = true;
+  rerender(<ChartRenderer data={data} scrollHeight={800} touchScroll/>);
+  expect(figureFromLastCall()).toMatchObject({ layout: { dragmode: false } });
+  expect(data.layout.dragmode).toBe('zoom');
+  rerender(<ChartRenderer data={data} scrollHeight={800}/>);
+  expect(figureFromLastCall()).toEqual(data);
+});
+
+it('removes a failed draw, bounds the local alert and recovers on a new figure', async () => {
+  const { rerender } = render(<ChartRenderer data={ohlc}/>);
+  const node = screen.getByTestId('chart-plot');
+  renderPlot.mockRejectedValueOnce(new Error('bad coordinate ' + 'x'.repeat(1200)));
+  rerender(<ChartRenderer data={[...ohlc]}/>);
+  const alert = await screen.findByRole('alert');
+  expect(alert).toHaveTextContent(/bad coordinate/);
+  expect(alert.textContent!.length).toBeLessThan(600);
+  expect(purgePlot).toHaveBeenCalledWith(node);
+  expect(node).not.toBeVisible();
+  rerender(<ChartRenderer data={[...ohlc]}/>);
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(screen.getByTestId('chart-plot')).toBeVisible();
+});
+
+it('ignores a superseded draw rejection after the next revision renders', async () => {
+  let reject!: (error: Error) => void;
+  renderPlot.mockReturnValueOnce(new Promise<void>((_, fail) => { reject = fail; }));
+  const { rerender } = render(<ChartRenderer data={ohlc} uirevision="old"/>);
+  rerender(<ChartRenderer data={ohlc} uirevision="new"/>);
+  await act(async () => reject(new Error('superseded')));
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(purgePlot).not.toHaveBeenCalled();
+  expect(logError).not.toHaveBeenCalledWith('chart render failed: superseded');
+});
+
+it('releases coarse watchlist drags only while its viewport overflows and restores zoom on resize', () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  const data = { data: [{ type: 'scatter' }], layout: { dragmode: 'zoom' } };
+  render(<ChartRenderer data={data} scrollHeight={280} touchScroll="overflow"/>);
+  const viewport = screen.getByTestId('chart-plot').parentElement!;
+  let available = 568;
+  Object.defineProperties(viewport, {
+    clientHeight: { get: () => available }, scrollHeight: { get: () => Math.max(available, 280) },
+  });
+  const resize = () => act(() => {
+    for (const observer of ResizeObserverStub.instances.filter(o => !o.disconnected))
+      observer.callback(sizeEntry(450, available), observer as unknown as ResizeObserver);
+  });
+  resize();
+  expect(figureFromLastCall()).toEqual(data);
+  available = 220;
+  resize();
+  expect(figureFromLastCall()).toMatchObject({ layout: { dragmode: false } });
+  available = 280;
+  resize();
+  expect(figureFromLastCall()).toEqual(data);
+});
+
+it('keeps touch zoom for a fitting fractional retained figure and scrolls when its admitted pixels overflow', () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  const retainedSurface = { width: 600.25, height: 400.25 };
+  const data = { data: [{ type: 'scatter' }], layout: { width: 600, height: 400, dragmode: 'zoom' } };
+  const measure = vi.fn();
+  const props = { data, scrollHeight: 210, touchScroll: 'overflow' as const, onDrawingSurfaceChange: measure };
+  const { rerender } = render(<ChartRenderer {...props}/>);
+  const plot = screen.getByTestId('chart-plot');
+  const viewport = plot.parentElement!;
+  let width = 600, height = 400;
+  for (const element of [plot, viewport]) {
+    Object.defineProperties(element, { clientWidth: { get: () => width }, clientHeight: { get: () => height } });
+  }
+  vi.spyOn(plot, 'getBoundingClientRect').mockImplementation(() => new DOMRect(0, 0, width + .25, height + .25));
+
+  rerender(<ChartRenderer {...props} retainedSurface={retainedSurface}/>);
+  expect(measure).toHaveBeenLastCalledWith(retainedSurface);
+  expect(viewport).not.toHaveClass('chart-scroll-viewport--touch-scroll');
+  expect(figureFromLastCall()).toEqual(data);
+
+  const resize = () => act(() => {
+    for (const observer of ResizeObserverStub.instances.filter(o => !o.disconnected))
+      observer.callback(sizeEntry(width, height), observer as unknown as ResizeObserver);
+  });
+  width = 590;
+  resize();
+  expect(viewport).toHaveClass('chart-scroll-viewport--touch-scroll');
+  expect(figureFromLastCall()).toMatchObject({ layout: { width: 600, height: 400, dragmode: false } });
+  width = 600;
+  height = 380;
+  resize();
+  expect(viewport).toHaveClass('chart-scroll-viewport--touch-scroll');
+  expect(measure).toHaveBeenLastCalledWith({ width: 600.25, height: 380.25 });
+  height = 400;
+  resize();
+  expect(viewport).not.toHaveClass('chart-scroll-viewport--touch-scroll');
+  expect(figureFromLastCall()).toEqual(data);
+});
+
+it('inspects Sankey nodes and links on tap and lets touch drags or unrelated taps pass through', () => {
+  const data = { data: [{ type: 'sankey' }], layout: { width: 390, height: 680 } };
+  render(<ChartRenderer data={data} scrollHeight={680} touchScroll="overflow" inspectSankeyOnTouch/>);
+  const plot = screen.getByTestId('chart-plot');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.innerHTML = '<g class="sankey-node"><rect/></g><path class="sankey-link"/><rect/>';
+  plot.append(svg);
+  const handlers = vi.fn();
+  svg.addEventListener('mouseover', handlers);
+  svg.addEventListener('mousemove', handlers);
+  const touch = { identifier: 1, clientX: 40, clientY: 50 };
+  for (const target of [svg.querySelector('g rect')!, svg.querySelector('path')!]) {
+    fireEvent.touchStart(target, { touches: [touch] });
+    expect(fireEvent.touchEnd(target, { changedTouches: [touch], touches: [] })).toBe(false);
+    expect(handlers.mock.calls.slice(-2).map(([event]) => [event.type, event.clientX, event.clientY]))
+      .toEqual([['mouseover', 40, 50], ['mousemove', 40, 50]]);
+  }
+  const link = svg.querySelector('path')!;
+  fireEvent.touchStart(link, { touches: [touch] });
+  fireEvent.touchMove(link, { touches: [{ ...touch, clientY: 75 }] });
+  expect(fireEvent.touchEnd(link, { changedTouches: [touch], touches: [] })).toBe(true);
+  const background = svg.lastElementChild!;
+  fireEvent.touchStart(background, { touches: [touch] });
+  expect(fireEvent.touchEnd(background, { changedTouches: [touch], touches: [] })).toBe(true);
+  fireEvent.touchStart(link, { touches: [touch] });
+  fireEvent.touchStart(link, { touches: [touch, { ...touch, identifier: 2 }] });
+  expect(fireEvent.touchEnd(link, { changedTouches: [touch], touches: [] })).toBe(true);
+  expect(handlers).toHaveBeenCalledTimes(4);
+});
+
+it('keeps a plot intact when Strict Mode reattaches the same newly drawable node', async () => {
+  const onViewportWidthChange = vi.fn();
+  const { rerender } = render(<StrictMode><ChartRenderer data={undefined} scrollHeight={260} onViewportWidthChange={onViewportWidthChange}/></StrictMode>);
+  const viewport = document.querySelector('.chart-scroll-viewport');
+  expect(viewport).not.toBeNull();
+  renderPlot.mockImplementationOnce(async node => {
+    await Promise.resolve();
+    if (purgePlot.mock.calls.some(([removed]) => removed === node)) throw new Error('Plotly lost its layout during drawing');
+  });
+  rerender(<StrictMode><ChartRenderer data={ohlc} scrollHeight={260} onViewportWidthChange={onViewportWidthChange}/></StrictMode>);
+  await act(async () => {});
+  expect(purgePlot).not.toHaveBeenCalled();
+  expect(screen.getByTestId('chart-plot').parentElement).toBe(viewport);
+});
+
+
+it('reports the current mounted tick failure as a chart-local draw error', async () => {
+  const axis = { range: [0, 2], tickvals: [1], ticktext: ['10%'] };
+  const figure = { data: [{ type: 'scatter' }], layout: { yaxis: axis } };
+  const format = () => ({ tickvals: [.5], ticktext: ['5%'] });
+  const { rerender, unmount } = render(<ChartRenderer data={figure} formatYAxisTicks={format}/>);
+  const node = screen.getByTestId('chart-plot');
+  await waitFor(() => expect(followPlotYAxisTicks).toHaveBeenCalledTimes(1));
+  const firstError = followPlotYAxisTicks.mock.calls[0][3];
+
+  rerender(<ChartRenderer data={{ ...figure }} formatYAxisTicks={format}/>);
+  await waitFor(() => expect(followPlotYAxisTicks).toHaveBeenCalledTimes(2));
+  await act(async () => firstError?.(new Error('obsolete zoom failed')));
+  expect(screen.getByTestId('chart-plot')).toBe(node);
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(logError).not.toHaveBeenCalled();
+
+  const currentError = followPlotYAxisTicks.mock.calls[1][3];
+  await act(async () => currentError?.(new Error('current zoom failed')));
+  expect(screen.getByRole('alert')).toHaveTextContent('Chart could not be drawn. current zoom failed');
+  expect(node).not.toBeInTheDocument();
+  unmount();
+  await act(async () => currentError?.(new Error('detached zoom failed')));
+  expect(logError.mock.calls).toEqual([['chart render failed: current zoom failed']]);
 });

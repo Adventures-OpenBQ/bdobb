@@ -102,6 +102,9 @@ async function settle() {
 }
 
 beforeEach(() => {
+  // Each fixture is a new dashboard lifetime. Reused d1/cf IDs must not inherit
+  // the preceding fixture's last Run, which survives connection URL changes.
+  useDashboardStore.setState({ dashboards: [] });
   __reset();
   __resetJsonStoreForTests();
   __resetLoggerForTests();

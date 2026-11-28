@@ -1,0 +1,57 @@
+{
+  "price-eps": {
+    "completeness": "partial",
+    "chart_sources": {"version": 1, "receipts": [
+      {
+        "version": 1,
+        "kind": "overlay",
+        "origin": "acquired-snapshot",
+        "recipe": "price-eps",
+        "series": {"left": {"id": "adjusted_close", "basis": "splits-and-dividends-adjusted-close", "unit": "money-per-share", "currency": "USD", "coordinate": "observation-date", "period_kind": null, "restated": false}, "right": {"id": "reported_diluted_eps", "basis": "current-split-adjusted-diluted-fq", "unit": "money-per-share", "currency": "USD", "coordinate": "availability-date", "period_kind": "FQ", "restated": true}},
+        "identity": {"issuer": "SEC-CIK-0000320193", "listing": "AAPL.US", "share_basis_ref": "sample/current-split-ledger"},
+        "vintages": {"left": "2026-11-19T22:00:00.123456Z", "right": "2026-11-19T22:00:00.123456Z"},
+        "preparation": {"input_refs": ["sample/eod", "sample/issuer"], "reference": "sample/prepared-pair"},
+        "coordinates": {"left": ["2026-11-02"], "right": ["2026-11-02T21:02:01.123456Z"]},
+        "raw_count": 2,
+        "normalized_count": 2,
+        "delivered_count": 2,
+        "retrieved_at": "2026-11-19T22:00:00.123456Z",
+        "unsafe": {"identity_conflict": false, "unit_conflict": false, "coordinate_conflict": false, "basis_conflict": false, "untraced_omission": false},
+        "diagnostics": []
+      }
+    ]},
+    "rows": [
+      {"series": "adjusted_close", "date": "2026-11-02", "value": 302.0205, "source_value": 302.0205, "unit": "money-per-share", "currency": "USD", "basis": "splits-and-dividends-adjusted-close", "period_kind": null, "restated": false, "issuer": "SEC-CIK-0000320193", "listing": "AAPL.US", "share_basis_ref": "sample/current-split-ledger", "source_contract": "eodhd-eod-adjusted-close", "input_ref": "sample/eod", "input_vintage": "2026-11-19T22:00:00.123456Z", "available_at": null, "release_ref": null, "session_timing": null, "target_start": null, "target_end": null},
+      {"series": "reported_diluted_eps", "date": "2026-09-30", "value": 1.98765, "source_value": 1.98765, "unit": "money-per-share", "currency": "USD", "basis": "current-split-adjusted-diluted-fq", "period_kind": "FQ", "restated": true, "issuer": "SEC-CIK-0000320193", "listing": "AAPL.US", "share_basis_ref": "sample/current-split-ledger", "source_contract": "issuer-reported-diluted-fq-eps", "input_ref": "sample/issuer", "input_vintage": "2026-11-19T22:00:00.123456Z", "available_at": "2026-11-02T21:02:01.123456Z", "release_ref": "sample/earnings-release", "session_timing": "after-market", "target_start": "2026-07-01", "target_end": "2026-09-30"}
+    ]
+  },
+  "cpi-ten-year": {
+    "completeness": "partial",
+    "chart_sources": {"version": 1, "receipts": [
+      {
+        "version": 1,
+        "kind": "overlay",
+        "origin": "acquired-snapshot",
+        "recipe": "cpi-ten-year",
+        "series": {"left": {"id": "CUSR0000SA0", "basis": "monthly-sa-us-cpi-u-all-items-1982-84=100", "unit": "index", "currency": null, "coordinate": "observation-date", "period_kind": null, "restated": false}, "right": {"id": "DGS10", "basis": "daily-nominal-us-ten-year-constant-maturity", "unit": "yield-fraction", "currency": null, "coordinate": "observation-date", "period_kind": null, "restated": false}},
+        "identity": null,
+        "vintages": {"left": "2026-11-19T22:00:00.123456Z", "right": "2026-11-19T22:00:00.123456Z"},
+        "preparation": {"input_refs": ["sample/cpi", "sample/h15"], "reference": "sample/prepared-pair"},
+        "coordinates": {"left": ["2026-09-01", "2026-10-01"], "right": ["2026-11-16", "2026-11-17", "2026-11-18"]},
+        "raw_count": 5,
+        "normalized_count": 5,
+        "delivered_count": 5,
+        "retrieved_at": "2026-11-19T22:00:00.123456Z",
+        "unsafe": {"identity_conflict": false, "unit_conflict": false, "coordinate_conflict": false, "basis_conflict": false, "untraced_omission": false},
+        "diagnostics": []
+      }
+    ]},
+    "rows": [
+      {"series": "CUSR0000SA0", "date": "2026-09-01", "value": 336.298, "source_value": 336.298, "unit": "index", "currency": null, "basis": "monthly-sa-us-cpi-u-all-items-1982-84=100", "period_kind": null, "restated": false, "issuer": null, "listing": null, "share_basis_ref": null, "source_contract": "BLS:CUSR0000SA0/FRED:CPIAUCSL", "input_ref": "sample/cpi", "input_vintage": "2026-11-19T22:00:00.123456Z", "available_at": null, "release_ref": null, "session_timing": null, "target_start": null, "target_end": null},
+      {"series": "CUSR0000SA0", "date": "2026-10-01", "value": 337.476, "source_value": 337.476, "unit": "index", "currency": null, "basis": "monthly-sa-us-cpi-u-all-items-1982-84=100", "period_kind": null, "restated": false, "issuer": null, "listing": null, "share_basis_ref": null, "source_contract": "BLS:CUSR0000SA0/FRED:CPIAUCSL", "input_ref": "sample/cpi", "input_vintage": "2026-11-19T22:00:00.123456Z", "available_at": "2026-11-10", "release_ref": "sample/october-cpi-release", "session_timing": null, "target_start": null, "target_end": null},
+      {"series": "DGS10", "date": "2026-11-16", "value": 0.0512, "source_value": 5.12, "unit": "yield-fraction", "currency": null, "basis": "daily-nominal-us-ten-year-constant-maturity", "period_kind": null, "restated": false, "issuer": null, "listing": null, "share_basis_ref": null, "source_contract": "Fed:H15/FRED:DGS10", "input_ref": "sample/h15", "input_vintage": "2026-11-19T22:00:00.123456Z", "available_at": null, "release_ref": null, "session_timing": null, "target_start": null, "target_end": null},
+      {"series": "DGS10", "date": "2026-11-17", "value": null, "source_value": null, "unit": "yield-fraction", "currency": null, "basis": "daily-nominal-us-ten-year-constant-maturity", "period_kind": null, "restated": false, "issuer": null, "listing": null, "share_basis_ref": null, "source_contract": "Fed:H15/FRED:DGS10", "input_ref": "sample/h15", "input_vintage": "2026-11-19T22:00:00.123456Z", "available_at": null, "release_ref": null, "session_timing": null, "target_start": null, "target_end": null},
+      {"series": "DGS10", "date": "2026-11-18", "value": 0.0507, "source_value": 5.07, "unit": "yield-fraction", "currency": null, "basis": "daily-nominal-us-ten-year-constant-maturity", "period_kind": null, "restated": false, "issuer": null, "listing": null, "share_basis_ref": null, "source_contract": "Fed:H15/FRED:DGS10", "input_ref": "sample/h15", "input_vintage": "2026-11-19T22:00:00.123456Z", "available_at": null, "release_ref": null, "session_timing": null, "target_start": null, "target_end": null}
+    ]
+  }
+}

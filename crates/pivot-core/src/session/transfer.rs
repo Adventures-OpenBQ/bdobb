@@ -25,15 +25,18 @@ impl Session {
         } else {
             selection::presented(v, &v.selection).count()
         };
-        let rows: Box<dyn Iterator<Item = &DatasetRow>> = if t.ignore_selection {
-            Box::new(v.eligible.iter())
-        } else {
-            selection::presented(v, &v.selection)
+        let presented_rows = || -> Box<dyn Iterator<Item = &DatasetRow>> {
+            if t.ignore_selection {
+                Box::new(v.eligible.iter())
+            } else {
+                selection::presented(v, &v.selection)
+            }
         };
         let start = t.offset;
         let end = start.saturating_add(self.batch_rows as usize).min(count);
         let fields = v.columns.iter().map(|c| c.id.clone()).collect::<Vec<_>>();
-        let (reservation, rows) = resources::bounded_rows(rows.skip(start).take(end - start));
+        let (reservation, rows) =
+            resources::bounded_rows(presented_rows().skip(start).take(end - start));
         if let Some(max) = self.limits.max_state_bytes {
             resources::check(
                 Some(max),
@@ -47,15 +50,22 @@ impl Session {
                 return Err(problem("RESOURCE_LIMIT", "Export batch budget exceeded"));
             }
         }
-        let provenance = (sequence == 0).then(|| {
+        let provenance = if sequence == 0 {
+            let source = self.input(&q.revision)?;
             let mut provenance = v.provenance.clone();
+            provenance.project_price_omissions(&source.rows, presented_rows(), &v.columns);
+            provenance.project_financial_evidence(presented_rows(), &v.columns);
+            provenance.mark_chart_filtered(!t.ignore_selection && !matches!(v.selection, SelectionSpec::None));
+            provenance.project_chart_sources(presented_rows, &v.columns);
             provenance.presentation = Some(PresentationProvenance {
                 scope: PresentedScope::Presented,
                 row_count: count as u64,
                 revision: q.revision.clone(),
             });
-            provenance
-        });
+            Some(provenance)
+        } else {
+            None
+        };
         let final_batch = end >= count;
         let batch = SubsetBatch {
             transfer_id: id.into(),

@@ -652,8 +652,13 @@ pub(crate) fn prepare(
         chart_columns = Some(output.clone());
     }
     let mut provenance = input.provenance.clone();
+    provenance.mark_presentation_filtered(
+        !d.definition.search.is_empty()
+            || state.column_filters.as_ref().is_some_and(|f| !f.is_empty()),
+    );
     if result.is_some() {
-        provenance.input_may_contain_aggregates = Some(true)
+        provenance.input_may_contain_aggregates = Some(true);
+        crate::statement::income_chart::clear_proof(&mut provenance);
     }
     let input_columns = input
         .columns

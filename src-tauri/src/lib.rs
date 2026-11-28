@@ -4,6 +4,8 @@
 mod migrate;
 mod save_panel;
 mod video_wrapper;
+mod youtube_pip;
+mod picture_in_picture;
 
 use tauri::Manager;
 
@@ -155,7 +157,14 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![video_wrapper::video_wrapper_port, set_window_pin, save_panel::save_workspace_panel])
+        .invoke_handler(tauri::generate_handler![
+            video_wrapper::video_wrapper_port, set_window_pin, save_panel::save_workspace_panel,
+            youtube_pip::youtube_pip_open, youtube_pip::youtube_pip_close, youtube_pip::youtube_pip_is_open,
+            picture_in_picture::picture_in_picture_fit, picture_in_picture::picture_in_picture_park,
+            picture_in_picture::picture_in_picture_release, picture_in_picture::picture_in_picture_set_muted,
+            picture_in_picture::picture_in_picture_mute_state, picture_in_picture::picture_in_picture_captured_audio,
+            picture_in_picture::picture_in_picture_open_settings,
+        ])
         .setup(|app| {
             // Restore the baseline storage fix from 4ac9cd071 (issue #316).
             // Root-level settings seed before nested stores create directories.
@@ -174,6 +183,7 @@ pub fn run() {
                     if let Err(error) = std::fs::create_dir_all(&dir) {
                         eprintln!("cannot create {}: {error}", dir.display());
                     }
+                    picture_in_picture::keep_hide_mute_in(&dir);
                 }
                 Err(error) => eprintln!("no app-data directory: {error}"),
             }
@@ -219,8 +229,18 @@ pub fn run() {
         });
 
     builder
-        .run(tauri::generate_context!())
-        .expect("error while running BDOBB");
+        .build(tauri::generate_context!())
+        .expect("error while running BDOBB")
+        .run(|app,event| {
+            if let tauri::RunEvent::WindowEvent {label,event,..}=&event {
+                match event {
+                    tauri::WindowEvent::Destroyed if label=="main"=>youtube_pip::close_all(app),
+                    tauri::WindowEvent::CloseRequested {..}=>youtube_pip::user_close_requested(app,label),
+                    _=>{}
+                }
+            }
+            if let tauri::RunEvent::Exit=event { picture_in_picture::release_all(); }
+        });
 }
 
 #[cfg(all(test, desktop))]

@@ -188,6 +188,8 @@ function toParam(p: Record<string, unknown>): WidgetParam | null {
   const param: WidgetParam = { paramName: p.paramName };
   copyTyped(param, p, "string", ["label", "type", "description", "optionsEndpoint"]);
   copyTyped(param, p, "boolean", ["show", "optional", "multiSelect"]);
+  // Flat SDK catalogues can also declare rows directly; row zero stays implicit.
+  if (typeof p.row === "number" && Number.isSafeInteger(p.row) && p.row > 0) param.row = p.row;
   // The reference types value as string | number | boolean, and openbb-api
   // emits booleans (hidden chart=true) and numbers (limit). The query string
   // is a string either way, so stringify here and keep WidgetParam.value flat.
@@ -266,7 +268,11 @@ function toParams(
       for (const entry of item) {
         total++;
         const p = isRecord(entry) ? toParam(entry) : null;
-        if (p) parsed.push(row === 0 ? p : { ...p, row });
+        if (p) {
+          // Organized arrays keep their existing authoritative position.
+          if (row === 0) delete p.row;
+          parsed.push(row === 0 ? p : { ...p, row });
+        }
       }
       row++;
       continue;

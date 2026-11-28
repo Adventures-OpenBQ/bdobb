@@ -1,5 +1,8 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
+import type { RecipeOptions } from './chartRecipes/types';
+export type LinkedPresentation = 'table' | 'chart' | 'metric';
+
 import type { CellFormat } from "../format";
 import type { Row } from "../tableColumns";
 import type { AggName, Bucket, ColumnSpec } from "../types";
@@ -89,9 +92,17 @@ export type WidgetDataset = {
   freshness: DatasetFreshness;
 };
 export type LinkedSource = { kind: "widget"; sourceWidgetId: string };
+export const LEGACY_LINKED_CHART_TYPES = ["bar", "column", "line", "pie", "bullet", "waterfall", "surface"] as const;
 export type LinkedChartSettings = {
-  type: "bar" | "column" | "line";
+  type: (typeof LEGACY_LINKED_CHART_TYPES)[number] | RecipeOptions["kind"];
   category?: string;
   measures: string[];
-  display: "grouped" | "stacked";
+  display: "grouped" | "stacked" | "percent";
+  seriesFrom?: "columns" | "rows"; // absent means "columns"
+  period?: string; // bullet only: the fiscal period shown; absent means the latest
+  recipe?: RecipeOptions;
+  /** Surface on a pivoted source: report value ids (`measureId`). */
+  height?: string;
+  spaceRowsBy?: string;
+  spaceColumnsBy?: string;
 };

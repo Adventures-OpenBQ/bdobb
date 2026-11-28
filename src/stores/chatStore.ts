@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { create } from "zustand";
+import { isClientArtifact } from "../lib/agent/clientArtifact";
 import { dashboardMcpUrls } from "../lib/agent/dashboardMcp";
 import { agentToolInput, buildWidgetRefs, executeFunction, makeWidgetDataFetcher, runAgentTool, type ToolRequest } from "../lib/agent/execute";
 import { LOCAL_TOOLS, forgetRitaCards } from "../lib/agent/localTools";
@@ -32,9 +33,7 @@ import { useWidgetRegistryStore } from "./widgetRegistryStore";
 export type ArtifactMessage = { role: "ai"; content: ClientArtifact[] };
 export type ChatMessage = AgentMessage | ArtifactMessage;
 
-export function isClientArtifact(v: unknown): v is ClientArtifact {
-  return isRecord(v) && typeof v.type === "string" && typeof v.uuid === "string" && "content" in v;
-}
+export { isClientArtifact } from "../lib/agent/clientArtifact";
 
 export function isArtifactMessage(m: ChatMessage): m is ArtifactMessage {
   return m.role === "ai" && Array.isArray(m.content) && m.content.every(isClientArtifact);
@@ -207,12 +206,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
     // Artifact messages are a client-side rendering; Rita never sent them as messages.
     const outgoing: AgentMessage[] = [...prior.filter((m): m is AgentMessage => !isArtifactMessage(m)), human];
     const turn: ChatMessage[] = [];
+    let completedRounds: AgentMessage[] = [];
     const trail: AgentStatus[] = [];
     const calls: AgentCall[] = [];
     const seen = new Set<string>();
     const show = () => {
       if (!live()) return;
-      set({ messages: [...prior, human, ...turn], trail: [...trail] });
+      set({ messages: [...prior, human, ...completedRounds, ...turn], trail: [...trail] });
     };
     const noticed = () => {
       if (!get().paneOpen) set({ hasUnread: true });
@@ -281,7 +281,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
         get cards() {
           return settings.contextSharing ? (liveDashboard()?.tabs.flatMap((t) => t.cards) ?? []) : [];
         },
-        backends,
+        // Resolve the same current connection as the card, including a credential changed during this turn.
+        get backends() {
+          return useBackendsStore.getState().backends;
+        },
         findWidget,
         // Read at each fetch, not once per turn: findWidget is live, so a
         // key-maint backend that finishes loading mid-turn must be off limits
@@ -289,8 +292,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
         get keyMaintBackends() {
           return keyMaintBackendIds(useWidgetRegistryStore.getState().widgets);
         },
-        request: (card, widget, backend, overrides) =>
-          cardRequestSync(card, widget, backend, liveDashboard(), armedRequestOf(card.id), new Date(), overrides),
+        request: (card, widget, backend, overrides) => {
+          const dashboard = liveDashboard();
+          return cardRequestSync(card, widget, backend, dashboard, armedRequestOf(card, widget, backend, dashboard?.id), new Date(), overrides);
+        },
       });
       const deps = {
         fetchWidget,
@@ -437,7 +442,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
           }
           return result;
         },
-        signal: controller.signal,
+        onHistory: (history) => {
+          completedRounds = history.slice(outgoing.length);
+          show();
+        },
+        signal: mine.signal,
         workspaceOptions,
         skillsCatalog: catalog,
         selectedSkills,
@@ -445,6 +454,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       for (;;) {
         const next = await gen.next();
         if (next.done) {
+          // A stopped query can return its completed engine history instead of throwing.
+          if (mine.signal.aborted) turn.push({role: "ai", content: "Stopped by the user. Completed tool actions are recorded above. Do not resume this interrupted request unless the user asks."});
           // Rita's function-round messages (ai call + tool result) come back in the history.
           if (live()) set({ messages: [...prior, human, ...next.value.slice(outgoing.length), ...turn] });
           break;
@@ -498,7 +509,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // DOMException (the abort case) is not an instanceof Error in jsdom,
       // so the name check has to stand on its own rather than gate on that.
       if (isRecord(err) && err.name === "AbortError") {
-        // Stop pressed: keep whatever streamed, no error.
+        // Keep completed calls so the next turn cannot mistake them for work
+        // still to do, and explicitly close the interrupted request.
+        turn.push({ role: "ai", content: "Stopped by the user. Completed tool actions are recorded above. Do not resume this interrupted request unless the user asks." });
+        show();
       } else if (err instanceof TypeError) {
         set({ error: `Rita offline. ${err.message} (${settings.ritaUrl})` });
         noticed();

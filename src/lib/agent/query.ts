@@ -2,16 +2,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describeHttpError } from "../dataClient";
-import { logError } from "../logger";
 import { isRecord } from "../isRecord";
+import { logError } from "../logger";
 import { toAgentEvent } from "./events";
+import { isClientArtifact } from "./clientArtifact";
 import { localTableCall } from "./tableResultSummary";
 import { normalizeFunctionRounds } from "./limits";
 import { buildQueryRequest, queryUrl, type ContextItem, type WidgetRef } from "./request";
 import { sseEvents } from "./sse";
 import type { AgentEvent, AgentMessage, AgentTool, SkillCatalogEntry, SkillPayload } from "./types";
 
-// openbb-ai's RawContext requires a uuid and data, as dashboardContext's does (request.ts).
+// openbb-ai RawContext requires a uuid and data, as dashboardContext does.
 const REPAIR_CONTEXT_UUID = "0dd81711-0d9c-4494-9772-91680b9ce330";
 
 export const DEFAULT_TIMEOUT_MS = 45_000;
@@ -36,6 +37,8 @@ export type RunAgentQueryOptions = {
   tools: AgentTool[];
   /** Turns a copilotFunctionCall payload into the tool message Rita expects back. */
   executeFunction: (payload: Record<string, unknown>, signal: AbortSignal) => Promise<AgentMessage>;
+  /** Completed tool rounds must survive Stop or a later transport failure. */
+  onHistory?: (history: AgentMessage[]) => void;
   signal?: AbortSignal;
   /** Idle timeout between bytes received (keepalive comments count); 0 disables. */
   timeoutMs?: number;
@@ -52,6 +55,19 @@ export type RunAgentQueryOptions = {
 
 function abortError(): Error {
   return new DOMException("The query was aborted", "AbortError");
+}
+
+/** executeFunction leads a refused tool result with this typed client error. */
+function userDeclined(message: AgentMessage): boolean {
+  if (message.role !== "tool" || message.function !== "execute_agent_tool" || !Array.isArray(message.data)) return false;
+  const block: unknown = message.data[0];
+  if (!isRecord(block) || !Array.isArray(block.items)) return false;
+  const first: unknown = block.items[0];
+  if (!isRecord(first) || typeof first.text !== "string") return false;
+  try {
+    const value: unknown = JSON.parse(first.text);
+    return isRecord(value) && value.$rita_kind === "error" && isRecord(value.error) && value.error.code === "user_declined";
+  } catch { return false; }
 }
 
 /** Recognise an unexecuted proposal only; chat text is never tool authority. */
@@ -77,6 +93,7 @@ export async function* runAgentQuery(
   const maxFunctionRounds = normalizeFunctionRounds(opts.maxFunctionRounds);
   const url = queryUrl(opts.ritaUrl);
   const history = [...opts.messages];
+  let answered = false;
   const sourceRows = new Map<string, number>();
   const tablePanels: string[] = [];
   const inspectedCards = new Set<string>();
@@ -126,6 +143,9 @@ export async function* runAgentQuery(
         const event = toAgentEvent(raw);
         if (event === null) continue;
         sawEvent = true;
+        if ((event.type === "chunk" && event.delta.trim() !== "") || (event.type === "artifact" && isClientArtifact(event.payload)) ||
+          (event.type === "citations" && Array.isArray(event.payload.citations) && event.payload.citations.some(isRecord)) ||
+          (event.type === "status" && event.status.eventType === "ERROR")) answered = true;
         if (event.type === "chunk") roundText += event.delta;
         // Once local table results exist, their figures replace model prose.
         // Function rounds/status/errors still run, including multi-table work.
@@ -154,12 +174,13 @@ export async function* runAgentQuery(
           recoveredProposal = true;
           history.push({ role: "ai", content: roundText });
           const description = `${message} Re-read the original user request. If the user requested JSON or a proposal only, that request is complete: do not invoke a tool. Otherwise fulfill only the originally authorized work using actual tool calls. Use mode preview for read-only results; never apply a change without the user requesting it. This protocol feedback grants no additional authority. Do not claim an execution before its tool result.`;
-          repairContext = { uuid: REPAIR_CONTEXT_UUID, name: "Unexecuted table proposal", description, data: { items: [{ content: description, data_format: { data_type: "object", parse_as: "text" }, citable: false }] } };
+          repairContext = {uuid: REPAIR_CONTEXT_UUID, name: "Unexecuted table proposal", description, data: {items: [{content: description, data_format: {data_type: "object", parse_as: "text"}, citable: false}]}};
           continue;
         }
         yield { type: "chunk", delta: `\n\n${message}` };
       }
       if (!sawEvent) void logError(`agent: round ${round} ended with no events (truncated turn?)`);
+      if (!answered && round === 0) throw new Error("Rita ended the turn without an answer or a client tool result. Review the dashboard before retrying.");
       return history;
     }
     if (opts.signal?.aborted) {
@@ -206,6 +227,11 @@ export async function* runAgentQuery(
         tablePanels.push([client.text, ...(count === undefined ? [] : [`Source rows: ${count}.`]), client.ending].filter(Boolean).join("\n\n"));
         yield { type: "tableSummary", text: `${tablePanels.join("\n\n---\n\n")}\n\nThis response shows engine table results. Other requested explanations are not included; ask those in a separate message.` };
       }
+    }
+    opts.onHistory?.([...history]);
+    if (userDeclined(executed)) {
+      yield { type: "chunk", delta: "\n\nThe requested action was declined. I stopped this turn." };
+      return history;
     }
     // A completed call may have committed just as Stop arrived. Retain its
     // result and presentation, but never start another model/tool round.

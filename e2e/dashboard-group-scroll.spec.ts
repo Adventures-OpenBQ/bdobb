@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "@playwright/test";
-import { dashboardSeed, seedApp } from "./fixtures";
+import { dashboardSeed, MOCK_URL, seedApp } from "./fixtures";
 
 test.use({ browserName: process.env.HEADER_WEBKIT ? "webkit" : "chromium" });
 
@@ -61,7 +61,7 @@ test('parameter groups use spare header width before scrolling', async ({ page }
 for (const width of [1440, 390]) {
   test(`Day Chart quote typography fits a compact tile at ${width}px`, async ({ page }) => {
     await page.setViewportSize({width,height:850});
-    await page.route('http://127.0.0.1:4174/**', async route => {
+    await page.route(`${MOCK_URL}/**`, async route => {
       const path = new URL(route.request().url()).pathname;
       const tile = {symbol:'AAPL',name:'Apple Inc.',logo_path:null,
         session:{date:'2026-11-20',timezone:'America/New_York',label:'Regular session',status:'closed'},

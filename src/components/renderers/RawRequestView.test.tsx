@@ -20,6 +20,16 @@ beforeEach(() => {
 });
 
 describe("RawRequestView", () => {
+  it("cancels an in-flight raw view read on unmount", async () => {
+    fetchWidgetData.mockReturnValueOnce(new Promise(() => {}));
+    const view = render(<RawRequestView backend={backend()} widget={html} params={{}} refreshKey={0} />);
+    await waitFor(() => expect(fetchWidgetData).toHaveBeenCalledTimes(1));
+    const signal = fetchWidgetData.mock.calls[0][4];
+
+    view.unmount();
+    expect(signal?.aborted).toBe(true);
+  });
+
   it("asks the same endpoint with the card's params plus raw=true", async () => {
     fetchWidgetData.mockResolvedValue([]);
     render(<RawRequestView backend={backend()} widget={html} params={{ symbol: "AAPL" }} refreshKey={0} />);

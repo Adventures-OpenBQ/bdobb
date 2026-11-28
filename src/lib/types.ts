@@ -646,6 +646,7 @@ export type DashboardCard = {
   queryBinding?: import("./temporal/bindings").QueryBinding;
   linkedSource?: LinkedSource;
   linkedChart?: LinkedChartSettings;
+  linkedMetric?: import('./widgetData/kpi/types').LinkedKpiOptions;
   id: string;
   widgetId: string;
   backendId: string;
@@ -714,6 +715,7 @@ export type DashboardCard = {
   pinned?: PinEdge;
   /** v8: a News card's feed list, highlight keywords and tab order. Absent until configured. */
   news?: NewsCardState;
+  video?: import("./youtubePlayback").YoutubePlayback;
   /** Set on a card that came from a dashboard server (workspaceDashboards.ts). Never in apps.json. */
   extensions?: { workspace?: CardWorkspaceState };
 };
@@ -828,6 +830,8 @@ export type Dashboard = {
   hidden?: boolean;
   /** The docks only: the rows each edge's band reserves. */
   dockRows?: Record<PinEdge, number>;
+  /** Edges whose locked band lets empty space show the dashboard. */
+  dockSeeThrough?: Partial<Record<PinEdge, true>>;
 };
 
 export type Settings = {

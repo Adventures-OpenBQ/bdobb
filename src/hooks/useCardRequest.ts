@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useMemo } from "react";
-import { paramsKey, queryParams, type WireContext } from "../lib/params";
+import { paramsKey, queryParams, wireParams, type WireContext } from "../lib/params";
 import { effectiveParams } from "../lib/paramGroups";
 import { CalendarError } from "../lib/calendars/contracts";
 import type { BackendConfig, Dashboard, DashboardCard, WidgetDef } from "../lib/types";
 import { useBundleCalendars, withOvernight } from "./useBundleCalendars";
 import { fiscalYearEndSync, useFiscalYearEnd } from "./useFiscalYearEnd";
 import { tradingCalendarsSync, useTradingCalendar } from "./useTradingCalendar";
+import { peekWidgetCalendars } from "../lib/calendars/bundles";
 import type { ArmedRequest } from "./useWidgetData";
 import { isDocks } from "../lib/dashboardsFile";
 import { useDashboardStore } from "../stores/dashboardStore";
@@ -156,12 +157,11 @@ export function useCardRequest(
  * (ruling RW6): the card would wait for it, and a synchronous read cannot.
  * `overrides` are Rita's `input_args`: applied before the calendars are
  * chosen, because a calendar follows the card's `symbol` (calendarOf) and an
- * atom's own `(MIC)`. An opted-in (`calendarBinding`) card gets no
- * `calendars`, so fetchWidgetData loads its bundles through the shared cache
- * the card's own hook reads; the legacy loader's never apply to it.
- * ponytail: no `bounds`, so `earliest` / `latest` defer to the provider's
- * own bound as on the card's first request; pass dataBounds of the card's
- * rows if Rita's answers must match a card that has since narrowed them.
+ * atom's own `(MIC)`. An opted-in (`calendarBinding`) card uses
+ * bundles from the cache shared with its hook. For a fresh request,
+ * fetchWidgetData loads missing bundles.
+ * An unoverridden backend table read must reproduce its committed wire,
+ * including the bounds its source used, before issuing a new GET.
  */
 export function cardRequestSync(
   card: DashboardCard,
@@ -193,6 +193,19 @@ export function cardRequestSync(
   if (legacy?.pending.length) {
     throw new CalendarError("CALENDAR_UNAVAILABLE", `${legacy.pending.join(", ")} calendar not loaded`);
   }
-  const calendars = legacy?.calendars;
-  return { query: armed ? params : queryParams(widget, params), ctx: { fiscalYearEnd, calendars, exchange } };
+  const ctx: WireContext = { fiscalYearEnd, calendars: legacy?.calendars, exchange };
+  if (armed?.progress && Object.keys(overrides).length === 0) {
+    // Use the same cached calendar maps, bounds and clock for the comparison and
+    // the GET. A fiscal hold or a dropped intent has no wire the agent can send.
+    const { held, wire, bounds } = armed.progress;
+    if (held || wire === null) throw new Error("Waiting for the source card to run.");
+    const bundled = backend && peekWidgetCalendars(backend, widget, params, exchange, now);
+    ctx.calendars = { ...ctx.calendars, ...bundled?.calendars };
+    ctx.bounds = bounds;
+    ctx.now = now;
+    if (bundled?.pending || paramsKey(wireParams(widget, params, ctx)) !== wire) {
+      throw new Error("The source request has changed. Run the source card to use its new values.");
+    }
+  }
+  return { query: armed ? params : queryParams(widget, params), ctx };
 }

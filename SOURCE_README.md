@@ -1,7 +1,7 @@
-# Source for BDOBB v11.0.0
+# Corresponding source for BDOBB main (v11.0.0)
 
-This revision adds the v10 Day Chart watchlist strip to the existing main/v11 web
-application: session snapshots, symbol-group bindings and authenticated raster logos.
+This source-only archive contains the main integration code identified by
+source-offer.json. It is separate from installer and runtime qualification.
 
 Base repository: Adventures-OpenBQ/bdobb
 The source identity and preparation commit are recorded in source-offer.json;
@@ -48,6 +48,23 @@ The existing dependency pack retains the older rustls distribution for its
 historical releases. This tree's Cargo lockfile selects 0.23.46; the supplement
 provides those exact upstream source bytes. All other dependency lockfiles match
 the earlier v11 preparation. Keep original license texts and vendored patches.
+
+## Main npm source supplement
+
+The four dependency updates selected by the current main pnpm lock are supplied
+separately as original, unmodified npm distributions with retained license texts:
+`@isaacs/nonrecursive-glob-match@1.1.0`, `minimatch@11.0.1`,
+`source-map-js@1.2.2`, and `zod@4.6.6`. The in-tree TanStack patch is retained
+in `patches/` and applied by the included pnpm configuration.
+
+- File: `main-npm-source-supplement-b6183511c2c2408b4cc6.tar.gz`
+- SHA-256: `9f4082f7fd0688b2647ddda3099a44ec8d182b10697d5b1043671ed21c86920e`
+- Prepared public URL: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-main-npm-b6183511c2c2/main-npm-source-supplement-b6183511c2c2408b4cc6.tar.gz
+
+`DEPENDENCY-SOURCES.json` identifies the unchanged shared pack, existing rustls
+supplement, and this four-package supplement. `DEPENDENCY-COVERAGE.json` records
+the current locks. The npm supplement does not replace historical source packs.
+Verify publication and all archive hashes before distributing this source offer.
 
 ## Build the application
 

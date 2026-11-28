@@ -36,7 +36,8 @@ const MAX_HEAD: usize = 2048;
 /// single serving thread for longer than this.
 const READ_DEADLINE: Duration = Duration::from_secs(2);
 
-const CSP: &str = "default-src 'none'; frame-src https://www.youtube.com; style-src 'unsafe-inline'";
+const CSP: &str = "default-src 'none'; frame-src https://www.youtube.com; style-src 'unsafe-inline'; script-src 'sha256-HYitdvmcfrmX6YOu4X4mSuL2LWMLWJCoQOxtfrU4Goc=' https://www.youtube.com https://s.ytimg.com";
+const PLAYER_JS: &str = include_str!("video_player.js");
 /// The same `allow` list YouTubeRenderer gives its own frame.
 const ALLOW: &str = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
 
@@ -166,10 +167,17 @@ fn respond(head: &str, port: u16) -> (u16, String) {
     }
     // The query must be exactly `id=<id>`: the id alphabet has no `&`, `=` or
     // `%`, so an extra parameter or any encoding fails validation.
-    match query.strip_prefix("id=").filter(|id| valid_id(id)) {
-        Some(id) => (200, page(id)),
-        None => error(400),
+    if let Some(id) = query.strip_prefix("id=").filter(|id| valid_id(id)) {
+        return (200, page(id));
     }
+    // Controlled playback has exactly these two boolean fields. No arbitrary
+    // origin, URL, encoded ID, duplicate or additional option reaches HTML.
+    let parts: Vec<_> = query.split('&').collect();
+    if parts.len() != 3 { return error(400); }
+    let Some(id) = parts[0].strip_prefix("id=").filter(|id| valid_id(id)) else { return error(400); };
+    let autoplay = match parts[1] { "autoplay=0" => false, "autoplay=1" => true, _ => return error(400) };
+    let muted = match parts[2] { "muted=0" => false, "muted=1" => true, _ => return error(400) };
+    (200, controlled_page(id, port, autoplay, muted))
 }
 
 /// `^[A-Za-z0-9_-]{11}$`, the same rule as src/lib/youtube.ts's ID_RE.
@@ -183,6 +191,20 @@ fn page(id: &str) -> String {
         "<!doctype html><html><head><meta charset=\"utf-8\"><title>YouTube video</title>\
 <style>html,body{{margin:0;height:100%;background:#000}}iframe{{display:block;border:0;width:100%;height:100%}}</style>\
 </head><body><iframe src=\"https://www.youtube.com/embed/{id}\" allow=\"{ALLOW}\" allowfullscreen></iframe></body></html>"
+    )
+}
+
+/// The controller is fixed source, permitted by its exact CSP hash. Neither a
+/// backend URL nor user-authored code is interpolated into its JavaScript.
+fn controlled_page(id: &str, port: u16, autoplay: bool, muted: bool) -> String {
+    let auto = u8::from(autoplay);
+    let mute = u8::from(muted);
+    // Windows checkouts may use CRLF. Serve the exact LF controller covered by CSP.
+    let player_js = PLAYER_JS.replace("\r\n", "\n");
+    format!(
+        "<!doctype html><html data-player-state=\"unstarted\" data-current-time=\"0\" data-player-error=\"\" data-start-muted=\"{muted}\" data-autoplay=\"{autoplay}\"><head><meta charset=\"utf-8\"><title>YouTube video</title>\
+<style>html,body{{margin:0;height:100%;background:#000}}iframe{{display:block;border:0;width:100%;height:100%}}</style>\
+</head><body><iframe id=\"player\" src=\"https://www.youtube.com/embed/{id}?enablejsapi=1&amp;playsinline=1&amp;autoplay={auto}&amp;mute={mute}&amp;origin=http://127.0.0.1:{port}\" allow=\"{ALLOW}\" allowfullscreen></iframe><script>{player_js}</script></body></html>"
     )
 }
 
@@ -305,7 +327,7 @@ mod tests {
             "\r\nReferrer-Policy: strict-origin-when-cross-origin\r\n",
             "\r\nCache-Control: no-cache\r\n",
             "\r\nX-Content-Type-Options: nosniff\r\n",
-            "\r\nContent-Security-Policy: default-src 'none'; frame-src https://www.youtube.com; style-src 'unsafe-inline'\r\n",
+            &format!("\r\nContent-Security-Policy: {CSP}\r\n"),
         ] {
             assert!(r.contains(h), "{h:?}");
         }
@@ -381,5 +403,40 @@ mod tests {
         assert_ne!(second, first);
         let ok = exchange(second, &format!("GET /yt?id={ID} HTTP/1.1\r\nHost: 127.0.0.1:{second}\r\n\r\n"));
         assert!(ok.starts_with("HTTP/1.1 200 OK\r\n"), "{ok}");
+    }
+}
+
+#[cfg(test)]
+mod playback_tests {
+    use super::*;
+    #[test]
+    fn controller_bytes_are_independent_of_windows_checkout_line_endings() {
+        let body = controlled_page("uYyhswnZkSw", 41234, true, true);
+        let script = body.split("<script>").nth(1).unwrap().split("</script>").next().unwrap();
+        assert!(!script.contains('\r'), "CSP hash must cover the same controller on LF and CRLF checkouts");
+    }
+
+    #[test]
+    fn controlled_player_accepts_only_the_two_bounded_playback_flags() {
+        let request = "GET /yt?id=uYyhswnZkSw&autoplay=1&muted=0 HTTP/1.1\r\nHost: 127.0.0.1:41234";
+        let (status, body) = respond(request, 41234);
+        assert_eq!(status, 200);
+        assert!(body.contains("autoplay=1"));
+        assert!(body.contains("mute=0"));
+        assert!(body.contains("enablejsapi=1"));
+        assert!(body.contains("data-player-state"));
+    }
+    #[test]
+    fn controlled_player_refuses_duplicate_unknown_and_nonboolean_fields() {
+        for query in [
+            "id=uYyhswnZkSw&autoplay=2&muted=0",
+            "id=uYyhswnZkSw&autoplay=true&muted=0",
+            "id=uYyhswnZkSw&autoplay=1&muted=0&url=https://evil.example",
+            "id=uYyhswnZkSw&autoplay=1&muted=0&muted=1",
+            "id=uYyhswnZkSw&muted=0",
+        ] {
+            let request = format!("GET /yt?{query} HTTP/1.1\r\nHost: 127.0.0.1:41234");
+            assert_eq!(respond(&request, 41234).0, 400, "{query}");
+        }
     }
 }

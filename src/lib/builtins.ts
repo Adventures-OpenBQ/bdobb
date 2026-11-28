@@ -3,6 +3,7 @@
 
 import { DEFAULT_ZONES } from "./zones";
 import type { WidgetDef } from "./types";
+import { DEFAULT_SOURCE, DEFAULT_VOLUME_LABEL } from "./pictureInPicture";
 
 /**
  * Reserved: no BackendConfig may carry this id. That is what keeps the
@@ -20,6 +21,8 @@ export const BUILTIN_BACKEND_ID = "builtin";
 export const LOCAL_TABLE_ID = "local_table";
 export const LINKED_TABLE_ID = "linked_table";
 export const LINKED_CHART_ID = "linked_chart";
+export const LINKED_METRIC_ID = "linked_metric";
+export const isLinkedMetricCard = (card: {backendId: string; widgetId: string}): boolean => card.backendId === BUILTIN_BACKEND_ID && card.widgetId === LINKED_METRIC_ID;
 
 /**
  * The RSS built-in's default item count. Named because RssRenderer falls back
@@ -39,6 +42,7 @@ const base: Pick<WidgetDef, "backendId" | "category" | "subCategory" | "endpoint
 export const BUILTIN_WIDGETS: WidgetDef[] = [
   { ...base, id: LINKED_TABLE_ID, name: "Linked table", description: "A table using another table in this dashboard.", type: LINKED_TABLE_ID, gridData: { w: 24, h: 14 }, params: [] },
   { ...base, id: LINKED_CHART_ID, name: "Linked chart", description: "A chart using another table in this dashboard.", type: LINKED_CHART_ID, gridData: { w: 24, h: 14 }, params: [] },
+  { ...base, id: LINKED_METRIC_ID, name: "Linked metric", description: "A KPI card or gauge using a verified observation from a table in this dashboard.", type: "metric", gridData: { w: 24, h: 16 }, params: [] },
   {
     ...base,
     id: "note",
@@ -125,6 +129,43 @@ export const BUILTIN_WIDGETS: WidgetDef[] = [
         // visibility, so this control stays visible but inert under the
         // horizontal layout and the description has to say so.
         description: "Only applies to the Vertical layout.",
+      },
+    ],
+  },
+  {
+    ...base,
+    id: "picture_in_picture",
+    name: "Picture in Picture",
+    description:
+      "A parking spot for Chrome's floating video player. In the macOS app, BDOBB moves and sizes the player over this card.",
+    type: "picture_in_picture",
+    // Room for the player's 284 × 160 minimum at ordinary dashboard widths;
+    // WidgetDef.gridData has no minW/minH, so a smaller card says so instead.
+    gridData: { w: 16, h: 14 },
+    params: [
+      {
+        paramName: "source",
+        label: "Source tab title contains",
+        type: "text",
+        value: DEFAULT_SOURCE,
+        description: "Optional. Text in the title of the Chrome tab the video came from, used only to find that tab's volume slider for Mute. Leave it empty to use whichever Chrome window shows the slider.",
+      },
+      {
+        paramName: "volumeLabel",
+        label: "Volume slider label",
+        type: "text",
+        value: DEFAULT_VOLUME_LABEL,
+        description: "What the site calls its volume slider. Change it only if the site renames the control.",
+      },
+      {
+        paramName: "muteWhileHidden",
+        label: "Mute while hidden",
+        value: "off",
+        options: [
+          { label: "Off", value: "off" },
+          { label: "On", value: "on" },
+        ],
+        description: "Silences the player while it is hidden (the card is out of view, or BDOBB is minimised or not in front) and restores the volume when it returns.",
       },
     ],
   },

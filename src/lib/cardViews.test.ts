@@ -17,6 +17,13 @@ it("offers Chart and Calendar only when the data supports them", () => {
   const views = availableViews(def("table"), rows, {}).map(v => v.value);
   expect(views).toEqual(expect.arrayContaining(["chart", "calendar", "raw", "transposed"]));
 });
+it('offers row-backed views for a schema-qualified single record and leaves undeclared envelopes raw',()=>{
+ const widget={...def('table'),table:{columns:[{field:'date',cellDataType:'dateString' as const},{field:'close',cellDataType:'number' as const}]}};
+ expect(availableViews(widget,{date:'2026-01-02',close:1},{}).map(view=>view.value))
+  .toEqual(expect.arrayContaining(['chart','calendar','transposed']));
+ expect(availableViews(widget,{unexpected:{date:'2026-01-02',close:1}},{}).map(view=>view.value))
+  .not.toEqual(expect.arrayContaining(['chart','calendar','transposed']));
+});
 it('offers Statement for explicit managed SSRM, while standard LIVE stays paged',()=>{
  const managed={...def('table_ssrm'),provider:'managed-native' as const,protocolVersion:1};
  expect(availableViews(managed,null,{}).map(v=>v.value)).toContain('statement');

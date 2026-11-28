@@ -28,6 +28,12 @@ describe('formula syntax', () => {
   it.each(['SUM', 'MEAN', 'MEDIAN', 'MIN', 'MAX', 'COUNT', 'UNIQUECOUNT', 'FIRST', 'LAST'])('accepts %s explicitly', fn => {
     expect(parseFormula(`${fn}(Volume)`).diagnostics).toEqual([]);
   });
+  // describe_table lists these in lower case; live Rita sent first(open) and was refused until its round limit.
+  it.each(['sum', 'first', 'Last', 'uniqueCount', 'if'])('accepts %s in any letter case', fn => {
+    const text = fn.toUpperCase() === 'IF' ? `${fn}(Volume > 0, 1, 0)` : `${fn}(Volume)`;
+    expect(parseFormula(text).diagnostics).toEqual([]);
+    expect(parseFormula(text).ast).toEqual(parseFormula(text.replace(fn, fn.toUpperCase())).ast);
+  });
   it.each(['a.b', 'evil(1)', 'new Object()', '{}', '1; alert(1)', 'a["x"]', 'SUM()', 'SUM(1,2)', 'IF(1,2)', '1 2', '1e999', '"unterminated', '[unterminated'])('rejects unsafe or malformed syntax %s', text => {
     expect(parseFormula(text)).toMatchObject({ diagnostics: [expect.objectContaining({ code: 'syntax' })] });
     expect(parseFormula(text).ast).toBeUndefined();
@@ -62,6 +68,15 @@ describe('formula syntax', () => {
     const tree = (leaves: number): string => leaves === 1 ? '1' : `(${tree(Math.floor(leaves / 2))}+${tree(Math.ceil(leaves / 2))})`;
     expect(parseFormula(`-${tree(512)}`).diagnostics).toEqual([]);
     expect(parseFormula(tree(513)).diagnostics[0]).toMatchObject({ code: 'node-limit', message: expect.stringContaining('1,024') });
+  });
+});
+
+describe('scalar math functions', () => {
+  it('parses LN and SQRT as one-argument scalar calls', () => {
+    expect(parseFormula('LN(strike / underlying_price)').ast).toMatchObject({ kind: 'call', function: 'LN' });
+    expect(parseFormula('SQRT(dte / 365)').ast).toMatchObject({ kind: 'call', function: 'SQRT' });
+    expect(parseFormula('LN(1, 2)').diagnostics[0].message).toBe('Invalid function argument count.');
+    expect(validateFormulaAst({ kind: 'call', function: 'SQRT', args: [{ kind: 'literal', value: 4 }] }).diagnostics).toEqual([]);
   });
 });
 

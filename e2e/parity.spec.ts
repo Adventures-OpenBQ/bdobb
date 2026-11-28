@@ -52,20 +52,21 @@ test("↻ refetches every card on the active tab and nothing on any other tab", 
   });
 
   let quoteRequests = 0;
+  const requestedSymbols: string[] = [];
   await page.route("**/quote*", async (route) => {
     quoteRequests += 1;
+    requestedSymbols.push(new URL(route.request().url()).searchParams.get("symbol") ?? "");
     await route.continue();
   });
 
   await seedApp(page, seed);
   await page.locator(".widget-card table").first().waitFor();
 
-  // Only the active tab's one card is mounted, so only it fetches — but
-  // React 18 StrictMode (which this harness's dev server runs under) mounts
-  // every component twice, so the settled count for that one card is 2 real
-  // requests, not 1. Assert the delta the refresh-all click causes, not an
-  // absolute count, so this stays correct if that mount behavior changes.
-  await expect.poll(() => quoteRequests).toBe(2);
+  // Bootstrap now runs once per mounted App, including StrictMode's effect
+  // replay. Wait for the rendered data, then measure the refresh delta rather
+  // than requiring the duplicate startup request that the old bootstrap made.
+  expect(quoteRequests).toBeGreaterThanOrEqual(1);
+  expect(requestedSymbols.every(symbol => symbol === "AAPL")).toBe(true);
   const afterMount = quoteRequests;
 
   await page.getByRole("button", { name: "Refresh all" }).click();
@@ -75,6 +76,7 @@ test("↻ refetches every card on the active tab and nothing on any other tab", 
   // asserting it did not.
   await page.waitForTimeout(500);
   expect(quoteRequests).toBe(afterMount + 1);
+  expect(requestedSymbols.every(symbol => symbol === "AAPL")).toBe(true);
 });
 
 test("↻ sits at the right end of the tab bar, immediately left of the quick-add +", async ({ page }) => {

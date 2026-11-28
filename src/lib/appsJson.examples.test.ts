@@ -4,7 +4,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { BUILTIN_WIDGETS, LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID } from "./builtins";
+import { BUILTIN_WIDGETS, LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID, LINKED_METRIC_ID } from "./builtins";
 import { importApps, isAppsJson, type App } from "./appsJson";
 import type { WidgetDef } from "./types";
 
@@ -71,6 +71,7 @@ describe("docs/examples", () => {
     "v7.0.0-touch.apps.json",
     "v8.0.0-news.apps.json",
     "v8.0.0-pinned.apps.json",
+    "v9-chart-expansion.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
     "v5-financial-demo/apps.json",
@@ -352,7 +353,7 @@ describe("docs/examples", () => {
   // built-in fails the gate until it has a card in the example. v8: News is a
   // v8 built-in whose state needs the v8 envelope, so its sample is the v8
   // News example, not the v4 file a v4-v7 install must still open.
-  it("v4.0.0-builtins: every BUILTIN_WIDGETS id, and param_echo, appears at least once", () => {
+  it("v4.0.0-builtins: every applicable built-in and param_echo appears at least once", () => {
     const { ids } = load("v4.0.0-builtins.apps.json");
     const present = new Set([...ids, ...load("v8.0.0-news.apps.json").ids]);
     for (const w of BUILTIN_WIDGETS) {
@@ -362,7 +363,9 @@ describe("docs/examples", () => {
       // no sample card, the same reason it gets no library entry.
       // Linked cards also need dashboard-owned table IDs. External apps.json
       // intentionally has no native dependency-reference extension.
-      if ([LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID].includes(w.id)) continue;
+      if ([LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID, LINKED_METRIC_ID].includes(w.id)) continue;
+      // The native PiP parking card was added after this historical v4 fixture.
+      if (w.type === "picture_in_picture") continue;
       expect(present.has(w.id), `${w.id} has no card in v4.0.0-builtins.apps.json`).toBe(true);
     }
     expect(present.has("param_echo")).toBe(true);

@@ -4,7 +4,9 @@ import { validatePivotGroupPlan, type PivotGroupPlan } from '../lib/pivotGroupCh
 import type { PivotGroupProofContext } from '../lib/tableExecution/pivotGroupProof';
 import { reservedPivotName } from '../lib/paramGroups';
 
-import type { LinkedChartSettings } from "../lib/widgetData/types";
+import type { LinkedChartSettings, LinkedPresentation } from "../lib/widgetData/types";
+import type { LinkedKpiOptions } from "../lib/widgetData/kpi/types";
+import { decodeLinkedKpiOptions } from "../lib/widgetData/kpi/settings";
 import { canUseLinkedSource } from "../lib/widgetData/sources";
 import { remapWidgetReferences } from "../lib/widgetData/persistence";
 import { validateTableModel } from "../lib/tableExecution/validation";
@@ -12,7 +14,7 @@ import type { TableDefinition, SelectionSpec } from "../lib/tableExecution/types
 import { create } from "zustand";
 import { parseQueryBinding } from "../lib/temporal/bindings";
 import { pinResolvedBackends } from "../lib/appsJson";
-import { BUILTIN_BACKEND_ID, BUILTIN_WIDGETS, LINKED_TABLE_ID, LINKED_CHART_ID, LOCAL_TABLE_ID } from "../lib/builtins";
+import { BUILTIN_BACKEND_ID, BUILTIN_WIDGETS, LINKED_TABLE_ID, LINKED_CHART_ID, LINKED_METRIC_ID, isLinkedMetricCard, LOCAL_TABLE_ID } from "../lib/builtins";
 import {
   clampDockRows,
   DEFAULT_DOCK_ROWS,
@@ -25,6 +27,7 @@ import {
   makeDefaultDocks,
   saveDashboard,
 } from "../lib/dashboardsFile";
+import { withDockSeeThrough } from "../lib/dockSeeThrough";
 import { firstFreeSpot } from "../lib/dockLayout";
 import { IMPORT_MAX_DASHBOARDS } from "../lib/importLimits";
 import { deleteLocalFile } from "../lib/localFiles";
@@ -34,6 +37,7 @@ import { fiscalChain } from "../lib/fiscalChain";
 import { isFiscalType, parseFyEndMonth, relabel } from "../lib/periods";
 import { bindableKeys, seedParams } from "../lib/params";
 import { cardSourceIdentity } from "../lib/cardSourceIdentity";
+import {PIP_GRAB_CHANNEL} from "../lib/youtubePlayback";
 import { withOptional } from "../lib/collections";
 import type {
   ParamGroup,
@@ -96,6 +100,7 @@ type DashboardState = {
   commitDockEdit: () => Promise<void>;
   /** The rows `edge` reserves, clamped. */
   setDockRows: (edge: PinEdge, rows: number) => Promise<void>;
+  setDockSeeThrough: (edge: PinEdge, on: boolean) => Promise<void>;
   /**
    * The docks sync's own write (R6): the server's copy, taken whole, at the
    * server's revision -- no bump, these ARE the synced state. Refused in the
@@ -235,15 +240,20 @@ type DashboardState = {
   addCard: (
     widget: WidgetDef,
     paramsOverride?: Record<string, string>,
+    title?: string,
+    managedSource?: DashboardCard["managedSource"],
   ) => Promise<string | null>;
   addCardTo: (
     dashboardId: string | null,
     tabId: string | null,
     widget: WidgetDef,
     paramsOverride?: Record<string, string>,
+    title?: string,
+    managedSource?: DashboardCard["managedSource"],
   ) => Promise<string | null>;
-  addLinkedCard: (input: { dashboardId: string; tabId: string; sourceWidgetId: string; presentation: "table" | "chart" }) => Promise<string | null>;
-  commitLinkedChartSettings: (dashboardId: string, cardId: string, settings: LinkedChartSettings) => Promise<boolean>;
+  addLinkedCard: (input: { dashboardId: string; tabId: string; sourceWidgetId: string; presentation: LinkedPresentation }) => Promise<string | null>;
+  commitLinkedChartSettings: (dashboardId: string, cardId: string, settings: LinkedChartSettings, guard?: () => boolean) => Promise<boolean>;
+  commitLinkedMetricSettings: (dashboardId: string, cardId: string, settings: LinkedKpiOptions, guard: () => boolean) => Promise<boolean>;
   replaceLinkedSource: (cardId: string, sourceWidgetId: string) => Promise<boolean>;
   removeCard: (cardId: string) => Promise<void>;
   /**
@@ -311,6 +321,7 @@ type DashboardState = {
 // v5.4.0: a fourth, `fiscalYearEnd` — the card's FY ends override (spec §1.5).
 // v5.5.1: a fifth, `hideTitleParams` — the Parameters popover's title-bar checkbox.
 type CardFieldPatch = {
+  video: import("../lib/youtubePlayback").YoutubePlayback;
   managedSource: import("../lib/types").ManagedSourceReference;
   queryBinding: import("../lib/temporal/bindings").QueryBinding;
   view: CardView;
@@ -1217,13 +1228,14 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
       const tab = dashboard?.tabs.find(t => t.id === tabId);
       const id = crypto.randomUUID();
       if (!dashboard || !tab || removing.has(dashboardId) || !canUseLinkedSource(dashboard, id, sourceWidgetId)) return null;
-      const widgetId = presentation === 'chart' ? LINKED_CHART_ID : LINKED_TABLE_ID;
+      const widgetId = {chart: LINKED_CHART_ID, table: LINKED_TABLE_ID, metric: LINKED_METRIC_ID}[presentation];
       const widget = BUILTIN_WIDGETS.find(w => w.id === widgetId)!;
       const card: DashboardCard = {
         id, widgetId, backendId: BUILTIN_BACKEND_ID, params: {},
         layout: { x: 0, y: nextY(tab.cards), w: widget.gridData.w, h: widget.gridData.h },
         linkedSource: { kind: 'widget', sourceWidgetId },
-        ...(presentation === 'chart' ? { linkedChart: { type: 'column' as const, measures: [], display: 'grouped' as const } } : { tableDefinition: { table: {}, search: '' }, tableSelection: { kind: 'none' as const } }),
+        ...(presentation === 'chart' && { linkedChart: { type: 'column' as const, measures: [], display: 'grouped' as const } }),
+        ...(presentation === 'table' && { tableDefinition: { table: {}, search: '' }, tableSelection: { kind: 'none' as const } }),
       };
       const commit = (d: Dashboard): Dashboard => ({ ...d, tabs: d.tabs.map(t => t.id === tabId ? { ...t, cards: [...t.cards, card] } : t) });
       const saved = await saveEdit(commit(dashboard), dashboard);
@@ -1231,14 +1243,29 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
       return id;
     }),
 
-    commitLinkedChartSettings: async (dashboardId, cardId, settings) => {
+    commitLinkedChartSettings: async (dashboardId, cardId, settings, guard) => {
       const captured = structuredClone(settings);
       return lifecycle(async () => {
-        if (refuse("commitLinkedChartSettings")) return false;
+        if (refuse("commitLinkedChartSettings") || (guard && !guard())) return false;
         const dashboard = get().dashboards.find(d => d.id === dashboardId);
         const card = dashboard?.tabs.flatMap(t => t.cards).find(c => c.id === cardId);
         if (!dashboard || removing.has(dashboardId) || !card?.linkedSource || !card.linkedChart) return false;
         const commit = (d: Dashboard) => updateCardInDashboard(d, cardId, c => ({ ...c, linkedChart: captured }));
+        const saved = await saveEdit(commit(dashboard), dashboard);
+        set(state => ({ dashboards: state.dashboards.map(d => d.id === dashboardId ? keepRevision(commit(d), saved) : d) }));
+        return true;
+      });
+    },
+
+    commitLinkedMetricSettings: async (dashboardId, cardId, settings, guard) => {
+      const decoded = decodeLinkedKpiOptions(settings);
+      if (!decoded.ok) return false;
+      const commit = (d: Dashboard) => updateCardInDashboard(d, cardId, c => ({ ...c, linkedMetric: decoded.options }));
+      return lifecycle(async () => {
+        if (refuse("commitLinkedMetricSettings") || !guard()) return false;
+        const dashboard = get().dashboards.find(d => d.id === dashboardId);
+        const card = dashboard?.tabs.flatMap(t => t.cards).find(c => c.id === cardId);
+        if (!dashboard || removing.has(dashboardId) || !card?.linkedSource || !isLinkedMetricCard(card)) return false;
         const saved = await saveEdit(commit(dashboard), dashboard);
         set(state => ({ dashboards: state.dashboards.map(d => d.id === dashboardId ? keepRevision(commit(d), saved) : d) }));
         return true;
@@ -1252,7 +1279,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
         if (refuse("replaceLinkedSource")) return false;
         const dashboard = get().dashboards.find(d => d.id === dashboardId);
         const card = dashboard?.tabs.flatMap(t => t.cards).find(c => c.id === cardId);
-        if (!dashboard || removing.has(dashboard.id) || !card?.linkedSource || !canUseLinkedSource(dashboard, cardId, sourceWidgetId)) return false;
+        if (!dashboard || removing.has(dashboard.id) || (!card || (!card.linkedSource && !isLinkedMetricCard(card))) || !canUseLinkedSource(dashboard, cardId, sourceWidgetId)) return false;
         const commit = (d: Dashboard) => updateCardInDashboard(d, cardId, c => ({ ...c, linkedSource: { kind: 'widget', sourceWidgetId } }));
         const saved = await saveEdit(commit(dashboard), dashboard);
         set(state => ({ dashboards: state.dashboards.map(d => d.id === dashboard.id ? keepRevision(commit(d), saved) : d) }));
@@ -1260,7 +1287,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
       });
     },
 
-    addCardTo: async (dashboardId, tabId, widget, paramsOverride) => {
+    addCardTo: async (dashboardId, tabId, widget, paramsOverride, title, managedSource) => {
+      if (dashboardId === null || removing.has(dashboardId)) return null;
       const dashboard = dashboardById(dashboardId);
       const tab = dashboard?.tabs.find((t) => t.id === tabId);
       if (!dashboard || !tab) return null;
@@ -1272,6 +1300,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
         ? firstFreeSpot(tab.cards.map((c) => c.layout), widget.gridData.w, widget.gridData.h, GRID_COLS, (dashboard.dockRows ?? DEFAULT_DOCK_ROWS)[edge])
         : { x: 0, y: nextY(tab.cards), w: widget.gridData.w, h: widget.gridData.h };
 
+      const seededParams={...seedParams(widget),...paramsOverride};
+      // A local Chrome capture requires an explicit authoring choice, never a backend default.
+      if(widget.type==='youtube'&&seededParams.channel===PIP_GRAB_CHANNEL&&paramsOverride?.channel!==PIP_GRAB_CHANNEL)seededParams.channel='bloomberg-tv';
       const cardId = crypto.randomUUID();
       const updated = await mutateDashboard(dashboardId, (d) => ({
         ...d,
@@ -1285,7 +1316,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
                     id: cardId,
                     widgetId: widget.id,
                     backendId: widget.backendId,
-                    params: { ...seedParams(widget), ...paramsOverride },
+                    params: seededParams,
+                    ...(title !== undefined ? { title } : {}),
+                    ...(managedSource !== undefined ? { managedSource } : {}),
                     layout,
                     // chartView.enabled opens a NEW card on its chart; an
                     // imported or existing card keeps the view it saved.
@@ -1296,7 +1329,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
             : t,
         ),
       }));
-      return updated ? cardId : null;
+      return updated && dashboardById(dashboardId)?.tabs
+        .find(t => t.id === tabId)?.cards.some(c => c.id === cardId) ? cardId : null;
     },
 
     // Delegates so the persist ordering lives in exactly one place; two copies
@@ -1331,7 +1365,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
           if (edge) copy.layout = firstFreeSpot(t.cards.map((c) => c.layout), copy.layout.w, copy.layout.h, GRID_COLS, (d.dockRows ?? DEFAULT_DOCK_ROWS)[edge]);
           // A link names a card on its own dashboard; elsewhere it would be a
           // foreign reference that blocks every table there.
-          if (found.dashboard.id !== dashboardId) { delete copy.linkedSource; delete copy.linkedChart; }
+          if (found.dashboard.id !== dashboardId) { delete copy.linkedSource; delete copy.linkedChart; delete copy.linkedMetric; }
           newId = copy.id;
           return { ...t, cards: [...t.cards, copy] };
         }),
@@ -1644,6 +1678,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
           }),
         };
       });
+    },
+
+    setDockSeeThrough: async (edge, on) => {
+      await mutateDashboard(DOCKS_ID, d => withDockSeeThrough(d, edge, on));
     },
 
     importDocks: async (incoming) => {

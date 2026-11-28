@@ -8,7 +8,7 @@ import { canUseLinkedSource } from '../lib/widgetData/sources';
 import { DialogShell } from './dialogs/DialogShell';
 
 export function LinkedWidgetDialog({ dashboardId, tabId, cardId, presentation = 'table', sourceWidgetId, onClose }: {
-  dashboardId: string; tabId: string; cardId?: string; presentation?: 'table' | 'chart'; sourceWidgetId?: string; onClose: () => void;
+  dashboardId: string; tabId: string; cardId?: string; presentation?: 'table' | 'chart' | 'metric'; sourceWidgetId?: string; onClose: () => void;
 }) {
   const dashboard = useDashboardStore(s => s.dashboards.find(d => d.id === dashboardId));
   const [source, setSource] = useState(sourceWidgetId ?? '');

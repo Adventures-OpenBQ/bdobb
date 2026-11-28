@@ -6,7 +6,7 @@ WebSocket connects directly to the authenticated v10 gateway over Funnel:
 ```
 Vercel page -> same-origin /socket-ticket (signed-in session)
             <- short-lived origin-bound chart ticket
-Vercel page -> wss://NODE.TAILNET.ts.net:10000/grid/chart_stream_ws?ticket=...
+Vercel page -> wss://host.example.com:10000/grid/chart_stream_ws?ticket=...
 Funnel gateway -> live-grid /chart_stream_ws -> private named q API
 ```
 
@@ -31,7 +31,7 @@ settings, alongside the preview's existing GitHub OAuth configuration:
 | Variable | Value |
 |---|---|
 | `APP_ORIGIN` | Exact canonical deployment origin, e.g. `https://chart-demo.vercel.app` |
-| `BACKEND_GATEWAY_ORIGIN` | Exact Funnel HTTPS origin, e.g. `https://node.tailnet.ts.net:10000` |
+| `BACKEND_GATEWAY_ORIGIN` | Exact Funnel HTTPS origin, e.g. `https://host.example.com:10000` |
 | `BACKEND_GATEWAY_TOKEN` | Existing private machine credential matching HOST `GATEWAY_TOKEN` |
 | `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET` | The preview OAuth app; callback is `APP_ORIGIN/auth/callback/github` |
 | `AUTH_SECRET` | Private preview session secret |

@@ -9,10 +9,13 @@ import { Boundary } from '../../test/tableWorkerBoundary';
 import { input } from '../../lib/tableExecution/fixtures';
 import type { Dashboard } from '../../lib/types';
 import type { ChartResult } from '../../lib/tableExecution/types';
-import { LinkedChartRenderer } from './LinkedChartRenderer';
-vi.mock('./ChartRenderer', () => ({ ChartRenderer: ({ data }: {
-        data: unknown;
-    }) => <pre data-testid="figure">{JSON.stringify(data)}</pre> }));
+import { LinkedChartRenderer as Renderer } from './LinkedChartRenderer';
+import {useEffect, useState, type ComponentProps} from 'react';
+function LinkedChartRenderer(props:Omit<ComponentProps<typeof Renderer>, 'parametersTarget'|'onOpenParameters'>){
+ const [target,setTarget]=useState<HTMLDivElement|null>(null);
+ return <><div ref={setTarget}/><Renderer {...props} parametersTarget={target} onOpenParameters={()=>{}}/></>;
+}
+vi.mock('./ChartRenderer', () => ({ ChartRenderer: ({data,onDrawingSurfaceChange}:{data:unknown;onDrawingSurfaceChange?:(size:{width:number;height:number})=>void})=>{useEffect(()=>onDrawingSurfaceChange?.({width:900,height:540}),[onDrawingSurfaceChange]);return <pre data-testid="figure">{JSON.stringify(data)}</pre>;},readDrawingSurface:()=>({width:900,height:540}) }));
 const settings = { type: 'column' as const, category: 'region', measures: ['revenue'], display: 'grouped' as const };
 const chart = { id: 'c', widgetId: 'linked_chart', backendId: 'builtin', params: {}, layout: { x: 0, y: 0, w: 1, h: 1 }, linkedSource: { kind: 'widget' as const, sourceWidgetId: 's' }, linkedChart: settings };
 async function setup(context = {}) { const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: { ...input, ...context, rows: Array.from({ length: 1600 }, (_, i) => ({ id: `r${i}`, values: { region: 'A', revenue: i } })) } }) }) }); store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [{ ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined }, chart] }] } as Dashboard); store.ensureTable('d', 'c'); await store.settled('d'); return store; }
@@ -84,6 +87,7 @@ it('binds both duplicate instances and blocks a deleted binding even after anoth
     expect(figure.data.map((t: { name: string; y: number[] }) => ({ name: t.name, y: t.y }))).toEqual([{ name: 'Revenue — Average', y: [15, 90] }, { name: 'Revenue — Total', y: [30, 90] }]);
     await act(async () => { store.updateDefinition('d', 's', { table: { pivot: { ...source.table.pivot, measures: [measures[0], { ...measures[1], id: 'new-copy' }] } }, search: '' }, { kind: 'none' }); await store.settled('d'); });
     expect(await screen.findByRole('alert')).toHaveTextContent('total-copy is unavailable. Repair chart fields.');
+    fireEvent.click(screen.getByRole('button', {name: /^Measures:/}));
     const totalChoices = screen.getAllByRole('checkbox', { name: 'Revenue — Total' });
     expect(totalChoices[0]).toBeChecked();
     expect(totalChoices[1]).not.toBeChecked();
@@ -142,4 +146,14 @@ it.each([false, true])('keeps split bindings through filters and fresh reopen wi
 it('discards a delivered figure when its privileged activation is evicted', async () => {
  const store=await setup();render(<LinkedChartRenderer dashboardId="d" card={chart} refreshKey={0} store={store} onSettingsChange={async()=>true}/>);
  await screen.findByTestId('figure');act(()=>store.disposeDashboard('d'));expect(screen.queryByTestId('figure')).toBeNull();
+});
+
+it('offers the carried pie chart as a durable presentation choice', async()=>{
+ const store=await setup();const commit=vi.fn(async()=>true);
+ render(<LinkedChartRenderer dashboardId="d" card={chart} refreshKey={0} store={store} onSettingsChange={commit}/>);
+ await screen.findByTestId('figure');
+ expect(screen.getByRole('option',{name:'Pie'})).toHaveValue('pie');
+ fireEvent.change(screen.getByLabelText('Chart type'),{target:{value:'pie'}});
+ await waitFor(()=>expect(commit).toHaveBeenCalledWith({...settings,type:'pie'}));
+ cleanup();store.disposeDashboard('d');
 });

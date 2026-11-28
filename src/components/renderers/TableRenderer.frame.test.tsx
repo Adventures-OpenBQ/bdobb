@@ -8,6 +8,22 @@ import { LABEL_FIELD } from '../../lib/pivotTable';
 vi.mock('@tanstack/react-virtual', () => ({ useVirtualizer: ({ count }: { count: number }) => ({ getVirtualItems: () => Array.from({ length: count }, (_, index) => ({ index, start: index * 28, end: (index + 1) * 28 })), getTotalSize: () => count * 28, measureElement: () => {}, scrollToIndex: () => {} }) }));
 const column=(field:string)=>({field,header:field===LABEL_FIELD?'Company › Year':field,cellDataType:'number' as const,renderFn:[],colorRules:[],hiddenByDefault:false});
 const view=(fields=[LABEL_FIELD,'revenue','margin']):ExecutionTableView=>({columns:fields.map(column),count:1,rowIds:['r'],slot:()=>({rowId:'r',groupPath:[],offset:0}),requestRange:()=>{},toggle:()=>{},totals:{[LABEL_FIELD]:'Grand total',revenue:90},selection:{selection:{kind:'none'},selectedCount:0,eligibleCount:1,checked:false,indeterminate:false,rows:[]}});
+it('renders Statement sections as one full-width toggle beside the selection gutter',()=>{
+ const toggle=vi.fn(),execution:ExecutionTableView={...view(),statement:true,toggle,slot:()=>({rowId:'r',groupPath:[],offset:0,group:{path:['Income'],childCount:1,open:true}})};
+ const data=[{[LABEL_FIELD]:'Income',revenue:100,margin:90}];
+ const {container,rerender}=render(<TableRenderer data={data} execution={execution}/>);
+ expect(container.querySelector('table.widget-table')).toHaveClass('statement-model');
+ const section=container.querySelector('tbody tr.statement-section')!;
+ expect(section.querySelector('.selection-cell')).not.toBeNull();
+ const button=screen.getByRole('button',{name:'Collapse Income'});
+ expect(button.closest('td')).toHaveAttribute('colspan','3');
+ expect(button.querySelector('.statement-section-label')).toHaveStyle({left:'40px'});
+ expect(section.querySelector('[data-field="revenue"]')).toBeNull();
+ fireEvent.click(button);expect(toggle).toHaveBeenCalledWith(['Income']);
+ rerender(<TableRenderer data={data} execution={{...execution,statement:false}}/>);
+ expect(container.querySelector('tbody tr.statement-section')).toBeNull();
+ expect(container.querySelector('tbody [data-field="revenue"]')).toHaveTextContent('100');
+});
 it('pins only the combined two-category label by identity, with measured selection gutter shared by body and totals',()=>{
  const measure=vi.spyOn(HTMLElement.prototype,'getBoundingClientRect').mockImplementation(function(this:HTMLElement){const width=this.hasAttribute('data-selection-gutter')?42:this.getAttribute('data-field')===LABEL_FIELD?137:80;return {width,height:28,left:0,right:width,top:0,bottom:28,x:0,y:0,toJSON:()=>({})};});
  try{

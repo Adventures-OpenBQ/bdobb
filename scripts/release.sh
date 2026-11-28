@@ -25,6 +25,10 @@
 # here; `tauri build` skips signing SILENTLY when they are missing, so their
 # presence is checked before the build, not discovered after.
 set -euo pipefail
+
+# Public installers start with reader-supplied connections, regardless of local env files.
+export VITE_OPENBB_API_URL= VITE_RITA_URL= VITE_MCP_SERVERS= VITE_SHARE_FOLDERS=
+export VITE_DEFAULT_BACKEND_URL= VITE_DEFAULT_BACKEND_AUTH= VITE_DEFAULT_RITA_URL= VITE_DEFAULT_MCP_URL=
 cd "$(dirname "$0")/.."
 
 TAG="${1:-}"
@@ -45,6 +49,10 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
+# Refuse public-source findings before reading any signing credential.
+python3 security/gate.py tree
+python3 security/gate.py --exceptions security/privacy-history-exceptions.json history --revision HEAD
+
 SECRETS="${APPLE_SIGNING_DIR:-$HOME/.apple-signing}/secrets"
 for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
   if [ -z "${!v:-}" ]; then
@@ -61,6 +69,18 @@ echo "building $TAG from $(git rev-parse --short HEAD), signing as $APPLE_SIGNIN
 pnpm typecheck
 pnpm test:run
 bash scripts/scrub-check.sh
+
+# The MCP bridge opens a control port and must never ship. It is an optional
+# dependency behind a feature a release never enables; this fails the release
+# if that ever stops being true (the feature made default, the dep made required).
+if ! DEPENDENCIES=$(cargo tree --manifest-path src-tauri/Cargo.toml -e normal 2>/dev/null); then
+  echo "Could not verify the native release dependency graph; refusing to release."
+  exit 1
+fi
+if grep -q 'tauri-plugin-mcp-bridge' <<< "$DEPENDENCIES"; then
+  echo "tauri-plugin-mcp-bridge is in the release build's dependency graph; refusing to release."
+  exit 1
+fi
 
 pnpm tauri:build
 
@@ -92,9 +112,21 @@ codesign --verify --deep --strict --verbose=2 "$APP"
 xcrun stapler validate "$DMG"
 spctl --assess --type open --context context:primary-signature --verbose=2 "$DMG"
 
-(cd "$(dirname "$DMG")" && shasum -a 256 "$(basename "$DMG")" > "$(basename "$DMG").sha256")
+# Qualify the final stapled bytes, including their installed and decoded contents.
+# The check returns the checksum recorded for the exact bytes it scanned.
+CHECKSUM=$(python3 scripts/public-release.py check --checksum "$DMG")
+printf '%s\n' "$CHECKSUM" > "$DMG.sha256"
+
+verify_release_bytes() {
+  if ! cmp -s "$DMG.sha256" <(printf '%s\n' "$CHECKSUM"); then
+    echo "The release checksum changed after the artifact scan."
+    return 1
+  fi
+  (cd "$(dirname "$DMG")" && shasum -a 256 -c - <<< "$CHECKSUM")
+}
 
 if [ "${BDOBB_RELEASE_DRY_RUN:-}" = "1" ]; then
+  verify_release_bytes
   echo "dry run: built, signed, notarized and verified $DMG; nothing published."
   exit 0
 fi
@@ -127,10 +159,12 @@ fi
 # the tag with no release at all.
 if gh release view "$TAG" >/dev/null 2>&1; then
   echo "updating the existing release for $TAG"
+  verify_release_bytes
   gh release upload "$TAG" "$DMG" "$DMG.sha256" --clobber
 else
   # --verify-tag: without it gh would create a missing tag from the default
   # branch's HEAD instead of failing.
+  verify_release_bytes
   gh release create "$TAG" "$DMG" "$DMG.sha256" \
     --verify-tag \
     --title "$TAG" \

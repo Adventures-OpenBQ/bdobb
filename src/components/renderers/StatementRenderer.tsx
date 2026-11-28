@@ -50,8 +50,8 @@ export function StatementRenderer({
                 <tr className="statement-section">
                   <td colSpan={span}>
                     <button type="button" aria-expanded={open} onClick={() => onToggle(sectionKey)}>
-                      <span aria-hidden="true">{open ? "▾" : "▸"}</span> {section.name}
-                      {open ? "" : ` (${section.items.length})`}
+                      <span className="statement-section-label"><span aria-hidden="true">{open ? "▾" : "▸"}</span> {section.name}
+                      {open ? "" : ` (${section.items.length})`}</span>
                     </button>
                   </td>
                 </tr>

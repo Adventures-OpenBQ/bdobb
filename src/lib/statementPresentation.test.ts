@@ -1,8 +1,24 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import { expect, it } from 'vitest';
-import { projectGenericStatementDataset, projectStatementDataset, readStatementPresentation, type StatementPresentation } from './statementPresentation';
+import { projectGenericStatementDataset, projectStatementDataset, readStatementPresentation, statementPresentation, type StatementPresentation } from './statementPresentation';
 import { input } from './tableExecution/fixtures';
+import { fixture } from './statementModel/compileFixtures';
+import { compileStatement } from './statementModel/compile';
+
+it('presents moved lines once in their displayed section and retains labels and order', () => {
+  const { statement, source, ids } = fixture();
+  const [, expenses, profit] = statement.template.sections;
+  const gross = ids.line('gross_profit');
+  statement.overrides.lineSection = { [gross]: expenses.id };
+  statement.overrides.lineOrder[expenses.id] = [gross, ...expenses.lineIds];
+  statement.overrides.labels[gross] = 'Moved gross profit';
+  const layout = compileStatement(statement, source.columns).model.layout;
+  const presentation = statementPresentation(statement, layout);
+  expect(presentation.sections.find(s => s.id === expenses.id)?.lines[0]).toEqual({ id: gross, label: 'Moved gross profit' });
+  expect(presentation.sections.find(s => s.id === profit.id)?.lines.some(line => line.id === gross)).toBe(false);
+  expect(presentation.sections.flatMap(s => s.lines).filter(line => line.id === gross)).toHaveLength(1);
+});
 
 const descriptor: StatementPresentation = { schemaVersion: 1, sectionCategoryId: 'section', itemCategoryId: 'line', periodCategoryId: 'period', valueMeasureId: 'value',
   sections: [{ id: 'income', label: 'Income', lines: [{ id: 'revenue', label: 'Revenue' }] }] };

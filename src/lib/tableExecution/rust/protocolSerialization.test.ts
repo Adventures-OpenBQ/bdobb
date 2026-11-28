@@ -30,3 +30,13 @@ it('does not retain oversized field names in the per-request cache',()=>{
  }finally{stringify.mockRestore();}
  expect(calls).toBe(rows.length);
 });
+it('converts row records without materializing an input entry pair per cell',()=>{
+ const rows=[{id:'one',values:{sentinelField:1}},{id:'two',values:{sentinelField:2}}];
+ const entries=vi.spyOn(Object,'entries');let pairs=0;
+ try{
+  const encoded=encodeRequest({kind:'registerInput',requestId:'q',revision,inputRevision:1,input:{...input,rows}},'en-US',1);
+  expect(JSON.parse(encoded).request.input.rows.map((row:{values:unknown})=>row.values)).toEqual([{sentinelField:{tag:'f64',value:1}},{sentinelField:{tag:'f64',value:2}}]);
+  pairs=entries.mock.calls.filter(([value])=>value!==null&&typeof value==='object'&&Object.hasOwn(value,'sentinelField')).length;
+ }finally{entries.mockRestore();}
+ expect(pairs).toBe(0);
+});

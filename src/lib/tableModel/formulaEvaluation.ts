@@ -4,9 +4,10 @@ import type { AnalyticalExecutionDescriptor } from './executionDescriptor';
 import { evaluateStatementLine } from '../statementModel/linePolicy';
 import type { DatasetColumn, DatasetRow } from '../widgetData/types';
 import { deriveCategories, type CategorizedRows } from './categories';
-import type { FiscalContext } from './fiscalContext';
+import { periodDate, type FiscalContext } from './fiscalContext';
 import { bindFormula, type ModelSymbols } from './formulaBinding';
 import type { GraphResult } from './formulaGraph';
+import { isAggregateFunction } from './formulaSyntax';
 import type { CategoryDef, CellResult, FormulaAst, ModelError, ModelWarning } from './types';
 import { aggregate } from '../pivotTable';
 import type { AggName } from '../types';
@@ -84,7 +85,13 @@ function evaluate(ast: FormulaAst, row: DatasetRow, cells: Map<string, CellResul
       return success(ast.operator === '<' ? (a as number) < (b as number) : ast.operator === '<=' ? (a as number) <= (b as number) : ast.operator === '>' ? (a as number) > (b as number) : (a as number) >= (b as number));
     }
     case 'call': {
-      if (ast.function !== 'IF') return fail('scope', 'Aggregate calls require aggregate scope.');
+      if (isAggregateFunction(ast.function)) return fail('scope', 'Aggregate calls require aggregate scope.');
+      if (ast.function === 'LN' || ast.function === 'SQRT') {
+        const operand = numeric(evaluate(ast.args[0], row, cells, definitionId, scoped));
+        if (!operand.ok) return operand;
+        const value = (ast.function === 'LN' ? Math.log : Math.sqrt)(operand.value as number);
+        return Number.isFinite(value) ? success(value) : fail('nonfinite', 'Calculation result must be finite.');
+      }
       const condition = evaluate(ast.args[0], row, cells, definitionId, scoped);
       if (!condition.ok) return condition;
       if (typeof condition.value !== 'boolean') return fail('invalid-type', 'IF condition must be boolean.');
@@ -254,6 +261,11 @@ export function evaluateAggregateFormulas(scope: CalculationScope, pool: Eligibl
         if(upstreamError) failures.push(upstreamError);
         const cell = pool.formulaCells.get(row.id)?.get(dateField);
         if (cell && !cell.ok) failures.push({ ...cell.error, dependencyIds: [...new Set([dateField, ...(cell.error.dependencyIds ?? [])])] });
+        // Off-axis date categories store errors under category IDs, not the bound field.
+        if (!upstreamError && (!cell || cell.ok) && !periodDate(row.values[dateField])) failures.push({
+          code: 'invalid-date', message: 'The bound report date is missing or invalid.',
+          definitionId: dateField, recordIds: [row.id], dependencyIds: [dateField],
+        });
       }
     }
     if (failures.length) return fail('blocked-dependency', failures[0].message, id, at, failures);
@@ -300,7 +312,7 @@ export function evaluateAggregateFormulas(scope: CalculationScope, pool: Eligibl
         const resolved = resolveMemberScope(pool, at, ast.selectors, model.execution?.scopeMembers);
         return resolved.ok ? expression(ast.value, resolved.scope, id, meta) : fail(resolved.errors[0].code, resolved.errors[0].message, id, at, resolved.errors);
       }
-      if (ast.kind === 'call' && ast.function !== 'IF') return aggregateInput(ast.args[0], ast.function, at, id, meta);
+      if (ast.kind === 'call' && isAggregateFunction(ast.function)) return aggregateInput(ast.args[0], ast.function, at, id, meta);
       if (ast.kind !== 'reference') return undefined;
       if (ast.target === 'formula') {
         const dependency = run(ast.id, at);

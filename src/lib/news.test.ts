@@ -38,7 +38,7 @@ const article = (over: Partial<NewsArticle> = {}): NewsArticle => ({
 
 describe("URLs", () => {
   it("derives the websocket URL from an http or https base, with or without a trailing slash", () => {
-    expect(wireUrl("https://ticker.tail.ts.net")).toBe("wss://ticker.tail.ts.net/ws/news");
+    expect(wireUrl("https://news.example.invalid")).toBe("wss://news.example.invalid/ws/news");
     expect(wireUrl("http://127.0.0.1:8088/")).toBe("ws://127.0.0.1:8088/ws/news");
     expect(wireUrl("ftp://x")).toBeNull();
     expect(wireUrl("not a url")).toBeNull();
@@ -110,6 +110,18 @@ describe("frames", () => {
 });
 
 describe("mergeArticles", () => {
+  it("keeps quiet newsletters represented when busy wires fill the bounded history", () => {
+    const quiet = [article({ id: 9001, feed_id: 8, sort_at: 1 }), article({ id: 9002, feed_id: 9, sort_at: 2 })];
+    const busy = Array.from({ length: 400 }, (_, i) => article({ id: i + 1, feed_id: 7, sort_at: i + 100 }));
+    const seeded = mergeArticles([], [...quiet, ...busy]);
+    expect(seeded).toHaveLength(300);
+    expect(seeded.filter(a => a.feed_id !== 7).map(a => a.id)).toEqual([9002, 9001]);
+    const streamed = mergeArticles(seeded, [article({ id: 10000, feed_id: 7, sort_at: 10000 })]);
+    expect(streamed).toHaveLength(300);
+    expect(streamed[0].id).toBe(10000);
+    expect(streamed.filter(a => a.feed_id !== 7).map(a => a.id)).toEqual([9002, 9001]);
+  });
+
   it("orders newest first by sort_at then id, dedups by id, and caps at 300", () => {
     const merged = mergeArticles(
       [article({ id: 1, sort_at: 100 }), article({ id: 2, sort_at: 200 })],

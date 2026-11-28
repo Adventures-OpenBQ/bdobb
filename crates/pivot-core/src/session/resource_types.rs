@@ -42,7 +42,7 @@ impl HeapBytes for crate::contract::Expanded {
 }
 struct_heap!(crate::contract::Measure; id,source_field_id,aggregation,custom_label);
 struct_heap!(crate::contract::TableModel; schema_version,enabled,params,categories,measures,formulas,layout,checklists,result_filters,subtotals,legacy_pivot);
-struct_heap!(crate::contract::Category; id,name,source_field_id,transform,fiscal_binding,legacy_bucket);
+struct_heap!(crate::contract::Category; id,name,source_field_id,transform,fiscal_binding,legacy_bucket,sort_field_id);
 struct_heap!(crate::contract::FiscalBinding; company_field_id,date_field_id,metadata_key,period_kind,period_start_field_id,period_end_field_id,fiscal_year_field_id,fiscal_quarter_field_id);
 struct_heap!(crate::contract::Formula; id,name,scope,expression,ast,format);
 impl HeapBytes for crate::contract::FormulaAst {
@@ -174,7 +174,7 @@ struct_heap!(crate::analytical::LogicalGroup; id,path,rows,children);
 struct_heap!(crate::analytical::CalculatedView; diagnostics,top_level_count,model_warnings,model_warning_count,compiled,pool,record_ids,groups,rows,columns,totals,calculated_totals,eligible_rows,errors,warnings,complete,provenance,completeness,freshness,selection,selection_namespace);
 struct_heap!(crate::analytical::CalculatedTotals; scope,formulas);
 struct_heap!(crate::categories::CategoryMember; category_id,key,label,value,period,fiscal);
-struct_heap!(crate::categories::CategoryMetadata; id,name,source_field_id,transform,recipe,bucket,periodicity);
+struct_heap!(crate::categories::CategoryMetadata; id,name,source_field_id,transform,recipe,bucket,periodicity,sort_field_id);
 struct_heap!(crate::categories::CategorizedRows; evaluated,members,categories,warnings);
 struct_heap!(crate::fiscal::FiscalContext; companies,metadata,overrides);
 struct_heap!(crate::fiscal::FiscalCompanyContext; year_end_month,calendar,source,periods);
@@ -218,7 +218,7 @@ struct_heap!(crate::statement::StatementBindings; shape,company_field_id,period_
 struct_heap!(crate::statement::LongFields; item_field_id,value_field_id);
 struct_heap!(crate::statement::Mapping; source_field_id,line_id);
 struct_heap!(crate::statement::UnpivotSpec; id,carry_field_ids,mappings,item_field_id,value_field_id);
-struct_heap!(crate::statement::StatementOverrides; labels,section_order,line_order,hidden_ids,formulas);
+struct_heap!(crate::statement::StatementOverrides; labels,section_order,line_order,line_section,hidden_ids,formulas);
 struct_heap!(crate::statement::OutputMember; selectors,formula_id,require_observed,format);
 struct_heap!(crate::statement::StatementPolicy; category_id,dependent_category_ids,measure_id,value_field_id,members,formulas,required,period_kind,company_field_id,currency_field_id,unit_field_id,fiscal);
 struct_heap!(crate::statement::ExecutionDescriptor; member_orders,member_labels,scope_members,output_members,policy,source_columns_by_row_id);

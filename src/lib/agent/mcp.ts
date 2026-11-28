@@ -29,6 +29,8 @@ export const MCP_PROTOCOL_VERSION = "2025-06-18";
 
 /** The same order as the app's other network timeouts. */
 export const DEFAULT_MCP_TIMEOUT_MS = 10_000;
+/** Cold provider work uses the same bounded budget as data and gateway calls. */
+export const MCP_TOOL_TIMEOUT_MS = 170_000;
 
 export type McpRpcResult = { result: unknown; sessionId: string | null };
 
@@ -441,7 +443,7 @@ export async function callMcpTool(
     2,
     session,
     fetchImpl,
-    undefined,
+    MCP_TOOL_TIMEOUT_MS,
     headers,
     signal,
   );

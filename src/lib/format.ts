@@ -64,25 +64,28 @@ function getFormatter(locale: string | undefined, maxDecimals: number, minDecima
   return nf;
 }
 
-function formatNumber(value: number, maxDecimals: number, locale?: string, abbreviate = true): string {
-  const nf = getFormatter(locale, maxDecimals);
-  // Infinity would otherwise clear every threshold below and print "∞T".
-  if (!Number.isFinite(value)) return nf.format(value);
-  const magnitude = Math.abs(value);
-  if (!abbreviate) return nf.format((value < 0 || Object.is(value, -0)) && magnitude < 0.5 * 10 ** -maxDecimals ? 0 : value);
+/** The K/M/B/T unit formatNumber prints `value` in at `maxDecimals`; `{ size: 1, suffix: "" }` for none. */
+export function abbreviation(value: number, maxDecimals: number): { size: number; suffix: string } {
   // The unit is picked on the raw magnitude but printed rounded, so a value
   // just under the next unit (999_999.5 at 2 decimals is 999.9995K) printed
   // "1,000K". When rounding reaches a thousand of the picked unit -- or of no
   // unit at all -- it steps up one. One step is enough: a rounded thousand
   // of one unit is exactly 1 of the next.
   const rounded = (x: number) => Math.round(Math.abs(x) * 10 ** maxDecimals) / 10 ** maxDecimals;
-  let i = UNITS.findIndex(([size]) => magnitude >= size);
+  let i = UNITS.findIndex(([size]) => Math.abs(value) >= size);
   if (i === -1) i = UNITS.length;
   if (i > 0 && rounded(value / (UNITS[i]?.[0] ?? 1)) >= 1000) i -= 1;
-  if (i < UNITS.length) {
-    const [size, suffix] = UNITS[i];
-    return `${nf.format(value / size)}${suffix}`;
-  }
+  return i < UNITS.length ? { size: UNITS[i][0], suffix: UNITS[i][1] } : { size: 1, suffix: "" };
+}
+
+function formatNumber(value: number, maxDecimals: number, locale?: string, abbreviate = true): string {
+  const nf = getFormatter(locale, maxDecimals);
+  // Infinity would otherwise clear every threshold below and print "∞T".
+  if (!Number.isFinite(value)) return nf.format(value);
+  const magnitude = Math.abs(value);
+  if (!abbreviate) return nf.format((value < 0 || Object.is(value, -0)) && magnitude < 0.5 * 10 ** -maxDecimals ? 0 : value);
+  const { size, suffix } = abbreviation(value, maxDecimals);
+  if (suffix) return `${nf.format(value / size)}${suffix}`;
   // Intl.NumberFormat.format(-0.001).format() with 2 max decimals prints
   // "-0" (and so does a literal -0): the value rounds to zero but keeps its
   // negative sign. `signDisplay: "negative"` would suppress that, but older

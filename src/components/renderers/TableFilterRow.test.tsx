@@ -91,6 +91,12 @@ describe("filterFnFor", () => {
     expect(run("date", { from: "2026-01-01" }, 20260828)).toBe(false);
   });
 
+  it("refuses impossible calendar days instead of normalizing them into a filter match", () => {
+    for (const value of ['2026-02-30', '1900-02-29', '2026-04-31T10:00:00Z'])
+      expect(run('date', { from: '0001-01-01', to: '9999-12-31' }, value)).toBe(false);
+    expect(run('date', { from: '2000-02-29', to: '2000-02-29' }, '2000-02-29T23:00:00-05:00')).toBe(true);
+  });
+
   it("boolean matches the stringified cell", () => {
     expect(run("boolean", "true", true)).toBe(true);
     expect(run("boolean", "false", false)).toBe(true);
@@ -240,6 +246,9 @@ it('saves typed drafts one at a time after a pause, never while busy, and keeps 
 });
 
 describe("parseDateBound", () => {
+  it.each(['0001-01-01','0099-12-31','0100-03-01'])('accepts the literal early calendar year %s', day => {
+    expect(parseDateBound(day)).toEqual({ok:true,value:day});
+  });
   it("reads YYYY-MM-DD as a bound, and blank as no bound", () => {
     expect(parseDateBound("2026-01-06")).toEqual({ ok: true, value: "2026-01-06" });
     expect(parseDateBound("  2026-01-06 ")).toEqual({ ok: true, value: "2026-01-06" });

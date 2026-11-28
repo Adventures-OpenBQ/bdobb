@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { StrictMode } from "react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -83,6 +84,8 @@ import { useWorkspacesStore } from "./stores/workspacesStore";
 import { useFoldersStore } from "./stores/foldersStore";
 import { useWidgetRegistryStore } from "./stores/widgetRegistryStore";
 import { backend as makeBackend, widget as makeWidget } from "./test/fixtures";
+import * as startup from "./lib/bootstrap";
+import * as dashboardFiles from "./lib/dashboardsFile";
 
 beforeEach(() => {
   __reset();
@@ -104,6 +107,84 @@ beforeEach(() => {
 });
 
 describe("App", () => {
+  it("keeps a durably imported dashboard when StrictMode replays the startup effect", async () => {
+    __seed("dashboards/main.json", JSON.stringify({ id: "main", name: "Main", tabs: [{ id: "main-tab", name: "Main", cards: [] }] }));
+    const loadDashboards = dashboardFiles.loadDashboards;
+    const bootstrap = startup.bootstrap;
+    const boots: Promise<string[]>[] = [];
+    let reads = 0;
+    let release = () => {};
+    const held = new Promise<void>(resolve => { release = resolve; });
+    let captured = () => {};
+    const secondSnapshot = new Promise<void>(resolve => { captured = resolve; });
+    const load = vi.spyOn(dashboardFiles, "loadDashboards").mockImplementation(async () => {
+      const call = ++reads;
+      const snapshot = await loadDashboards();
+      // If effect replay starts another bootstrap, hold its actual pre-import
+      // disk snapshot until after the user has saved and opened a new dashboard.
+      if (call === 2) { captured(); await held; }
+      return snapshot;
+    });
+    const boot = vi.spyOn(startup, "bootstrap").mockImplementation(() => {
+      const work = bootstrap();
+      boots.push(work);
+      return work;
+    });
+    const mounted = render(<StrictMode><App /></StrictMode>);
+    try {
+      await act(async () => {
+        await boots[0];
+        if (boots.length > 1) await secondSnapshot;
+      });
+      const imported: Dashboard = { id: "imported", name: "Imported", tabs: [{ id: "imported-tab", name: "Imported", cards: [] }] };
+      await act(async () => { await useDashboardStore.getState().importDashboards([imported]); });
+      expect(screen.getByRole("tab", { name: "Imported" })).toBeInTheDocument();
+      expect(__read("dashboards/imported.json")).toBeDefined();
+      await act(async () => { release(); await Promise.all(boots); });
+      expect(useDashboardStore.getState().dashboards).toContainEqual(imported);
+      expect(useDashboardStore.getState().activeId).toBe(imported.id);
+      expect(screen.getByRole("tab", { name: "Imported" })).toBeInTheDocument();
+    } finally {
+      release();
+      await act(async () => { await Promise.all(boots); });
+      mounted.unmount();
+      boot.mockRestore();
+      load.mockRestore();
+    }
+  });
+
+  it("delivers startup failures to the live StrictMode effect after cleanup and replay", async () => {
+    let finish = (_labels: string[]) => {};
+    const pending = new Promise<string[]>(resolve => { finish = resolve; });
+    const boot = vi.spyOn(startup, "bootstrap").mockReturnValue(pending);
+    const mounted = render(<StrictMode><App /></StrictMode>);
+    try {
+      await act(async () => { finish(["dashboards"]); await pending; });
+      expect(screen.getByRole("alert")).toHaveTextContent("Failed to load on startup: dashboards.");
+    } finally {
+      mounted.unmount();
+      boot.mockRestore();
+    }
+  });
+
+  it("loads repaired startup files on a real App unmount and remount", async () => {
+    const main = (tab: string) => JSON.stringify({ id: "main", name: "Main", tabs: [{ id: "main-tab", name: tab, cards: [] }] });
+    __seed("dashboards/main.json", main("Before restart"));
+    const first = render(<App />);
+    await screen.findByRole("tab", { name: "Before restart" });
+    await waitFor(() => expect(Object.values(useBackendsStore.getState().statuses)).toEqual(["offline"]));
+    first.unmount();
+    __seed("dashboards/main.json", main("After restart"));
+    const second = render(<App />);
+    try {
+      await screen.findByRole("tab", { name: "After restart" });
+      expect(screen.queryByRole("tab", { name: "Before restart" })).not.toBeInTheDocument();
+      await waitFor(() => expect(Object.values(useBackendsStore.getState().statuses)).toEqual(["offline"]));
+    } finally {
+      second.unmount();
+    }
+  });
+
   it("renders the application shell", async () => {
     render(<App />);
     expect(screen.getByRole("main")).toBeInTheDocument();
@@ -934,7 +1015,7 @@ describe("App: locked widget bands", () => {
     expect(screen.getByRole("region", { name: "Locked at Bottom" })).toBe(band);
   });
 
-  it("measures --dashboard-top to the tab bar's bottom, below a mounted top band", async () => {
+  it("keeps tabs above the top band and maximized cards below both", async () => {
     // jsdom lays nothing out: stubbing the bar's rect is what makes the old
     // formula (area top + bar height, both 0 here) and the new one differ.
     __seed("dashboards/z.json", JSON.stringify({ id: "z", name: "Zeta", tabs: [{ id: "t1", name: "Main", cards: [] }] }));
@@ -945,12 +1026,13 @@ describe("App: locked widget bands", () => {
     await waitFor(() => expect(main.querySelector(".tab-bar")).not.toBeNull());
     const bar = main.querySelector<HTMLElement>(".tab-bar");
     expect(bar).not.toBeNull();
-    expect(band.compareDocumentPosition(bar as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(band.compareDocumentPosition(bar as Node) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    band.getBoundingClientRect = () => ({ bottom: 250 }) as DOMRect;
     (bar as HTMLElement).getBoundingClientRect = () => ({ bottom: 132 }) as DOMRect;
     act(() => {
       useDashboardStore.setState((s) => ({ docks: { ...s.docks, dockRows: { top: 7, bottom: 8 } } }));
     });
-    expect(main.style.getPropertyValue("--dashboard-top")).toBe("132px");
+    expect(main.style.getPropertyValue("--dashboard-top")).toBe("250px");
   });
 
   it("aims ⌘K at the dock being edited, and at the active dashboard otherwise", async () => {

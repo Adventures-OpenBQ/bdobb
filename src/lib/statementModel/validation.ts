@@ -4,6 +4,7 @@
 import { isRecord as object } from '../isRecord';
 import { boundedPlainData } from '../tableModel/validation';
 import { astChildren, validateFormulaAst } from '../tableModel/formulaSyntax';
+import { displayedSections } from './placement';
 import type { FormulaAst, FormulaDef, ModelDiagnostic } from '../tableModel/types';
 import { statementOwnedIds, type StatementIntent, type StatementValidation } from './types';
 type Obj = Record<string, unknown>;
@@ -164,7 +165,7 @@ export function validateStatementIntent(raw: unknown): StatementValidation {
         || !object(o.lineOrder)
         || !strings(o.hiddenIds)
         || !Array.isArray(o.formulas)
-        || !exact(o, ['labels', 'lineOrder', 'hiddenIds', 'formulas', 'sectionOrder']))
+        || !exact(o, ['labels', 'lineOrder', 'lineSection', 'hiddenIds', 'formulas', 'sectionOrder']))
       issue('overrides', 'Invalid overrides.');
     else {
       for (const [key, label] of Object.entries(o.labels)) {
@@ -185,16 +186,32 @@ export function validateStatementIntent(raw: unknown): StatementValidation {
           o.sectionOrder.forEach(id => reference(id, new Set(sections.keys()), 'overrides.sectionOrder'));
         }
       }
+      if (o.lineSection !== undefined && !object(o.lineSection))
+        issue('overrides.lineSection', 'Invalid line placement.');
+      const lineSection: Record<string, string> = {};
+      for (const [line, section] of Object.entries(object(o.lineSection) ? o.lineSection : {})) {
+        reference(line, lines, 'overrides.lineSection');
+        if (typeof section !== 'string' || !sections.has(section))
+          issue('overrides.lineSection', 'Unknown or unowned reference.', 'missing-reference');
+        else if (lines.has(line))
+          lineSection[line] = section;
+      }
+      const membership = displayedSections({
+        sections: [...sections].map(([id, lineIds]) => ({ id, label: id, lineIds })),
+        lines: [...lines].map(id => ({ id })),
+      }, { lineSection });
+      const displayed = new Map(membership.map(section => [section.id, section.lineIds]));
       for (const [section, order] of Object.entries(o.lineOrder)) {
         if (!sections.has(section) || !strings(order)) {
           issue('overrides.lineOrder', 'Unknown section or invalid order.');
           continue;
         }
         unique(order, 'overrides.lineOrder');
-        const ids = sections.get(section)!;
+        const ids = displayed.get(section)!;
         if (order.length !== ids.length)
           issue('overrides.lineOrder', 'Order must include every section line.');
-        order.forEach(id => reference(id, new Set(ids), 'overrides.lineOrder'));
+        const members = new Set(ids);
+        order.forEach(id => reference(id, members, 'overrides.lineOrder'));
       }
       o.formulas.forEach((f, i) => formulaDefs.push({ raw: f, path: `overrides.formulas.${i}` }));
     }

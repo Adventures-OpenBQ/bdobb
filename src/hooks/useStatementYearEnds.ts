@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { correctStatementRows, isStatementPeriodParam } from "../lib/statementFiscal";
 import { tableRows } from "../lib/tableColumns";
+import { isTableSnapshotEnvelope } from "../lib/tableRowValues";
 import type { BackendConfig, WidgetDef } from "../lib/types";
 import { __resetFiscalYearEndCacheForTests, lookupFiscalYearEnd } from "./useFiscalYearEnd";
 
@@ -34,10 +35,12 @@ export async function statementYearEnds(backend: BackendConfig, symbols: string[
  */
 export async function correctStatementData(backend: BackendConfig, widget: WidgetDef, params: Record<string, string>, data: unknown): Promise<unknown> {
   const period = widget.params.find((p) => p.paramName === "period");
-  const rows = period !== undefined && isStatementPeriodParam(period) ? tableRows(data) : null;
+  const envelope = isTableSnapshotEnvelope(data);
+  const rows = period !== undefined && isStatementPeriodParam(period) ? tableRows(envelope ? data.rows : data) : null;
   const symbols = statementSymbolsOf(params);
   if (rows === null || symbols.length === 0) return data;
-  return correctStatementRows(rows, params.period ?? "", await statementYearEnds(backend, symbols), symbols).rows;
+  const corrected = correctStatementRows(rows, params.period ?? "", await statementYearEnds(backend, symbols), symbols).rows;
+  return corrected === rows ? data : envelope ? { ...data, rows: corrected } : corrected;
 }
 
 /** Each symbol's fiscal-year-end month (1..12), or null when the lookup has no answer. */

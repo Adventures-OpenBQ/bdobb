@@ -1,6 +1,10 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { captureChartSources, chartRequestContext, chartResponseRows, requestsDailyPriceSource } from "./widgetData/chartRecipes/chartSourceContracts";
+import { backendFinancialResponse, type BackendAcquisition } from "./widgetData/chartRecipes/financialEvidence";
+import { isTableSnapshotEnvelope } from "./tableRowValues";
+import {withRequestSlot} from "./requestQueue";
 import { fetch } from "@tauri-apps/plugin-http";
 import type { BackendConfig, ParamOption, WidgetDef, WidgetForm } from "./types";
 import { calendarIdsOf, sendParams, type WireContext } from "./params";
@@ -26,6 +30,8 @@ export const THEMED_TYPES = new Set(["chart", "html"]);
  * widget card stuck with no spinner, no error, and no way out but a restart.
  */
 const CONNECT_TIMEOUT_MS = 10_000;
+const REQUEST_TIMEOUT_MS = 180_000;
+type RequestOptions = {signal?:AbortSignal};
 
 /**
  * apps.json's own END-TO-END deadline, which CONNECT_TIMEOUT_MS is not: that
@@ -68,6 +74,27 @@ export function buildWidgetUrl(
     ...sendParams(widget, params, ctx),
     ...(THEMED_TYPES.has(widget.type) ? { theme: resolvedTheme() } : {}),
   });
+}
+
+/**
+ * Framed backend tools may use relative API endpoints. Resolve only those
+ * against their own backend, including their current query parameters.
+ * Absolute/protocol-relative addresses are handed to IframeRenderer verbatim:
+ * its safeUrl gate validates them, and no backend credential goes off-site.
+ */
+export function buildIframeWidgetUrl(
+  backend: BackendConfig | undefined,
+  widget: WidgetDef,
+  params: Record<string, string>,
+): string {
+  if (!backend || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(widget.endpoint)) return widget.endpoint;
+  try {
+    return buildWidgetUrl(backend, widget, params);
+  } catch {
+    // An invalid saved backend must produce the renderer's invalid-URL hint,
+    // not throw while rendering the whole dashboard.
+    return widget.endpoint;
+  }
 }
 
 /**
@@ -204,14 +231,16 @@ export function createManagedTableRequest(backend: BackendConfig): typeof global
 }
 
 /** Walks a dotted dataKey; an unresolvable key yields the whole payload. */
-export function extractData(payload: unknown, dataKey?: string): unknown {
+export function extractData(payload: unknown, dataKey?: string, preserveTableSnapshot = false): unknown {
   if (!dataKey) return payload;
 
   let current: unknown = payload;
-  for (const segment of dataKey.split(".")) {
+  const segments = dataKey.split(".");
+  for (const [index, segment] of segments.entries()) {
     if (typeof current !== "object" || current === null) return payload;
     const next = (current as Record<string, unknown>)[segment];
     if (next === undefined) return payload;
+    if (preserveTableSnapshot && segment === "rows" && index === segments.length - 1 && isTableSnapshotEnvelope(current)) return current;
     current = next;
   }
   return current;
@@ -242,8 +271,9 @@ export function describeHttpError(status: number, body: string): string {
   let text: string | undefined;
   if (typeof detail === "string") {
     text = detail;
-  } else if (Array.isArray(detail)) {
-    const parts = detail.flatMap((item) => {
+  } else if (typeof detail === "object" && detail !== null) {
+    // openbb-core answers a missing provider input with ONE { loc, msg } object, not a list.
+    const parts = (Array.isArray(detail) ? detail : [detail]).flatMap((item) => {
       // The API server also answers with a bare list of strings (e.g. its JSON
       // serialiser rejecting a NaN), not only pydantic's { loc, msg } items.
       if (typeof item === "string") return [item];
@@ -261,7 +291,31 @@ export function describeHttpError(status: number, body: string): string {
   if (!text) return base;
 
   const full = `${base}: ${text}`;
-  return full.length > MAX_ERROR_CHARS ? `${full.slice(0, MAX_ERROR_CHARS - 1)}…` : full;
+  if (full.length <= MAX_ERROR_CHARS) return full;
+  // The retry sentence is the last thing in the text and the only part the
+  // app reads, so a long explanation is cut BEFORE it rather than through it.
+  const tail = RETRY_AFTER.exec(full)?.[0];
+  if (tail) return `${full.slice(0, MAX_ERROR_CHARS - tail.length - 2)}… ${tail}`;
+  return `${full.slice(0, MAX_ERROR_CHARS - 1)}…`;
+}
+
+/**
+ * A contract with the EODHD provider (openbq-eodhd 9.0.2, `raise_sdk_error`
+ * and `get_client`): an error that carries a wait ENDS with exactly
+ * "Retry after <N> s.", N whole seconds. openbb-api relays a provider error
+ * as `{"detail": text}` and nothing else -- no header survives -- so the text
+ * is the only place the wait can travel. A test in each repo pins the shape.
+ */
+const RETRY_AFTER = /Retry after (\d+) s\.$/;
+
+/**
+ * The wait a failed request asked for, in seconds, or nothing. Only 1-300 is
+ * believed: that is the provider's own clamp, and a backend that answered
+ * "Retry after 99999 s." would otherwise lock a card for a day.
+ */
+export function retryAfterSeconds(message: string): number | undefined {
+  const seconds = Number(RETRY_AFTER.exec(message)?.[1]);
+  return seconds >= 1 && seconds <= 300 ? seconds : undefined;
 }
 
 export function stripQuery(url: string): string {
@@ -361,14 +415,16 @@ export class HttpError extends Error {
  * `signal` is the caller's own deadline, which is a DIFFERENT guarantee from
  * connectTimeout above: that one only bounds getting the connection open,
  * while this one bounds the whole exchange and aborts the request rather than
- * leaving it running unwatched. Opt-in per call -- a widget's own fetch is
- * allowed to take as long as the backend needs.
+ * leaving it running unwatched. Every ordinary request also has a bounded
+ * three-minute deadline spanning queue wait, headers, and response body.
  *
  * `onHeaders` sees the headers of the response whose body is about to be
  * parsed, and only that one: a caller may want something the payload does
  * not carry (its declared size), and handing over headers rather than the
  * Response keeps the body this function's to consume.
  */
+type ResponseHead = Pick<Response, "url" | "status" | "headers" | "type">;
+
 async function request(
   method: "GET" | "PUT" | "POST" | "DELETE",
   url: string,
@@ -378,58 +434,87 @@ async function request(
     parse = true,
     allow404 = false,
     onHeaders,
+    onResponse,
     signal,
-  }: {
+  }: RequestOptions & {
     parse?: boolean;
     allow404?: boolean;
     onHeaders?: (headers: Headers) => void;
+    onResponse?: (head: ResponseHead) => void;
     signal?: AbortSignal;
   } = {},
 ): Promise<unknown> {
-  const hasBody = method === "POST" || method === "PUT";
-  let res: Response;
+  const controller = new AbortController();
+  const requestSignal = controller.signal;
+  const abort = () => controller.abort(signal?.reason);
+  if (signal?.aborted) abort();
+  else signal?.addEventListener("abort", abort, { once: true });
+  const timer = setTimeout(() => {
+    controller.abort(new DOMException(`Request timed out (${stripQuery(url)})`, "TimeoutError"));
+  }, REQUEST_TIMEOUT_MS);
+
+  const exchange = async () => {
+    const hasBody = method === "POST" || method === "PUT";
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method,
+        headers: hasBody ? { ...headers, "Content-Type": "application/json" } : headers,
+        ...(hasBody ? { body: JSON.stringify(body) } : {}),
+        connectTimeout: CONNECT_TIMEOUT_MS,
+        signal: requestSignal,
+      });
+    } catch (err) {
+      requestSignal.throwIfAborted();
+      throw new Error(safeNetworkErrorMessage(url, err));
+    }
+    if (requestSignal.aborted) {
+      // Headers may race cancellation. Release a body created after the
+      // transport's abort listener already fired.
+      void res.body?.cancel().catch(() => {});
+      requestSignal.throwIfAborted();
+    }
+    if (res.status === 204) return null;
+    if (res.status === 404 && allow404) {
+      // Read and discard: a body left unconsumed holds its connection out of
+      // the pool until it is collected, and this 404 is the ORDINARY case for
+      // an optional document — every discovery of a backend serving no
+      // apps.json takes this path. Await the drain to retain the queue slot;
+      // the answer is "no
+      // document", whatever the backend chose to say alongside it.
+      await res.text().catch(() => {});
+      return null;
+    }
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new HttpError(describeHttpError(res.status, text), res.status, text);
+    }
+    onHeaders?.(res.headers);
+    onResponse?.({ url: res.url, status: res.status, headers: res.headers, type: res.type });
+    if (!parse) {
+      // Read to the end even though nothing is parsed: an unread body holds the
+      // connection open, which is why the !res.ok branch above reads it too.
+      await res.text().catch(() => "");
+      return null;
+    }
+    // Content-type-aware: a widget endpoint may answer text/plain -- the youtube
+    // widget returns a bare watch URL, not JSON. res.json() would throw on it, so
+    // only an application/json response is parsed; anything else is read as text
+    // and the renderer decides what it means. A malformed application/json body
+    // still throws here, as before, so a broken data widget stays an error card.
+    // A structured-syntax suffix (application/problem+json, a vendor
+    // application/vnd.x+json) is JSON as well, and media types are
+    // case-insensitive.
+    const mediaType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+    return mediaType === "application/json" || mediaType.endsWith("+json") ? res.json() : res.text();
+  };
+
   try {
-    res = await fetch(url, {
-      method,
-      headers: hasBody ? { ...headers, "Content-Type": "application/json" } : headers,
-      ...(hasBody ? { body: JSON.stringify(body) } : {}),
-      connectTimeout: CONNECT_TIMEOUT_MS,
-      ...(signal ? { signal } : {}),
-    });
-  } catch (err) {
-    throw new Error(safeNetworkErrorMessage(url, err));
+    return await withRequestSlot(url, requestSignal, exchange);
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", abort);
   }
-  if (res.status === 204) return null;
-  if (res.status === 404 && allow404) {
-    // Read and discard: a body left unconsumed holds its connection out of
-    // the pool until it is collected, and this 404 is the ORDINARY case for
-    // an optional document — every discovery of a backend serving no
-    // apps.json takes this path. Voided deliberately; the answer is "no
-    // document", whatever the backend chose to say alongside it.
-    void res.text().catch(() => {});
-    return null;
-  }
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new HttpError(describeHttpError(res.status, text), res.status, text);
-  }
-  onHeaders?.(res.headers);
-  if (!parse) {
-    // Read to the end even though nothing is parsed: an unread body holds the
-    // connection open, which is why the !res.ok branch above reads it too.
-    await res.text().catch(() => "");
-    return null;
-  }
-  // Content-type-aware: a widget endpoint may answer text/plain -- the youtube
-  // widget returns a bare watch URL, not JSON. res.json() would throw on it, so
-  // only an application/json response is parsed; anything else is read as text
-  // and the renderer decides what it means. A malformed application/json body
-  // still throws here, as before, so a broken data widget stays an error card.
-  // A structured-syntax suffix (application/problem+json, a vendor
-  // application/vnd.x+json) is JSON as well, and media types are
-  // case-insensitive.
-  const mediaType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
-  return mediaType === "application/json" || mediaType.endsWith("+json") ? res.json() : res.text();
 }
 
 /** `${widget.endpoint}/{envVar}`, with an optional trailing path segment. */
@@ -531,6 +616,22 @@ export function obbjectWarnings(payload: unknown): string[] {
   });
 }
 
+function rejectsDailyPriceTransport({ status, headers, type }: ResponseHead): boolean {
+  if (status === 206 || headers.has("content-range")) return true;
+  if (type === "cors") {
+    // Fetch represents missing and hidden headers the same way. Require an observable exposure list.
+    const exposed = (headers.get("access-control-expose-headers") ?? "").toLowerCase().split(",").map(name => name.trim());
+    if (!["link", "content-range", "access-control-expose-headers"].every(name => exposed.includes(name))) return true;
+  }
+  // Scan URI references and whole parameter values so their contents cannot be mistaken for a relation.
+  const link = headers.get("link") ?? "";
+  const parameters = link.matchAll(/<[^>]*>|;\s*([^=;,\s]+)\s*=\s*(?:"((?:[^"\\]|\\.)*)"|([^;,\s]+))/g);
+  for (const [, name, quoted, token] of parameters) {
+    if (name?.toLowerCase() === "rel" && /(?:^|\s)next(?:\s|$)/i.test(quoted?.replace(/\\(.)/g, "$1") ?? token)) return true;
+  }
+  return false;
+}
+
 export async function fetchWidgetData(
   backend: BackendConfig,
   widget: WidgetDef,
@@ -542,6 +643,8 @@ export async function fetchWidgetData(
   // an agent fetch has no card context to resolve, so it passes `undefined`.
   signal?: AbortSignal,
   onWarnings?: (warnings: string[]) => void,
+  onAcquisition?: (acquisition: BackendAcquisition) => void,
+  onRequest?: (url: string, headers: Record<string, string>) => void,
 ): Promise<unknown> {
   // Hookless callers (including Rita's synchronous card facade) may supply the legacy map while still needing
   // overnight bundles. Keep that map and load missing bundle calendars through the hooks' shared cache. A supplied
@@ -561,15 +664,47 @@ export async function fetchWidgetData(
     );
     ctx = { ...ctx, now, calendars: { ...ctx?.calendars, ...loaded.calendars } };
   }
-  const payload = await request("GET", buildWidgetUrl(backend, widget, params, ctx), authHeaders(backend), undefined, {
-    signal,
+  const requestUrl = buildWidgetUrl(backend, widget, params, ctx);
+  const headers = authHeaders(backend);
+  onRequest?.(requestUrl, headers);
+  let response: ResponseHead | undefined;
+  const payload = await request("GET", requestUrl, headers, undefined, {
+    signal, onResponse: head => { response = head; },
   });
+  signal?.throwIfAborted();
+  const table = widget.type === "table";
+  const url = table && onAcquisition ? new URL(requestUrl) : undefined;
+  const credentialKey = backend.authLocation === "query" && backend.headerValue ? backend.headerName : undefined;
+  const financial = url && backendFinancialResponse(payload, url, credentialKey);
+  const retrievedAt = Date.now();
+  const chartRequest = url && response?.url === url.href ? chartRequestContext(url, widget.dataKey, retrievedAt, credentialKey) : undefined;
+  const fullRows = chartRequest && chartResponseRows(payload, chartRequest.selector);
+  const sources = chartRequest && fullRows && captureChartSources(chartRequest, payload, fullRows);
+  const selected = extractData(payload, widget.dataKey, table);
+  if (url && onAcquisition) {
+    // Use the completed request and only its selected, complete result array.
+    const parameters: Record<string, string> = {};
+    for (const key of ["symbol", "exchange", "provider"]) {
+      if (credentialKey === key) continue;
+      const values = url.searchParams.getAll(key);
+      if (values.length) parameters[key] = values.join(",");
+    }
+    const selectedRows = isTableSnapshotEnvelope(selected) ? selected.rows : selected;
+    let captured = fullRows === selectedRows ? sources : undefined;
+    if (captured?.["daily-price"] && response && rejectsDailyPriceTransport(response)) {
+      delete captured["daily-price"];
+      if (!Object.keys(captured).length) captured = undefined;
+    }
+    onAcquisition({ endpoint: url.pathname, parameters, retrievedAt, ...(captured ? { ...chartRequest, chartSources: captured } : {}),
+      ...(!captured?.['daily-price'] && requestsDailyPriceSource(url, payload) ? { dailyPriceRejected: true } : {}),
+      ...(financial && selectedRows === financial.rows ? { financialEvidence: financial.evidence } : {}) });
+  }
   onWarnings?.(obbjectWarnings(payload));
   // A keys panel renders from the whole `{ tier, rows }` envelope — `tier`
   // decides whether edit controls show — so key-maint's own
   // `data.dataKey: "rows"` must not strip it.
   if (widget.type === "keys") return payload;
-  return extractData(payload, widget.dataKey);
+  return selected;
 }
 
 /**
@@ -751,8 +886,13 @@ export async function fetchParamOptions(
   backend: BackendConfig,
   endpoint: string,
   params: Record<string, string>,
+  options?: RequestOptions,
 ): Promise<ParamOption[]> {
-  const payload = await fetchEndpoint(backend, endpoint, params);
+  const url = new URL(joinUrl(backend.baseUrl, endpoint));
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== "") url.searchParams.set(key, value);
+  }
+  const payload = await request("GET", applyAuthQuery(url, backend).toString(), authHeaders(backend), undefined, options);
   if (!Array.isArray(payload)) throw new Error("options endpoint returned no list");
   return toOptions(payload) ?? [];
 }
@@ -846,8 +986,9 @@ export async function fetchWidgetDocuments(
   // unchanged; handed to buildWidgetUrl exactly as fetchWidgetData hands its
   // own ctx, so the documents query resolves under the dashboard's exchange.
   ctx?: WireContext,
+  options?: RequestOptions,
 ): Promise<unknown> {
-  return request("POST", buildWidgetUrl(backend, widget, params, ctx), authHeaders(backend), body);
+  return request("POST", buildWidgetUrl(backend, widget, params, ctx), authHeaders(backend), body, options);
 }
 
 /**

@@ -231,7 +231,20 @@ team() {
       # With no bundle id to match on, every profile is a candidate: a wrong
       # team is better caught by xcodebuild than by silently reporting none.
       if [ -n "$bundle_id" ]; then
-        case "$appid" in *".$bundle_id") ;; *) continue ;; esac
+        # A development wildcard profile is valid for every bundle beneath
+        # its prefix. Match its declared team first; do not infer a team from
+        # an unrelated certificate or a different app's scoped wildcard.
+        case "$appid" in "$team."*) ;; *) continue ;; esac
+        local profile_bundle="${appid#"$team."}" prefix
+        case "$profile_bundle" in
+          "$bundle_id") ;;
+          *\*)
+            prefix="${profile_bundle%\*}"
+            case "$prefix" in *\*) continue ;; esac
+            case "$bundle_id" in "$prefix"*) ;; *) continue ;; esac
+            ;;
+          *) continue ;;
+        esac
       fi
       found=1
       # An expired profile still names the right team, so it is a usable

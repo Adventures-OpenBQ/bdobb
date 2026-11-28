@@ -1,16 +1,19 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { acquisitionParams } from "../lib/widgetData/sources";
 import { fetchesData } from "../lib/builtins";
 import { peekWidgetCalendars } from "../lib/calendars/bundles";
-import { fetchWidgetData, THEMED_TYPES } from "../lib/dataClient";
+import {tableExecutionStore,type BackendRowsRequest} from "../stores/tableExecutionStore";
+import type { BackendAcquisition } from "../lib/widgetData/chartRecipes/financialEvidence";
+import { fetchWidgetData, retryAfterSeconds, THEMED_TYPES } from "../lib/dataClient";
 import { cronMatches, cronNext, parseCron, type Cron } from "../lib/cron";
 import { logError } from "../lib/logger";
 import { paramsKey, wireParams } from "../lib/params";
 import { dataBounds } from "../lib/dataBounds";
 import { isPeriodType, namesBounds } from "../lib/dateExpressions";
-import type { DashboardCard, WidgetDef } from "../lib/types";
+import type { BackendConfig, Dashboard, DashboardCard, WidgetDef } from "../lib/types";
 import { useBackendsStore } from "../stores/backendsStore";
 import { useDashboardStore } from "../stores/dashboardStore";
 import { useSettingsStore } from "../stores/settingsStore";
@@ -70,18 +73,29 @@ export function refreshIntervalMs(
   return Math.min(autoRefreshMinutes * 60_000, MAX_TIMEOUT_MS);
 }
 
-/** What a Run-button card last ran: the params it fetches and shows, and their fiscal map. */
-export type ArmedRequest = { params: Record<string, string>; fiscalYearEnd?: Record<string, number> };
-/** By card id, while the card is mounted; see armedRequestOf. */
+/** The committed Run question, including the exact resolved wire and source bounds. */
+export type ArmedRequest = { params: Record<string, string>; fiscalYearEnd?: Record<string, number>;
+  progress?: { wire: string | null; held: boolean; bounds?: { min: Date; max: Date } } };
+type RunQuestion = ArmedRequest & { intent: string; sourceParams?: Record<string, string>; progress: NonNullable<ArmedRequest["progress"]> };
 const armedRequests = new Map<string, ArmedRequest>();
-/**
- * A mounted Run-button card's last-run request, for Rita's get_widget_data
- * (cardRequestSync): she must read what the card shows, not an un-run edit.
- * Undefined for any other card, and for one that is not mounted -- it arms
- * its live params when it mounts, so those are what it would show.
- */
-export function armedRequestOf(cardId: string): ArmedRequest | undefined {
-  return armedRequests.get(cardId);
+// Dashboard lifetime, not presentation lifetime: a source may move between visible and headless runners.
+const scopedRequests = new Map<string, { producer: string; question: RunQuestion }>();
+let watchingScopedRequests = false;
+const runScope = (dashboardId: string, cardId: string) => JSON.stringify([dashboardId, cardId]);
+function runProducer(card: DashboardCard, widget: WidgetDef | undefined, backend: BackendConfig | undefined) {
+  // A connection refresh re-asks the last Run; it must never adopt an un-run
+  // draft. backendQuestion separately retires rows and proof on auth/URL changes.
+  return JSON.stringify([card.backendId, card.widgetId, widget?.endpoint, widget?.dataKey, widget?.table, widget?.runButton,
+    backend?.id]);
+}
+export function armedRequestOf(card: DashboardCard | string, widget?: WidgetDef, backend?: BackendConfig, dashboardId?: string): ArmedRequest | undefined {
+  if (typeof card === "string") return armedRequests.get(card);
+  if (widget?.runButton !== true) return undefined;
+  if (dashboardId !== undefined && widget.type === "table" && !card.queryBinding && !card.linkedSource) {
+    const saved = scopedRequests.get(runScope(dashboardId, card.id));
+    return saved?.producer === runProducer(card, widget, backend) ? saved.question : undefined;
+  }
+  return armedRequests.get(card.id);
 }
 
 /**
@@ -100,6 +114,7 @@ export function useWidgetData(
   calendars?: TradingCalendars & { intent?: string },
   /** v5.4.0: the dashboard's exchange, carried into every wireParams this hook runs. */
   exchange?: string,
+  backendTableDashboard?: Dashboard,
 ) {
   // The explicit descriptor owns acquisition, even when imported card metadata
   // still names a backend widget. Derived cards only signal their runtime here.
@@ -137,14 +152,26 @@ export function useWidgetData(
   const resolved = useResolvedTheme();
   const themeKey = widget && THEMED_TYPES.has(widget.type) ? resolved : "";
 
+  const scopedKey = runButton && backendTableDashboard ? runScope(backendTableDashboard.id, card.id) : undefined;
+  const producer = runProducer(card, widget, backend);
+  const saved = scopedKey ? scopedRequests.get(scopedKey) : undefined;
+  const initialQuestion = saved?.producer === producer ? saved.question : undefined;
+  const [armed, setArmed] = useState<RunQuestion | undefined>(initialQuestion);
+  const [owner, setOwner] = useState({ scopedKey, producer });
   const [status, setStatus] = useState<Status>("unresolved");
-  const [data, setData] = useState<unknown>(null);
+  const [publication, setPublication] = useState<{data: unknown; acquisition?: BackendAcquisition; request?:BackendRowsRequest}>({data:null});
+  const data = publication.data;
+  const setData = useCallback((value: unknown) => setPublication({data:value}), []);
   /** The bounds of the last answer to a request sent WITHOUT bounds. See `bounds`. */
-  const [heldBounds, setHeldBounds] = useState<{ min: Date; max: Date } | undefined>(undefined);
+  const [heldBounds, setHeldBounds] = useState<{ min: Date; max: Date } | undefined>(initialQuestion?.progress.bounds);
   // OBBject warnings from the last successful fetch (e.g. a truncated result).
   const [warnings, setWarnings] = useState<string[]>([]);
   const [error, setError] = useState<string | undefined>(undefined);
   const [attempt, setAttempt] = useState(0);
+  const [retryNotBefore, setRetryNotBefore] = useState<number | null>(null);
+  const [retryIn, setRetryIn] = useState<number | undefined>();
+  const pressedRef = useRef(false);
+  const sentQuestionRef = useRef<string | null>(null);
   /** Date.now() of the last successful fetch; null until there is one. */
   const [fetchedAt, setFetchedAt] = useState<number | null>(null);
   /** The widget's staleTime has passed since fetchedAt. Always false without one. */
@@ -194,10 +221,8 @@ export function useWidgetData(
    */
   // v5.4.0 fix round 2: that release now re-arms the params and the map
   // together, so the rule above holds without the exception.
-  const [armedParams, setArmedParams] = useState<Record<string, string> | null>(null);
-  const [armedFiscalYearEnd, setArmedFiscalYearEnd] = useState<Record<string, number> | undefined>(
-    undefined,
-  );
+  const armedParams = armed?.params ?? null;
+  const armedFiscalYearEnd = armed?.fiscalYearEnd;
   /**
    * v5.4.0 fix round 2: the intent a send was armed under, recorded wherever
    * one is armed (the first arm, Run) and compared when a held send is
@@ -207,17 +232,43 @@ export function useWidgetData(
    * fiscal map never relabels.
    */
   const intent = calendars?.intent ?? paramsKey(params);
-  const [armedIntent, setArmedIntent] = useState<string | undefined>(undefined);
+  const armedIntent = armed?.intent;
+  const armRequest = useCallback(() => {
+    const question: RunQuestion = { params, fiscalYearEnd, intent, sourceParams: backendTableDashboard ? acquisitionParams(card, backendTableDashboard) : undefined, progress: { wire: null, held: false } };
+    if (scopedKey) {
+      const current = scopedRequests.get(scopedKey);
+      if (current?.producer === producer && armed && current.question !== armed) return;
+      scopedRequests.set(scopedKey, { producer, question });
+    }
+    setArmed(question);
+  }, [params, fiscalYearEnd, intent, scopedKey, producer, card, backendTableDashboard, armed]);
   useEffect(() => {
-    if (!runButton || armedParams === null) return;
-    const entry: ArmedRequest = { params: armedParams, fiscalYearEnd: armedFiscalYearEnd };
+    if (!scopedKey || watchingScopedRequests) return;
+    watchingScopedRequests = true;
+    // Runtime-wide subscription survives presentation unmounts; removal retires the question.
+    useDashboardStore.subscribe((state, previous) => {
+      if (state.dashboards === previous.dashboards) return;
+      for (const key of scopedRequests.keys()) {
+        const [dashboardId, cardId] = JSON.parse(key) as [string, string];
+        if (!state.dashboards.some(dashboard => dashboard.id === dashboardId && dashboard.tabs.some(tab => tab.cards.some(card => card.id === cardId)))) scopedRequests.delete(key);
+      }
+    });
+  }, [scopedKey]);
+  if (owner.scopedKey !== scopedKey || owner.producer !== producer || scopedKey && initialQuestion && armed !== initialQuestion) {
+    setOwner({ scopedKey, producer });
+    setArmed(initialQuestion);
+    setHeldBounds(initialQuestion?.progress.bounds);
+  }
+  useEffect(() => {
+    if (!runButton || scopedKey !== undefined || armedParams === null) return;
+    const entry: ArmedRequest = { params: armedParams, fiscalYearEnd: armedFiscalYearEnd, progress: armed?.progress };
     armedRequests.set(card.id, entry);
     // Only its own entry: a second mount of the same card (a linked table's
     // off-tab source runner) may have armed since.
     return () => {
       if (armedRequests.get(card.id) === entry) armedRequests.delete(card.id);
     };
-  }, [runButton, card.id, armedParams, armedFiscalYearEnd]);
+  }, [runButton, scopedKey, card.id, armedParams, armedFiscalYearEnd, armed]);
   /**
    * runButton only: the WIRE values the last fetch sent, as a fingerprint,
    * and whether a refresh trigger found them moved. An expression (`T`, a
@@ -232,7 +283,6 @@ export function useWidgetData(
    * fingerprint is the resolved wire of the request that went out, never of
    * a live edit.
    */
-  const armedWireRef = useRef<string | null>(null);
   const [wireStale, setWireStale] = useState(false);
   /**
    * The calendars are not armed with the params: a calendar only ever
@@ -263,7 +313,6 @@ export function useWidgetData(
   const calendarsKey = calendars?.key ?? "";
   const calendarTrigger = runButton ? "" : calendarsKey;
   /** runButton only: a real trigger found a consulted year pending and sent nothing yet. */
-  const heldRef = useRef(false);
   const [released, setReleased] = useState(0);
   // Adjusting state during render, deliberately: React discards this pass and
   // re-renders with the value set BEFORE committing, so the fetch effect below
@@ -273,12 +322,11 @@ export function useWidgetData(
   // exactly the request a run button exists to prevent. Until then the effect
   // returns early on `!widget` and nothing has been requested at all.
   if (runButton && armedParams === null && widget) {
-    setArmedParams(params);
-    setArmedFiscalYearEnd(fiscalYearEnd);
-    setArmedIntent(intent);
+    armRequest();
   }
 
   const retry = useCallback(() => {
+    pressedRef.current = true;
     // An unresolved widget cannot be fixed by re-running the same fetch —
     // there is no fetch to re-run. Kick a discovery sweep so a backend the
     // user just brought back online has a chance to populate the registry;
@@ -337,6 +385,18 @@ export function useWidgetData(
     isPeriodType(widget?.params.find((p) => p.paramName === key)?.type) && namesBounds(value));
   const bounds = wantsBounds ? heldBounds : undefined;
   const boundsKey = bounds ? `${bounds.min.getTime()}|${bounds.max.getTime()}` : "";
+  const backendRequest = useRef<BackendRowsRequest | undefined>(undefined);
+  // A new authenticated question must retire linked proof before paint, even while this card retains its old body.
+  const backendQuestion=widget?.type==='table'&&!linked&&!card.queryBinding?JSON.stringify([
+    card.id,card.backendId,widget.id,widget.endpoint,widget.dataKey,widget.table,
+    backend?.id,backend?.baseUrl,backend?.authLocation,backend?.headerName,backend?.headerValue,
+    key,fiscalKey,calendarTrigger,exchange,boundsKey,
+  ]):undefined;
+  useLayoutEffect(()=>{
+    backendRequest.current=backendQuestion===undefined?undefined:tableExecutionStore.observeBackendQuestion(card.id,backendQuestion, backendTableDashboard?.id,
+      backendTableDashboard ? [card.widgetId, card.backendId, runButton ? armed?.sourceParams : acquisitionParams(card, backendTableDashboard)] : undefined);
+  },[card,backendQuestion,backendTableDashboard,runButton,armed?.sourceParams]);
+
 
   /**
    * Are there parameter edits the card has not run? Compared through
@@ -369,20 +429,18 @@ export function useWidgetData(
    * nothing: only Run adopts a new resolution.
    */
   const run = useCallback(() => {
+    pressedRef.current = true;
     if (stale) {
       // Forget the armed wire so the next effect run records what Run sends,
       // and bump `attempt` too: when only the CLOCK moved, the params key is
       // unchanged and nothing else would make the effect re-run.
-      armedWireRef.current = null;
       setWireStale(false);
-      setArmedParams(params);
-      setArmedFiscalYearEnd(fiscalYearEnd);
-      setArmedIntent(intent);
+      armRequest();
       setAttempt((n) => n + 1);
       return;
     }
     retry();
-  }, [stale, params, fiscalYearEnd, intent, retry]);
+  }, [stale, armRequest, retry]);
 
   /**
    * The `key` the payload currently in `data` was fetched under. WidgetCard
@@ -483,19 +541,21 @@ export function useWidgetData(
     // or, with a run button, when the release effect below bumps `released`.
     if (calendarsPending) {
       setStatus("loading");
-      if (runButton) heldRef.current = true;
+      if (runButton) armed!.progress.held = true;
       return;
     }
-    heldRef.current = false;
+    // A successor can mount after a held fiscal lookup landed. The release effect
+    // must adopt that intent's landed map before any request resolves a wire.
+    if (runButton && armed?.progress.held) return;
 
     // Review I2: after an un-run edit a card's bundle calendars are the EDIT's (useBundleCalendars reads the live
     // params), so the armed params it re-sends resolve on their own, from the shared cache, as preview showed them:
     // all of a bound card's, and a legacy card's overnight ones laid over its per-year map (2026-10-24).
-    const armed =
+    const armedCalendars =
       backend && key !== paramsKey(params)
         ? peekWidgetCalendars(backend, widget, fetchParams, exchange, new Date()).calendars
         : undefined;
-    const sendMap = !armed ? calendarMap : widget.calendarBinding ? armed : { ...calendarMap, ...armed };
+    const sendMap = !armedCalendars ? calendarMap : widget.calendarBinding ? armedCalendars : { ...calendarMap, ...armedCalendars };
 
     // runButton: re-resolve, and refuse to send a resolution the user has not
     // run. The comparison is on the WIRE values — what wireParams would put on
@@ -505,7 +565,7 @@ export function useWidgetData(
       const live = paramsKey(
         wireParams(widget, fetchParams, { fiscalYearEnd: fetchFiscal, calendars: sendMap, exchange, bounds }),
       );
-      if (armedWireRef.current !== null && armedWireRef.current !== live) {
+      if (armed!.progress.wire !== null && armed!.progress.wire !== live) {
         setWireStale(true);
         // v5.4.0 final-review fix: a HELD trigger released here (a ⌘R held on
         // a pending lookup after a dropped hold left the " dropped" sentinel,
@@ -516,10 +576,12 @@ export function useWidgetData(
         if (status === "loading") settleUnsent();
         return;
       }
-      armedWireRef.current = live;
+      armed!.progress.wire = live;
+      armed!.progress.bounds = bounds;
     }
 
     let cancelled = false;
+    const controller = new AbortController();
     /** The one timer this card ever has in flight. */
     let timer: ReturnType<typeof setTimeout> | null = null;
     /** Date.now() of the last COMPLETED request; 0 while the first is in flight. */
@@ -563,9 +625,8 @@ export function useWidgetData(
     // The guarantee is deliberately that narrow. A manual Refresh, a ⌘R
     // refresh-all, or a change to the resolved interval re-runs the effect
     // immediately, and an older request may still be in flight when it does.
-    // That request is not aborted — its `cancelled` flag is set by the
-    // cleanup below, so its result is discarded and it can never overwrite
-    // the newer answer.
+    // Cleanup aborts queued and active transport and also marks the result
+    // cancelled, so noncooperative transports cannot replace the new answer.
     function armAfterCompletion() {
       completedAt = Date.now();
       if (!cancelled) setCompletedAt(completedAt);
@@ -596,7 +657,28 @@ export function useWidgetData(
       else arm(intervalMs - elapsed);
     }
 
+    function stop() {
+      cancelled = true;
+      controller.abort();
+      clearTimer();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    }
     document.addEventListener("visibilitychange", onVisibilityChange);
+    // The refusal belongs to the authenticated question, kept private here.
+    const question = JSON.stringify([backend, widget.endpoint, widget.dataKey, key, fiscalKey]);
+    const pressed = pressedRef.current;
+    pressedRef.current = false;
+    if (retryNotBefore !== null && Date.now() < retryNotBefore && !pressed &&
+        sentQuestionRef.current === question && status === "error" &&
+        error !== undefined && retryAfterSeconds(error) !== undefined) {
+      completedAt = Date.now();
+      if (!document.hidden) {
+        if (cron) armCron(cron);
+        else if (intervalMs !== undefined) arm(intervalMs);
+      }
+      return stop;
+    }
+    sentQuestionRef.current = question;
     setStatus("loading");
 
     void (async () => {
@@ -612,21 +694,28 @@ export function useWidgetData(
       }
 
       try {
+        const request=backendRequest.current;
         let received: string[] = [];
+        let acquisition: BackendAcquisition | undefined;
         const result = await fetchWidgetData(backend, widget, fetchParams, {
           fiscalYearEnd: fetchFiscal,
           // A bound card's map is useBundleCalendars' (useCardRequest), so the GET resolves on what preview showed.
           calendars: sendMap,
           exchange,
           bounds,
-        }, undefined, (w) => { received = w; });
+        }, controller.signal, (w) => { received = w; }, next => { acquisition = next; });
         if (cancelled) return;
         setWarnings(received);
-        setData(result);
-        if (wantsBounds && bounds === undefined) setHeldBounds(dataBounds(result));
+        setPublication({data:result, acquisition, request});
+        if (wantsBounds && bounds === undefined) {
+          const nextBounds = dataBounds(result);
+          if (armed) armed.progress.bounds = nextBounds;
+          setHeldBounds(nextBounds);
+        }
         setFetchedAt(Date.now());
         setError(undefined);
         setStatus("ready");
+        setRetryNotBefore(null);
         armAfterCompletion();
       } catch (err) {
         if (cancelled) return;
@@ -634,6 +723,8 @@ export function useWidgetData(
         setError(message);
         setWarnings([]);
         setStatus("error");
+        const wait = retryAfterSeconds(message);
+        setRetryNotBefore(wait === undefined ? null : Date.now() + wait * 1000);
         // Before the await, so a slow log write cannot delay the next arm.
         armAfterCompletion();
         // Name, id and backend: the id alone cannot tell two backends'
@@ -644,11 +735,7 @@ export function useWidgetData(
       }
     })();
 
-    return () => {
-      cancelled = true;
-      clearTimer();
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
+    return stop;
     // Fetch on mount, on param change, on explicit retry, when the resolved
     // auto-refresh interval changes, and on a refreshAll bump. `key`, not
     // `params`, is the dependency: see the comment above `key`. With a run
@@ -731,14 +818,15 @@ export function useWidgetData(
   //   happens to leave the map equal still shows it) and leaves "loading",
   //   since nothing is in flight: the payload it holds, else the ask for Run.
   useEffect(() => {
-    if (!heldRef.current || calendarsPending) return;
-    if (armedWireRef.current === null) {
+    if (!runButton || !armed?.progress.held || calendarsPending) return;
+    armed.progress.held = false;
+    if (armed.progress.wire === null) {
       if (armedIntent !== intent) {
-        heldRef.current = false;
+        if (armed) armed.progress.held = false;
         setWireStale(true);
         // v5.4.0 fix round 3: leaving the ref null let any OTHER trigger
         // (⌘R, ↻, a backendStatus change, a theme flip — none of them Run)
-        // run the fetch effect's armed-wire check at `armedWireRef.current
+        // run the fetch effect's armed-wire check at `armed!.progress.wire
         // !== null` above, find it null, and quietly arm-and-send the
         // params still armed under the provisional (December) map — the
         // very send this branch just dropped. paramsKey (src/lib/params.ts)
@@ -746,16 +834,34 @@ export function useWidgetData(
         // equal a live wire fingerprint: every such trigger now takes the
         // "wire moved" path instead and sends nothing. Run already nulls the
         // ref itself (`run`, above) before re-arming, so Run is unaffected.
-        armedWireRef.current = " dropped";
+        armed!.progress.wire = " dropped";
         settleUnsent();
         return;
       }
-      setArmedParams(params);
-      setArmedFiscalYearEnd(fiscalYearEnd);
+      armRequest();
     }
     setReleased((n) => n + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calendarsPending]);
+  }, [calendarsPending, armed, runButton]);
+
+  // The retry wait's countdown. It only counts and, at the end, clears the
+  // wait: nothing is sent when a wait ends, so a board of refused cards does
+  // not fire as one the moment the limit lifts. The next ordinary trigger,
+  // or a press, sends.
+  useEffect(() => {
+    if (retryNotBefore === null) {
+      setRetryIn(undefined);
+      return;
+    }
+    const tick = () => {
+      const left = Math.ceil((retryNotBefore - Date.now()) / 1000);
+      if (left > 0) setRetryIn(left);
+      else setRetryNotBefore(null);
+    };
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [retryNotBefore]);
 
   // The stale tint (stale-time.md): set once staleTime has passed since the
   // last successful fetch, cleared by the next one.
@@ -787,6 +893,8 @@ export function useWidgetData(
   return {
     status,
     data,
+    acquisition: publication.acquisition,
+    backendRequest: status==='ready'?publication.request:backendRequest.current,
     error,
     warnings,
     retry,
@@ -797,5 +905,6 @@ export function useWidgetData(
     completedAt,
     stalePastInterval,
     dataStale,
+    retryIn,
   };
 }

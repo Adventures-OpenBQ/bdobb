@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { card } from "../test/fixtures";
 import { __list, __read, __reset, __seed } from "../test/memfs";
 import { onDashboardChanged } from "./dashboardSync";
 import { __resetLoggerForTests } from "./logger";
@@ -72,6 +73,61 @@ describe("loadDashboards", () => {
     __seed("dashboards/1.json", JSON.stringify(content));
     await loadDashboards();
     expect(__read("dashboards/1.json.corrupt")).toBe(JSON.stringify(content));
+  });
+
+  it.each([
+    ["null card", { tabs: [{ id: "t", name: "Main", cards: [null] }] }],
+    ["invalid layout", { cards: [card({ layout: undefined })] }],
+    ["invalid table order", { cards: [{ ...card(), table: { columnOrder: {} } }] }],
+    ["invalid params", { cards: [{ ...card(), params: { symbol: 42 } }] }],
+    ["invalid tab name", { tabs: [{ id: "t", name: {}, cards: [] }] }],
+    ["non-array groups", { cards: [], groups: {} }],
+    ["null group", { cards: [], groups: [null] }],
+    ["invalid group value", { cards: [], groups: [{ id: "g", name: "Group", paramName: "symbol", value: [] }] }],
+    ["invalid binding", { cards: [{ ...card(), bindings: [{ groupId: "g" }] }] }],
+    ["invalid legacy memberships", { cards: [{ ...card(), groupIds: {} }] }],
+  ])("quarantines %s without losing a healthy dashboard", async (_label, invalid) => {
+    const bad = JSON.stringify({ id: "bad", name: "Bad", ...invalid });
+    const healthyCard = { ...card(), extensions: { future: { value: 7 } } };
+    const extensions = { future: { value: 8 } };
+    const good = JSON.stringify({ id: "good", name: "Good", cards: [healthyCard], extensions });
+    __seed("dashboards/bad.json", bad);
+    __seed("dashboards/good.json", good);
+
+    const loaded = await loadDashboards();
+
+    expect(loaded.map((d) => d.id)).toEqual(["good"]);
+    expect(loaded[0].tabs[0].cards).toEqual([healthyCard]);
+    expect(loaded[0].extensions).toEqual(extensions);
+    expect(__read("dashboards/bad.json.corrupt")).toBe(bad);
+    expect(__read("dashboards/good.json")).toBe(good);
+  });
+
+  it.each([
+    ["a null value", { id: "n", value: null }],
+    ["a missing value", { id: "n" }],
+    ["an array value", { id: "n", value: [] }],
+    ["a nonnumeric bound", { id: "n", value: { min: "10" } }],
+    ["a nonstring date bound", { id: "day", value: { from: 10 } }],
+  ])("quarantines a filter with %s and preserves the healthy table filters", async (_label, invalid) => {
+    const columnFilters = [
+      { id: "n", value: { min: 10 } },
+      { id: "day", value: { from: "2026-06-01" } },
+      { id: "name", value: "good" },
+      { id: "active", value: "true" },
+    ];
+    const bad = JSON.stringify({ id: "bad", name: "Bad", cards: [{ ...card(), table: { columnFilters: [invalid] } }] });
+    const good = JSON.stringify({ id: "good", name: "Good", cards: [card({ table: { columnFilters } })] });
+    __seed("dashboards/bad.json", bad);
+    __seed("dashboards/good.json", good);
+
+    const loaded = await loadDashboards();
+    const table = loaded[0].tabs[0].cards[0].table;
+
+    expect(loaded.map((dashboard) => dashboard.id)).toEqual(["good"]);
+    expect(__read("dashboards/bad.json.corrupt")).toBe(bad);
+    expect(__read("dashboards/good.json")).toBe(good);
+    expect(table?.columnFilters).toEqual(columnFilters);
   });
 
   describe("a legacy flat-cards file (written before tabs existed)", () => {
@@ -330,5 +386,18 @@ describe("the docks dashboard (v8 locked widgets)", () => {
     expect(loaded.find((d) => d.id === DOCKS_ID)?.dockRows).toEqual({ top: 24, bottom: 8 });
     expect(clampDockRows(null)).toEqual(DEFAULT_DOCK_ROWS);
     expect(clampDockRows({ top: 1, bottom: 7.6 })).toEqual({ top: 2, bottom: 8 });
+  });
+
+  it("round-trips the see-through switch, and writes nothing for it while it is off", async () => {
+    await saveDashboard({ ...makeDefaultDocks(), dockSeeThrough: { bottom: true } });
+    expect((await loadDashboards()).find((d) => d.id === DOCKS_ID)?.dockSeeThrough).toEqual({ bottom: true });
+    await saveDashboard(makeDefaultDocks());
+    expect(__read("dashboards/docks.json")).not.toContain("dockSeeThrough");
+    expect((await loadDashboards()).find((d) => d.id === DOCKS_ID)).not.toHaveProperty("dockSeeThrough");
+  });
+
+  it("reads the switch leniently: only true, only the two edges", async () => {
+    __seed("dashboards/docks.json", JSON.stringify({ ...makeDefaultDocks(), dockSeeThrough: { top: "yes", bottom: true, middle: true } }));
+    expect((await loadDashboards()).find((d) => d.id === DOCKS_ID)?.dockSeeThrough).toEqual({ bottom: true });
   });
 });

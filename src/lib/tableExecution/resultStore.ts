@@ -1,6 +1,12 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { chartPresentationProvenance, projectChartSources } from '../widgetData/chartRecipes/chartSourceContracts';
+import { financialProjectionProvenance } from '../widgetData/chartRecipes/financialEvidence';
+import { priceOmissionEvidence } from '../widgetData/chartRecipes/priceEvidence';
+import {resortAnalytical} from './analyticalSortReuse';
+import type {RuntimeParams} from './runtimeParams';
+import type {TableDefinition,SelectionSpec} from './types';
 import { filterKindFor } from '../tableFiltering';
 import { inspectionPage, inspectionCounts } from './inspection';
 import { selectionSummary } from './selection';
@@ -9,6 +15,8 @@ import type { CalculatedView, Revision, RowRequest, RowBlock, FacetResult, Total
 import type { DatasetRow } from '../widgetData/types';
 import { ExecutionProtocolError } from './validation';
 export interface ResultStore {
+  trySort?(definition:TableDefinition,selection:SelectionSpec,revision:Revision,runtimeParams:RuntimeParams|undefined,maximum:number):ResultStore|undefined;
+  sortReservation?():number;
   ready(requestId: string, revision: Revision): ViewReady;
   selection(requestId: string, revision: Revision, action: SelectionAction, visibleIds: string[]): SelectionResult;
   rows(requestId: string, revision: Revision, request: RowRequest): RowBlock;
@@ -20,8 +28,10 @@ export interface ResultStore {
 }
 /** Private immutable snapshot; no delivery result can mutate later reads. */
 export function createResultStore(view: CalculatedView, revision: Revision): ResultStore {
-  view = structuredClone(view);
-  revision = structuredClone(revision);
+  return createOwnedResultStore(structuredClone(view),structuredClone(revision));
+}
+/** Private candidate ownership only; ordinary callers retain the clone boundary. */
+function createOwnedResultStore(view:CalculatedView,revision:Revision):ResultStore {
   const ownWarnings = view.analytical?.warnings ?? [];
   const modelWarnings = [...(view.modelWarnings ?? []), ...ownWarnings.map(w => ({
     code: w.code, message: w.message.slice(0, 1000), ...(w.categoryId ? { categoryId: w.categoryId } : {}),
@@ -48,6 +58,13 @@ export function createResultStore(view: CalculatedView, revision: Revision): Res
     return kind==='none'?column:{...column,dtype:kind==='date'?'dateString' as const:kind};
   });
   return {
+    sortReservation(){return view.sortReuse?.reservation??0;},
+    trySort(definition,selection,next,runtimeParams,maximum){
+      if(![next.input,next.model,next.output].every(n=>Number.isSafeInteger(n)&&n>=0))return;
+      if(next.widgetId!==revision.widgetId||next.input!==revision.input||next.model<=revision.model||next.output<=revision.output)return;
+      const candidate=resortAnalytical(view,definition,selection,runtimeParams,maximum);
+      return candidate?createOwnedResultStore(candidate,structuredClone(next)):undefined;
+    },
     ready(requestId, requested) { return structuredClone({ ...context(requestId, requested), kind: 'viewReady', selection: view.selection, selectionNamespace: view.selectionNamespace, columns: view.columns, ...(view.chartColumns ? { chartColumns: view.chartColumns } : {}), topLevelCount: rootRows().length, inspection: { inputColumns, inputPeriodicity: view.inputPeriodicity, definition: view.definition, aggregations, counts: inspectionCounts(view), ...(view.paramMatches ? {paramMatches:view.paramMatches} : {}) } }); },
     selection(requestId, requested, action, visibleIds) { return structuredClone({ ...context(requestId, requested), kind: 'selection', ...selectionSummary(view, action, visibleIds) }); },
     rows(requestId, requested, request) {
@@ -71,15 +88,26 @@ export function createResultStore(view: CalculatedView, revision: Revision): Res
       throw new ExecutionProtocolError('INVALID_REQUEST', `Unknown facet ${categoryId}`); return structuredClone({ ...envelope, ...facet, kind: 'facets', categoryId }); },
     inspect(requestId, requested, request) { return structuredClone({ ...context(requestId, requested), ...inspectionPage(view, request), kind: 'inspect' }); },
     totals(requestId, requested) { return structuredClone({ ...context(requestId, requested), ...view.totals, kind: 'totals' }); },
-    chartData(requestId, requested, fields) { const envelope = context(requestId, requested); if (fields.some(f => !view.columns.some(c => c.id === f)))
-      throw new ExecutionProtocolError('INVALID_REQUEST', 'Unknown chart field'); return structuredClone({ ...envelope, kind: 'chartData', columns: view.columns.filter(c => fields.includes(c.id)), rows: projection(view.presentedRows, fields), resultRevision: revision.model, outputRevision: revision.output, provenance: view.provenance, freshness: view.freshness }); },
+    chartData(requestId, requested, fields) {
+      const envelope = context(requestId, requested);
+      if (fields.some(f => !view.columns.some(c => c.id === f))) throw new ExecutionProtocolError('INVALID_REQUEST', 'Unknown chart field');
+      const priceProvenance = priceOmissionEvidence({ ...view, columns: view.inputColumns }, view.selectionIdentityRows, view.presentedRows, fields);
+      const columns = view.columns.filter(c => fields.includes(c.id));
+      const financial = financialProjectionProvenance(priceProvenance, view.presentedRows, columns);
+      const provenance = projectChartSources(chartPresentationProvenance(financial, view.selection.kind !== 'none'), columns, view.presentedRows);
+      return structuredClone({ ...envelope, kind: 'chartData', columns, rows: projection(view.presentedRows, fields), resultRevision: revision.model, outputRevision: revision.output, provenance, freshness: view.freshness });
+    },
     presented(requestId, requested, transferId, batchSize = 500, ignoreSelection = false) {
       const envelope = context(requestId, requested);
       if (!transferId || !Number.isSafeInteger(batchSize) || batchSize < 1)
         throw new ExecutionProtocolError('INVALID_REQUEST', 'Transfer ID and positive safe batch size required');
-      const rows = projection(ignoreSelection ? eligiblePresentedRows(view) : view.presentedRows, view.columns.map(c => c.id));
+      const fields = view.columns.map(c => c.id);
+      const rows = projection(ignoreSelection ? eligiblePresentedRows(view) : view.presentedRows, fields);
+      const priceProvenance = priceOmissionEvidence({ ...view, columns: view.inputColumns }, view.selectionIdentityRows, rows, fields);
+      const financial = financialProjectionProvenance(priceProvenance, rows, view.columns);
+      const provenance = projectChartSources(chartPresentationProvenance(financial, !ignoreSelection && view.selection.kind !== 'none'), view.columns, rows);
       return (function* () { for (let offset = 0, sequence = 0; offset < Math.max(1, rows.length); offset += batchSize, sequence++)
-        yield structuredClone({ ...envelope, kind: 'subset' as const, transferId, sequence, ...(sequence === 0 ? { columns: view.columns, provenance: { ...view.provenance, presentation: { scope: 'presented' as const, rowCount: rows.length, revision } }, freshness: view.freshness } : {}), rows: rows.slice(offset, offset + batchSize), final: offset + batchSize >= rows.length }); })();
+        yield structuredClone({ ...envelope, kind: 'subset' as const, transferId, sequence, ...(sequence === 0 ? { columns: view.columns, provenance: { ...provenance, presentation: { scope: 'presented' as const, rowCount: rows.length, revision } }, freshness: view.freshness } : {}), rows: rows.slice(offset, offset + batchSize), final: offset + batchSize >= rows.length }); })();
     },
   };
 }

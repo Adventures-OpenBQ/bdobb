@@ -875,26 +875,15 @@ body {
   font: inherit;
 }
 
-/* Sticky, not static: the bar is the first child of .dashboard-area, which was
-   the scroll box (overflow: auto) until v8, so a static bar scrolled up and out
-   of the window on a dashboard taller than the area. Since v8 the grid scrolls
-   in .dashboard-scroll below the bar and the area itself never scrolls, so
-   this holds trivially; it stays for anything placed in the area that is not
-   a DashboardGrid. A maximized card then covers
-   the grid content that took the bar's place instead of the bar itself,
-   because its `inset` top is --dashboard-top -- the area's own top plus the
-   bar's height, which App can only publish as a CONSTANT (App.tsx). Pinning
-   the bar to the scroll box's top edge is what makes that constant true in
-   every scroll state.
+/* The dashboard tabs stay above the locked top band while the grid scrolls
+   separately in .dashboard-scroll. App measures --dashboard-top below the
+   tabs and any ordinary top band, so maximized dashboard cards leave them
+   visible. See-through bands retain their overlay behavior.
 
-   z-index 15 is above every card (react-grid-layout gives a resizing item 1, a
-   placeholder 2 and a dragged item 3, from its own stylesheet) and below the
-   maximized card's 20, the library overlay's 30, the expanded rail's 40, the
-   modal backdrop's 50 and the portalled menus' 60 -- so a maximized card,
-   which is meant to cover the bar, still does.
-
-   An OPAQUE background is required, not decoration: the grid now scrolls
-   underneath, and the bar's default transparency would show cards through it. */
+   z-index 15 is above dragged grid cards and below maximized cards (20),
+   library (30), expanded rail (40), modal backdrop (50) and menus (60).
+   Maximized cards do not overlap the tabs because their inset excludes them.
+   The opaque background prevents scrolled cards showing through the bar. */
 .tab-bar {
   display: flex;
   align-items: center;
@@ -917,6 +906,16 @@ body {
    many tabs never push ↻ and the green + (the only add-widget control left in
    the bar since v8) off the right edge. */
 .tab-bar-tabs { display: flex; align-items: center; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+
+/* Long dashboards scroll their tabs, not the dashboard and its cards. Keep
+   the actions outside that scroll box so Refresh/Add stay in view. */
+.dashboard-area > .tab-bar > .tab-bar-tabs {
+  min-width: 0;
+  overflow-x: auto;
+  flex: 0 1 auto;
+}
+.dashboard-area > .tab-bar > .tab-bar-tabs > .tab-bar-tab { flex: 0 0 auto; }
+.dashboard-area > .tab-bar > button { flex-shrink: 0; }
 
 .tab-bar-tab { display: flex; align-items: center; }
 
@@ -1558,8 +1557,8 @@ body {
    and what this grid uses) top/left are not inline at all.
 
    z-index 20 is below the expanded rail's 40 and the portalled menus' 60, so
-   both stay reachable over a maximized card. --dashboard-top is the tab bar's
-   bottom edge, published by App; --rail-width is the rail setting, published
+   both stay reachable over a maximized card. --dashboard-top is the bottom edge of the tab bar and
+   any ordinary locked top band, published by App; --rail-width is the rail setting, published
    on :root by App. */
 .react-grid-item.card-maximized,
 .card-dock.card-maximized {
@@ -1680,6 +1679,39 @@ body {
    bands paint over it. The band rises to the card's level for as long as one
    of its cards is maximized. */
 .dock-band-maximized { z-index: 20; }
+/* See-through locked bands (Settings ▸ Locked Widgets ▸ See-through where
+   empty). DockBand adds .dock-band-float while the switch is on, the band
+   fits the window and no workspace is shown (lib/dockSeeThrough.ts), and
+   useFloatingBand publishes the band's height on the area as
+   --dock-room-top / --dock-room-bottom. Only over a dashboard's own scroll
+   region: an area without one (no dashboard, no tab) keeps the column.
+   The band leaves the column -- a negative margin as tall as itself -- and
+   lies over the scroll region's end. `order` moves a floating top band after
+   the tab bar and a tab's pinned top card, and a floating bottom band before
+   a tab's pinned bottom card, so neither is covered; the DOM order, and so
+   the bands' mount-once guarantee, is untouched. No background, no border
+   line. Each rule names .dock-band-float, so an ordinary band is unchanged. */
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dashboard-scroll { order: 1; }
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .card-dock-bottom { order: 1; }
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dock-band-bottom { order: 1; }
+.dashboard-area:has(> .dashboard-scroll) > .dock-band-top.dock-band-float { order: 1; margin-bottom: calc(-1 * var(--dock-room-top, 0px)); }
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-bottom.dock-band-float) > .card-dock-bottom { order: 2; }
+.dashboard-area:has(> .dashboard-scroll) > .dock-band-bottom.dock-band-float { margin-top: calc(-1 * var(--dock-room-bottom, 0px)); }
+.dashboard-area:has(> .dashboard-scroll) > .dock-band.dock-band-float { background: none; border: 0; }
+/* The room: the region pads each floating end by that band's height, so its
+   last cards scroll up clear of a bottom band and its first cards down clear
+   of a top one. The grid is kept at least the region's height plus a top
+   band's room, so even a short tab can open scrolled past that room
+   (useFloatingBand) instead of sitting part-way down under the band. */
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dashboard-scroll { padding-top: var(--dock-room-top, 0px); padding-bottom: var(--dock-room-bottom, 0px); }
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dashboard-scroll > .react-grid-layout { min-height: calc(100% + var(--dock-room-top, 0px)); }
+/* Empty band space is the dashboard's: a click, a drag, the wheel and a
+   finger's pan go to the region under it. Only the locked cards take the
+   pointer, so their own controls, menus and scrolling work as before. The
+   live band's grid is locked and has no drag or resize to lose; the editor's
+   canvas (.dock-canvas) is another element and is untouched. */
+.dashboard-area:has(> .dashboard-scroll) > .dock-band-float { pointer-events: none; }
+.dashboard-area:has(> .dashboard-scroll) > .dock-band-float .react-grid-item { pointer-events: auto; }
 /* Settings ▸ Locked Widgets' editor: a panel over the dashboard area, the
    widget library's footprint (the rail's edge to the window's edge, both rail
    widths, Rita's inset below) and one level BELOW it (29 < 30), so the green +
@@ -1692,6 +1724,7 @@ body {
 .dock-edit-bar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--border); font-size: var(--font-size-12); }
 .dock-edit-title { flex: 1 1 auto; margin: 0; font-size: var(--font-size-16); }
 .dock-edit-rows { display: inline-flex; align-items: center; gap: 4px; }
+.dock-edit-see-through { display: inline-flex; align-items: center; gap: 4px; }
 .dock-edit-hint { margin: 8px 16px; color: var(--text-muted); font-size: var(--font-size-12); }
 .dock-canvas { position: relative; flex: 0 0 auto; display: flex; flex-direction: column; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); box-shadow: 0 0 0 2px var(--accent) inset; }
 .dock-empty { margin: auto; }
@@ -1739,11 +1772,7 @@ body {
   cursor: default;
 }
 
-/* One row, 38px when nothing wraps: 4px + 20px controls + 4px, plus the
-   hairline. The chips group has a minimum it will not shrink below; when the
-   title and the icons leave it less than that, it wraps to a second line as
-   a group (see .card-chips) and the header grows — the only time it is
-   taller than the Workspace's. */
+/* Header parameters scroll beside the title; actions retain their own space. */
 .card-header {
   display: flex;
   align-items: center;
@@ -1773,15 +1802,31 @@ body {
   font-weight: 600;
 }
 
-/* The parameter chips: the flexible middle of the row, between the fixed-size
-   title and the fixed-size controls. min-width: 0 lets it shrink; the 180px
-   basis is the point past which it wraps to its own line (see .card-header's
-   flex-wrap) instead of squeezing the chips unreadably thin. */
-.card-chips { flex: 1 1 180px; min-width: 0; }
+/* Give the parameter scroller spare width; cap long titles without reserving empty space. */
+.card-header:has(.card-chips:not(.card-chips-hidden):not(:empty)) .card-title { flex: 0 1 auto; max-width: min(30%, 18rem); }
+
+/* A zero basis keeps parameters beside the title and actions instead of
+   moving the whole strip to another line. Native overflow supports trackpads,
+   scrollbars and iPadOS touch panning without intercepting control gestures. */
+.card-chips {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+/* Live TV's audio control is portalled beside ParamControls. Keep both in
+   the same scrolling row instead of flowing after its block container. */
+.card-chips:has(> .video-row-zero):not(.card-chips-hidden) { display: flex; align-items: center; gap: 4px; }
+.card-chips:has(> .video-row-zero) > .card-params { flex: 0 0 auto; min-width: 0; }
+.video-row-zero { display: inline-flex; align-items: center; flex: 0 0 auto; }
+.card-chips-overflowing { padding-bottom: 16px; }
 /* Collapsed controls (see .card-controls-collapsed below) hide the chips too
    -- a card collapsed to just its icon cluster showing its parameters anyway
    would defeat the whole point of collapsing. */
 .card-chips-hidden { display: none; }
+.card-chips:empty { display: none; }
 
 /* Belt and suspenders with the ellipsis above: if the card is narrow enough
    that even a fully-shrunk title can't leave room for Parameters/Raw/
@@ -2016,14 +2061,14 @@ body {
 .group-chip .param-badge { padding: 0 5px; border-radius: 8px; font-size: var(--font-size-10); }
 .group-chip-label { white-space: nowrap; }
 
-/* The chips row. Inside .card-chips on the title line; wraps within itself
-   before the group wraps under the title. */
+/* Forms and panels keep their wrapping layout. Title-bar fields use inline
+   layout so only declared row breaks start a new line; max-content measures
+   the widest declared row, which supplies the scroller's full width. */
 .card-params { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
+.card-chips .card-params { display: block; width: max-content; min-width: 100%; white-space: nowrap; padding: 1px 0; }
 
-/* OpenBB's parameter positioning: a full-width, zero-height item between two
-   rows of chips ends the line. Only the title line draws rows. */
 .card-params-break { display: none; }
-.card-chips .card-params-break { display: block; flex-basis: 100%; height: 0; }
+.card-chips .card-params-break { display: block; height: 2px; }
 /* No param on row 0 (the list opens with `[]`): the chips go under the title
    line instead of beside the name. */
 .card-chips-below { flex-basis: 100%; }
@@ -2105,6 +2150,7 @@ body {
    resolution on a second line, and a fixed 20px let that line spill over the
    next wrapped control on a narrow card. */
 .card-chips .param-field {
+  vertical-align: middle; margin-inline-end: 6px;
   min-height: 20px;
   padding: 0 4px;
   border-radius: 4px;
@@ -2123,16 +2169,10 @@ body {
 }
 .card-chips .param-field .period-trigger[data-pressed],
 .card-chips .param-field .period-trigger[aria-expanded="true"] { outline: 1px solid var(--accent); }
-/* On a narrow card the field shrinks (min-width: 0 above) but its control did
-   not: the .param-control wrapper was a block with min-width: auto, an input's
-   automatic minimum is its ~20-character intrinsic width, and a period pill is
-   a button, so .card-header button's flex: 0 0 auto pinned it at its full
-   nowrap label. All ran past the card edge and were clipped (#13). Let them
-   shrink with the field; the pill's label is cut short inside its own box. */
-.card-chips .param-control { display: flex; min-width: 0; }
+/* Fields retain their natural width inside the scroller. */
+.card-chips .param-control { display: flex; }
 .card-chips .param-field input,
-.card-chips .param-field .period-trigger { min-width: 0; flex-shrink: 1; }
-.card-chips .param-field .period-trigger { overflow: hidden; }
+.card-chips .param-field .period-trigger { flex-shrink: 0; }
 .react-aria-DateSegment {
   padding: 0 1px;
   font-variant-numeric: tabular-nums;
@@ -2452,6 +2492,11 @@ body {
 .iframe-hint button { padding: 2px 6px; color: var(--text); }
 
 .chart-plot { width: 100%; height: 100%; }
+.chart-scroll-viewport, .news-calendar-width-probe { width: 100%; overflow-y: auto; }
+.chart-scroll-viewport { height: 100%; }
+.chart-scroll-viewport--measured { scrollbar-gutter: stable; }
+.chart-scroll-viewport--measured > .chart-plot { min-height: 100%; }
+.chart-scroll-viewport--touch-scroll { touch-action: pan-y pinch-zoom; }
 /* The TradingView card: lightweight-charts' autoSize fills whatever the
    credit line below it leaves, so the plot box must be the flexible one and
    be allowed to shrink (min-height: 0) when the card does. */
@@ -2460,16 +2505,135 @@ body {
 .live-chart-note { margin: 0; padding: 0 4px 2px; font-size: var(--font-size-11); color: var(--text-muted); }
 .tv-credit { align-self: flex-end; padding: 2px 4px 0; font-size: var(--font-size-11); color: var(--text-muted); }
 
-/* Linked chart controls and notices share the card's bounded plot space. */
+/* The linked Parameters form stays mounted while the panel is closed. */
+.widget-card:has(.card-linked-params) { container-type: size; }
+.card-linked-params { min-width: 0; max-height: min(12rem, 35cqh); overflow: auto; }
+.card-linked-params[hidden] { display: none; }
+.widget-card:has(.card-linked-params:not([hidden])) .linked-parameters-repair { display: none; }
+.card-linked-params > button { margin-bottom: 6px; }
+.card-linked-params .chart-controls { display: flex; flex-wrap: wrap; align-items: start; gap: 6px; }
+.card-linked-params .chart-controls label { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; }
+.card-linked-params .chart-controls > label { max-width: min(100%, 28rem); }
+.card-linked-params .chart-controls label:has(> select) { white-space: nowrap; }
+.card-linked-params .chart-controls :is(select, input) { min-width: 0; max-width: 100%; }
+.card-linked-params .chart-controls fieldset { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; max-width: 100%; margin: 0; }
+.card-linked-params .chart-controls > fieldset:is(.etf-sunburst-controls, .dual-axis-overlay-controls, .estimate-revisions-controls, .market-map-controls) {
+  flex: 0 0 100%;
+  border: 0;
+  padding: 2px 0;
+}
 .linked-chart-card { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.linked-chart-card > button { align-self: flex-start; flex: 0 0 auto; }
 .linked-chart-renderer { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
-.linked-chart-renderer .chart-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; flex: 0 1 auto; max-height: 40%; overflow: auto; }
-.linked-chart-renderer .chart-controls label { display: inline-flex; align-items: center; gap: 4px; }
-.linked-chart-renderer .chart-controls fieldset { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; margin: 0; }
+:is(.linked-chart-renderer, .card-params-panel) .chart-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; flex: 0 1 auto; max-height: 40%; overflow: auto; }
+:is(.linked-chart-renderer, .card-params-panel) .chart-controls label { display: inline-flex; align-items: center; gap: 4px; }
+:is(.linked-chart-renderer, .card-params-panel) .chart-controls .chart-measures { display: inline-flex; align-items: center; gap: 4px; }
+.card-params-panel .chart-controls { max-height: none; overflow: visible; margin-top: 6px; }
 .linked-chart-status { flex: 0 1 auto; max-height: 25%; overflow: auto; }
+.linked-chart-renderer--price-views .linked-chart-status { max-height: 50%; }
 .linked-chart-status p { margin: 4px 0; }
 .linked-chart-plot { flex: 1; min-height: 0; overflow: hidden; }
+/* Match the news plot viewport's stable scrollbar gutter without occupying card height. */
+.news-calendar-width-probe { flex: 0 0 0; height: 0; visibility: hidden; }
+.news-calendar-fields { flex-basis: 100%; }
+.news-calendar-details summary { cursor: pointer; }
+.linked-chart-renderer--news .linked-chart-status { max-height: 33%; }
+.news-calendar-details { flex: 0 1 auto; max-height: 25%; overflow: auto; padding: 4px 6px; }
+.news-calendar-day-controls { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.news-calendar-details p, .news-calendar-details ul { margin: 4px 0; }
+
+.linked-chart-renderer--return, .linked-chart-renderer--ownership { position: relative; --recipe-plot-share: 58%; }
+.linked-chart-plot--return, .linked-chart-plot--ownership { flex: 0 0 var(--recipe-plot-share); margin-top: auto; }
+.return-summary-draft-probe, .ownership-draft-probe {
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--recipe-plot-share);
+  visibility: hidden;
+  pointer-events: none;
+}
+.linked-chart-renderer--etf { position: relative; --etf-plot-share: 58%; }
+.linked-chart-plot--etf { flex: 0 0 var(--etf-plot-share); margin-top: auto; }
+.etf-sunburst-draft-probe {
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--etf-plot-share);
+  visibility: hidden;
+  pointer-events: none;
+}
+.etf-sunburst-controls label { max-width: 100%; }
+.etf-sunburst-controls select { min-width: 0; }
+.etf-sunburst-controls p { flex: 1 0 100%; margin: 2px 0; }
+.etf-sunburst-navigation { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.etf-sunburst-navigation select { max-width: 100%; }
+.etf-sunburst-details { flex: 0 1 auto; max-height: 25%; overflow: auto; padding: 4px 6px; overflow-wrap: anywhere; }
+.etf-sunburst-details:not([open]) { flex-shrink: 0; }
+.etf-sunburst-details summary { cursor: pointer; }
+.etf-sunburst-details p, .etf-sunburst-details ul { margin: 4px 0; }
+.linked-chart-renderer--overlay { position: relative; --overlay-plot-share: 58%; }
+.linked-chart-plot--overlay { flex: 0 0 var(--overlay-plot-share); margin-top: auto; }
+.dual-axis-overlay-draft-probe {
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--overlay-plot-share);
+  visibility: hidden;
+  pointer-events: none;
+}
+.dual-axis-overlay-details summary { cursor: pointer; }
+.dual-axis-overlay-controls label { max-width: 100%; }
+.dual-axis-overlay-controls select { min-width: 0; max-width: 100%; }
+.dual-axis-overlay-controls p { flex: 1 0 100%; margin: 2px 0; }
+.dual-axis-overlay-details { flex: 0 1 auto; max-height: 25%; overflow: auto; padding: 4px 6px; overflow-wrap: anywhere; }
+.dual-axis-overlay-details:not([open]) { flex-shrink: 0; }
+.dual-axis-overlay-details h4, .dual-axis-overlay-details p, .dual-axis-overlay-details ul { margin: 4px 0; }
+.linked-chart-renderer--revisions { position: relative; --revision-plot-share: 58%; }
+.linked-chart-plot--revisions { flex: 0 0 var(--revision-plot-share); margin-top: auto; }
+.estimate-revisions-draft-probe {
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--revision-plot-share);
+  visibility: hidden;
+  pointer-events: none;
+}
+.estimate-revisions-details summary { cursor: pointer; }
+.estimate-revisions-controls label { max-width: 100%; overflow-wrap: anywhere; }
+.estimate-revisions-controls select { min-width: 0; max-width: 100%; }
+.estimate-revisions-controls p { flex: 1 0 100%; margin: 2px 0; }
+.estimate-revisions-controls .estimate-revisions-pins { flex-direction: column; width: 100%; overflow-wrap: anywhere; }
+.estimate-revisions-details { flex: 0 1 auto; max-height: 24%; overflow: auto; padding: 4px 6px; overflow-wrap: anywhere; }
+.estimate-revisions-details:not([open]) { flex-shrink: 0; }
+.estimate-revisions-details h4, .estimate-revisions-details p, .estimate-revisions-details ul { margin: 4px 0; }
+.linked-chart-renderer--market { position: relative; --market-plot-share: 58%; }
+.linked-chart-plot--market { flex: 0 0 var(--market-plot-share); margin-top: auto; }
+.market-map-draft-probe {
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--market-plot-share);
+  visibility: hidden;
+  pointer-events: none;
+}
+.market-map-details summary { cursor: pointer; }
+.market-map-controls label { max-width: 100%; }
+.market-map-controls select { min-width: 0; max-width: 100%; }
+.market-map-controls p { flex: 1 0 100%; margin: 2px 0; }
+.market-map-navigation { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.market-map-navigation label, .market-map-navigation select { max-width: 100%; }
+.market-map-details { flex: 0 1 auto; max-height: 25%; overflow: auto; padding: 4px 6px; overflow-wrap: anywhere; }
+.market-map-details:not([open]) { flex-shrink: 0; }
+.market-map-details p, .market-map-details ul { margin: 4px 0; }
+.market-map-details th, .market-map-details td { padding: 2px 4px; text-align: start; }
+.chart-surface-placeholder { visibility: hidden; }
+.chart-scroll-viewport--wide { overflow-x: auto; }
+.chart-scroll-viewport--wide.chart-scroll-viewport--touch-scroll { touch-action: pan-x pan-y pinch-zoom; }
+.card-linked-params .return-summary-listings { flex-basis: 100%; }
+.return-summary-details, .ownership-snapshot-details { flex: 0 1 auto; max-height: 25%; overflow: auto; padding: 4px 6px; }
+.return-summary-details:not([open]), .ownership-snapshot-details:not([open]) { flex-shrink: 0; }
+.return-summary-details summary, .ownership-snapshot-details summary { cursor: pointer; }
+.return-summary-details p, .return-summary-details dl, .return-summary-details ul, .ownership-snapshot-details ul { margin: 4px 0; }
+.ownership-recipe-controls label { max-width: 100%; }
+.ownership-recipe-controls select { min-width: 0; }
+.ownership-recipe-controls p { flex: 1 0 100%; margin: 2px 0; }
+.ownership-snapshot-details li { overflow-wrap: anywhere; }
+.return-summary-details dt { font-weight: 600; }
+.return-summary-details dd { margin-inline-start: 1em; overflow-wrap: anywhere; }
 
 /* The header's view dropdown. A native select inherits the platform's
    chrome, so the same tokens .card-action uses are restated for the parts
@@ -3702,10 +3866,25 @@ td[data-flash="down"] { animation: cell-flash-down 0.7s ease-out; }
 .widget-table.statement th:first-child { z-index: 3; }
 .widget-table.statement td:not(.statement-label) { text-align: right; }
 /* A section row is one full-width button: the whole row toggles. */
-.widget-table .statement-section td { padding: 0; }
+.widget-table.statement-model { min-width: 100%; }
+.widget-table .statement-section td:not(.selection-cell) {
+  padding: 0;
+  /* Let the caption stick to the table scroller rather than this cell. */
+  overflow: visible;
+  border-top: 1px solid var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.widget-table.statement-model tbody tr:not(.statement-section) td,
+.widget-table.statement tbody tr:not(.statement-section) td {
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.widget-table.statement-model td.statement-label,
+.widget-table.statement td.statement-label { padding-left: 16px; }
 .statement-section button {
   width: 100%;
-  padding: 4px 6px;
+  padding: 7px 8px;
   border: 0;
   background: none;
   color: inherit;
@@ -3714,6 +3893,9 @@ td[data-flash="down"] { animation: cell-flash-down 0.7s ease-out; }
   text-align: left;
   cursor: pointer;
 }
+.statement-section button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* Section captions stay beside pinned labels while financial periods scroll. */
+.statement-section-label { display: inline-block; position: sticky; left: 8px; }
 
 /* ---- iPadOS ------------------------------------------------------------ */
 
@@ -3791,3 +3973,60 @@ body {
 .drop-veil {
   top: var(--safe-top);
 }
+
+.linked-kpi-renderer { position: relative; min-width: 0; container-type: inline-size; }
+.linked-kpi-renderer .metric { height: auto; padding: 8px 0; }
+.linked-kpi-renderer .metric-value { font-size: clamp(var(--font-size-16), 8cqi, var(--font-size-28)); }
+.linked-kpi-details { margin-block: 6px; }
+.linked-kpi-details summary { cursor: pointer; }
+.linked-kpi-controls fieldset { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px; margin: 0 0 6px; border: 0; min-width: 0; }
+.linked-kpi-controls label { display: flex; flex-direction: column; min-width: 0; max-width: 100%; gap: 2px; }
+.linked-kpi-controls input, .linked-kpi-controls select { max-width: 100%; }
+.linked-kpi-controls .linked-kpi-checkbox { flex-direction: row; align-items: center; align-self: end; }
+.linked-kpi-controls p, .linked-kpi-provenance { margin-block: 4px; }
+.linked-kpi-provenance, .linked-kpi-details li, .linked-kpi-renderer .metric-value { overflow-wrap: anywhere; }
+.linked-kpi-details ul { margin-block: 4px; }
+.linked-kpi-plot { height: 164px; }
+.linked-kpi-surface-probe { position: absolute; inset: 0 0 auto; height: 164px; visibility: hidden; pointer-events: none; }
+/* Vector header controls stay centred without font-glyph baselines or clipping. */
+.card-header button:has(> svg) { display: inline-flex; align-items: center; justify-content: center; padding: 0; min-width: 20px; min-height: 22px; }
+
+/* Numeric title controls reserve digits and native steppers, not text-field width. */
+.card-chips .param-field input[type="number"] {
+  width: 6ch;
+  min-width: 6ch;
+  max-width: 16ch;
+}
+@supports (field-sizing: content) {
+  .card-chips .param-field input[type="number"] {
+    field-sizing: content;
+    width: auto;
+  }
+}
+
+/* Native iPad only: keep declared row-zero controls in a wrapping strip.
+   Pointer media queries would change this when a trackpad is attached.
+   Later declared rows remain exclusively in Parameters, as on desktop. */
+.widget-card[data-parameter-layout="wrap"] .card-chips {
+  flex: 1 1 100%;
+  order: 2;
+  overflow: visible;
+}
+.widget-card[data-parameter-layout="wrap"] .card-chips .card-params {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  white-space: normal;
+}
+.widget-card[data-parameter-layout="wrap"] .card-chips:has(> .video-row-zero) > .card-params {
+  flex: 1 1 0;
+  width: auto;
+}
+
+/* One owner of live video: either this frame or the native floating window. */
+.youtube-player { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.youtube-player > .iframe-wrap { flex: 1; min-height: 0; }
+.video-playback-actions { display: flex; justify-content: flex-end; padding: 3px 6px; }
+.video-playback-actions button { font-size: 11px; padding: 2px 6px; }
+.video-playback-config { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.video-playback-config label { display: inline-flex; gap: 4px; align-items: center; }

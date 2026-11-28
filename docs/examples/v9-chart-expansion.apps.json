@@ -1,0 +1,912 @@
+[
+  {
+    "name": "Financial chart examples",
+    "description": "Seven linked charts with four fictional source tables. Requires the chart expansion on BDOBB 9.0.0 or later. Connect the companion v9-chart-expansion fixture directory before importing.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "chart-examples": {
+        "id": "chart-examples",
+        "name": "Charts and sources",
+        "layout": [
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 0,
+            "w": 20,
+            "h": 19,
+            "state": {
+              "params": {},
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Drawdown"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_chart",
+            "x": 20,
+            "y": 0,
+            "w": 20,
+            "h": 19,
+            "state": {
+              "params": {},
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Yield curve"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 19,
+            "w": 20,
+            "h": 19,
+            "state": {
+              "params": {},
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Monthly returns"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_chart",
+            "x": 20,
+            "y": 19,
+            "w": 20,
+            "h": 19,
+            "state": {
+              "params": {},
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Daily return correlation"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 38,
+            "w": 20,
+            "h": 19,
+            "state": {
+              "params": {},
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Estimate ranges"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_chart",
+            "x": 20,
+            "y": 38,
+            "w": 20,
+            "h": 19,
+            "state": {
+              "params": {},
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Earnings versus estimates"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 57,
+            "w": 20,
+            "h": 19,
+            "state": {
+              "params": {},
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Income statement bridge"
+                }
+              }
+            }
+          },
+          {
+            "i": "chart_demo_prices",
+            "x": 20,
+            "y": 57,
+            "w": 20,
+            "h": 19
+          },
+          {
+            "i": "chart_demo_curves",
+            "x": 0,
+            "y": 76,
+            "w": 20,
+            "h": 19
+          },
+          {
+            "i": "chart_demo_estimates",
+            "x": 20,
+            "y": 76,
+            "w": 20,
+            "h": 19
+          },
+          {
+            "i": "chart_demo_income",
+            "x": 0,
+            "y": 95,
+            "w": 20,
+            "h": 19
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": [],
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v4",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "chart-examples"
+          ]
+        },
+        "cards": [
+          {
+            "ref": "c0",
+            "tab": "chart-examples",
+            "index": 0,
+            "extras": {
+              "linkedChart": {
+                "measures": [],
+                "display": "grouped",
+                "type": "drawdown",
+                "recipe": {
+                  "version": 1,
+                  "kind": "drawdown",
+                  "fields": {
+                    "date": "date",
+                    "price": "adjusted_close",
+                    "symbol": "symbol"
+                  },
+                  "symbols": [
+                    "ALDER",
+                    "MAPLE"
+                  ]
+                }
+              },
+              "sourceRef": "c7"
+            }
+          },
+          {
+            "ref": "c1",
+            "tab": "chart-examples",
+            "index": 1,
+            "extras": {
+              "linkedChart": {
+                "measures": [],
+                "display": "grouped",
+                "type": "yield-curve",
+                "recipe": {
+                  "version": 1,
+                  "kind": "yield-curve",
+                  "fields": {
+                    "date": "date",
+                    "maturity": "maturity",
+                    "rate": "rate"
+                  }
+                }
+              },
+              "sourceRef": "c8"
+            }
+          },
+          {
+            "ref": "c2",
+            "tab": "chart-examples",
+            "index": 2,
+            "extras": {
+              "linkedChart": {
+                "measures": [],
+                "display": "grouped",
+                "type": "monthly-returns",
+                "recipe": {
+                  "version": 1,
+                  "kind": "monthly-returns",
+                  "fields": {
+                    "date": "date",
+                    "price": "adjusted_close",
+                    "symbol": "symbol"
+                  },
+                  "symbol": "ALDER"
+                }
+              },
+              "sourceRef": "c7"
+            }
+          },
+          {
+            "ref": "c3",
+            "tab": "chart-examples",
+            "index": 3,
+            "extras": {
+              "linkedChart": {
+                "measures": [],
+                "display": "grouped",
+                "type": "correlation",
+                "recipe": {
+                  "version": 1,
+                  "kind": "correlation",
+                  "fields": {
+                    "date": "date",
+                    "price": "adjusted_close",
+                    "symbol": "symbol"
+                  },
+                  "symbols": [
+                    "ALDER",
+                    "BIRCH",
+                    "CEDAR",
+                    "ELM",
+                    "LINDEN",
+                    "MAPLE"
+                  ],
+                  "lookback": 40,
+                  "minOverlap": 8
+                }
+              },
+              "sourceRef": "c7"
+            }
+          },
+          {
+            "ref": "c4",
+            "tab": "chart-examples",
+            "index": 4,
+            "extras": {
+              "linkedChart": {
+                "measures": [],
+                "display": "grouped",
+                "type": "estimate-range",
+                "recipe": {
+                  "version": 1,
+                  "kind": "estimate-range",
+                  "metric": "eps",
+                  "fields": {
+                    "periodEnd": "period_ending",
+                    "fiscalPeriod": "fiscal_period",
+                    "status": "band_status",
+                    "note": "band_note",
+                    "low": "eps_low",
+                    "average": "eps_avg",
+                    "high": "eps_high"
+                  }
+                }
+              },
+              "sourceRef": "c9"
+            }
+          },
+          {
+            "ref": "c5",
+            "tab": "chart-examples",
+            "index": 5,
+            "extras": {
+              "linkedChart": {
+                "measures": [
+                  "eps_actual",
+                  "revenue_actual"
+                ],
+                "display": "grouped",
+                "type": "bullet",
+                "category": "fiscal_period",
+                "period": "FQ3 2025"
+              },
+              "sourceRef": "c9"
+            }
+          },
+          {
+            "ref": "c6",
+            "tab": "chart-examples",
+            "index": 6,
+            "extras": {
+              "linkedChart": {
+                "measures": [
+                  "[\"string\",\"FY2024\"]\u001fstatement/income/1.0.0/measure/value",
+                  "[\"string\",\"FY2025\"]\u001fstatement/income/1.0.0/measure/value"
+                ],
+                "display": "grouped",
+                "type": "waterfall",
+                "category": "\u001egroup"
+              },
+              "sourceRef": "c10"
+            }
+          },
+          {
+            "ref": "c7",
+            "tab": "chart-examples",
+            "index": 7,
+            "extras": {}
+          },
+          {
+            "ref": "c8",
+            "tab": "chart-examples",
+            "index": 8,
+            "extras": {}
+          },
+          {
+            "ref": "c9",
+            "tab": "chart-examples",
+            "index": 9,
+            "extras": {}
+          },
+          {
+            "ref": "c10",
+            "tab": "chart-examples",
+            "index": 10,
+            "extras": {
+              "tableDefinition": {
+                "table": {},
+                "search": "",
+                "analytical": {
+                  "schemaVersion": 2,
+                  "kind": "statement",
+                  "template": {
+                    "schemaVersion": 1,
+                    "id": "income",
+                    "version": "1.0.0",
+                    "sections": [
+                      {
+                        "id": "statement/income/1.0.0/section/Income",
+                        "label": "Income",
+                        "lineIds": [
+                          "statement/income/1.0.0/line/revenue",
+                          "statement/income/1.0.0/line/operating_revenue",
+                          "statement/income/1.0.0/line/interest_income",
+                          "statement/income/1.0.0/line/net_interest_income",
+                          "statement/income/1.0.0/line/non_operating_income_net_other",
+                          "statement/income/1.0.0/line/non_operating_income_excluding_interest",
+                          "statement/income/1.0.0/line/total_other_income_expense_net",
+                          "statement/income/1.0.0/line/total_other_income_expenses",
+                          "statement/income/1.0.0/line/other_items",
+                          "statement/income/1.0.0/line/extraordinary_items",
+                          "statement/income/1.0.0/line/non_recurring"
+                        ]
+                      },
+                      {
+                        "id": "statement/income/1.0.0/section/Expenses",
+                        "label": "Expenses",
+                        "lineIds": [
+                          "statement/income/1.0.0/line/cost_of_revenue",
+                          "statement/income/1.0.0/line/cost_and_expenses",
+                          "statement/income/1.0.0/line/research_and_development_expense",
+                          "statement/income/1.0.0/line/selling_and_marketing_expenses",
+                          "statement/income/1.0.0/line/selling_and_marketing_expense",
+                          "statement/income/1.0.0/line/selling_general_and_administrative_expense",
+                          "statement/income/1.0.0/line/selling_general_and_admin_expense",
+                          "statement/income/1.0.0/line/general_and_admin_expense",
+                          "statement/income/1.0.0/line/other_operating_expenses",
+                          "statement/income/1.0.0/line/other_expenses",
+                          "statement/income/1.0.0/line/total_operating_expenses",
+                          "statement/income/1.0.0/line/depreciation_and_amortization",
+                          "statement/income/1.0.0/line/reconciled_depreciation",
+                          "statement/income/1.0.0/line/interest_expense",
+                          "statement/income/1.0.0/line/total_interest_expense",
+                          "statement/income/1.0.0/line/income_tax_expense",
+                          "statement/income/1.0.0/line/tax_provision",
+                          "statement/income/1.0.0/line/effect_of_accounting_charges",
+                          "statement/income/1.0.0/line/minority_interest",
+                          "statement/income/1.0.0/line/preferred_stock_and_other_adjustments",
+                          "statement/income/1.0.0/line/other_adjustments_to_net_income",
+                          "statement/income/1.0.0/line/net_income_deductions"
+                        ]
+                      },
+                      {
+                        "id": "statement/income/1.0.0/section/Profit",
+                        "label": "Profit",
+                        "lineIds": [
+                          "statement/income/1.0.0/line/gross_profit",
+                          "statement/income/1.0.0/line/operating_income",
+                          "statement/income/1.0.0/line/total_operating_income",
+                          "statement/income/1.0.0/line/ebit",
+                          "statement/income/1.0.0/line/ebitda",
+                          "statement/income/1.0.0/line/income_before_tax",
+                          "statement/income/1.0.0/line/total_pre_tax_income",
+                          "statement/income/1.0.0/line/net_income_from_continuing_ops",
+                          "statement/income/1.0.0/line/net_income_from_continuing_operations",
+                          "statement/income/1.0.0/line/net_income_from_discontinued_operations",
+                          "statement/income/1.0.0/line/discontinued_operations",
+                          "statement/income/1.0.0/line/consolidated_net_income",
+                          "statement/income/1.0.0/line/net_income",
+                          "statement/income/1.0.0/line/net_income_to_common",
+                          "statement/income/1.0.0/line/bottom_line_net_income",
+                          "statement/income/1.0.0/line/calculated_gross_profit"
+                        ]
+                      }
+                    ],
+                    "lines": [
+                      {
+                        "id": "statement/income/1.0.0/line/revenue",
+                        "label": "revenue",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/operating_revenue",
+                        "label": "operating_revenue",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/interest_income",
+                        "label": "interest_income",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/net_interest_income",
+                        "label": "net_interest_income",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/non_operating_income_net_other",
+                        "label": "non_operating_income_net_other",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/non_operating_income_excluding_interest",
+                        "label": "non_operating_income_excluding_interest",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/total_other_income_expense_net",
+                        "label": "total_other_income_expense_net",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/total_other_income_expenses",
+                        "label": "total_other_income_expenses",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/other_items",
+                        "label": "other_items",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/extraordinary_items",
+                        "label": "extraordinary_items",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/non_recurring",
+                        "label": "non_recurring",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/cost_of_revenue",
+                        "label": "cost_of_revenue",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/cost_and_expenses",
+                        "label": "cost_and_expenses",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/research_and_development_expense",
+                        "label": "research_and_development_expense",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/selling_and_marketing_expenses",
+                        "label": "selling_and_marketing_expenses",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/selling_and_marketing_expense",
+                        "label": "selling_and_marketing_expense",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/selling_general_and_administrative_expense",
+                        "label": "selling_general_and_administrative_expense",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/selling_general_and_admin_expense",
+                        "label": "selling_general_and_admin_expense",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/general_and_admin_expense",
+                        "label": "general_and_admin_expense",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/other_operating_expenses",
+                        "label": "other_operating_expenses",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/other_expenses",
+                        "label": "other_expenses",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/total_operating_expenses",
+                        "label": "total_operating_expenses",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/depreciation_and_amortization",
+                        "label": "depreciation_and_amortization",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/reconciled_depreciation",
+                        "label": "reconciled_depreciation",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/interest_expense",
+                        "label": "interest_expense",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/total_interest_expense",
+                        "label": "total_interest_expense",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/income_tax_expense",
+                        "label": "income_tax_expense",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/tax_provision",
+                        "label": "tax_provision",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/effect_of_accounting_charges",
+                        "label": "effect_of_accounting_charges",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/minority_interest",
+                        "label": "minority_interest",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/preferred_stock_and_other_adjustments",
+                        "label": "preferred_stock_and_other_adjustments",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/other_adjustments_to_net_income",
+                        "label": "other_adjustments_to_net_income",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/net_income_deductions",
+                        "label": "net_income_deductions",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/gross_profit",
+                        "label": "gross_profit",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/operating_income",
+                        "label": "operating_income",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/total_operating_income",
+                        "label": "total_operating_income",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/ebit",
+                        "label": "ebit",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/ebitda",
+                        "label": "ebitda",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/income_before_tax",
+                        "label": "income_before_tax",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/total_pre_tax_income",
+                        "label": "total_pre_tax_income",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/net_income_from_continuing_ops",
+                        "label": "net_income_from_continuing_ops",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/net_income_from_continuing_operations",
+                        "label": "net_income_from_continuing_operations",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/net_income_from_discontinued_operations",
+                        "label": "net_income_from_discontinued_operations",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/discontinued_operations",
+                        "label": "discontinued_operations",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/consolidated_net_income",
+                        "label": "consolidated_net_income",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/net_income",
+                        "label": "net_income",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/net_income_to_common",
+                        "label": "net_income_to_common",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/bottom_line_net_income",
+                        "label": "bottom_line_net_income",
+                        "required": false,
+                        "policy": "flow",
+                        "unit": "currency"
+                      },
+                      {
+                        "id": "statement/income/1.0.0/line/calculated_gross_profit",
+                        "label": "Calculated gross profit",
+                        "required": false,
+                        "policy": "formula",
+                        "unit": "currency",
+                        "formula": {
+                          "id": "statement/income/1.0.0/formula/calculated_gross_profit",
+                          "name": "Calculated gross profit",
+                          "scope": "aggregate",
+                          "expression": "Value[Item=revenue] - Value[Item=cost_of_revenue]",
+                          "ast": {
+                            "kind": "binary",
+                            "operator": "-",
+                            "left": {
+                              "kind": "member",
+                              "value": {
+                                "kind": "reference",
+                                "target": "measure",
+                                "id": "statement/income/1.0.0/measure/value"
+                              },
+                              "selectors": [
+                                {
+                                  "categoryId": "statement/income/1.0.0/category/item",
+                                  "memberKey": "statement/income/1.0.0/line/revenue"
+                                }
+                              ]
+                            },
+                            "right": {
+                              "kind": "member",
+                              "value": {
+                                "kind": "reference",
+                                "target": "measure",
+                                "id": "statement/income/1.0.0/measure/value"
+                              },
+                              "selectors": [
+                                {
+                                  "categoryId": "statement/income/1.0.0/category/item",
+                                  "memberKey": "statement/income/1.0.0/line/cost_of_revenue"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "bindings": {
+                    "shape": "wide",
+                    "companyFieldId": "symbol",
+                    "periodKindFieldId": "period",
+                    "fiscal": {
+                      "companyFieldId": "symbol",
+                      "dateFieldId": "date",
+                      "fiscalYearFieldId": "year",
+                      "periodStartFieldId": "start",
+                      "periodEndFieldId": "end",
+                      "periodKind": "FY"
+                    },
+                    "mappings": [
+                      {
+                        "sourceFieldId": "revenue",
+                        "lineId": "statement/income/1.0.0/line/revenue"
+                      },
+                      {
+                        "sourceFieldId": "cost_of_revenue",
+                        "lineId": "statement/income/1.0.0/line/cost_of_revenue"
+                      },
+                      {
+                        "sourceFieldId": "gross_profit",
+                        "lineId": "statement/income/1.0.0/line/gross_profit"
+                      },
+                      {
+                        "sourceFieldId": "net_income",
+                        "lineId": "statement/income/1.0.0/line/net_income"
+                      }
+                    ]
+                  },
+                  "overrides": {
+                    "labels": {
+                      "statement/income/1.0.0/line/cost_of_revenue": "Cost of revenue",
+                      "statement/income/1.0.0/line/gross_profit": "Gross profit",
+                      "statement/income/1.0.0/line/revenue": "Revenue",
+                      "statement/income/1.0.0/line/net_income": "Net income"
+                    },
+                    "lineOrder": {},
+                    "hiddenIds": [
+                      "statement/income/1.0.0/line/calculated_gross_profit"
+                    ],
+                    "formulas": []
+                  },
+                  "periodKind": "FY",
+                  "checklists": [],
+                  "resultFilters": []
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+]

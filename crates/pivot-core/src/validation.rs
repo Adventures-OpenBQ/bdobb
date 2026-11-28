@@ -115,15 +115,14 @@ pub fn arithmetic_number(value: &WireValue) -> Result<f64, Diagnostic> {
     }
 }
 fn validate_pivot(pivot: &PivotConfig) -> Result<(), Diagnostic> {
-    for id in pivot.grouping.iter().chain(&pivot.split) {
-        required(id, "pivot.axes")?;
-    }
+    // Legacy axes bind raw JSON field names; the empty-string key is valid.
     if matches!(pivot.expanded, Some(Expanded::All(false))) {
         return Err(invalid("pivot.expanded"));
     }
     if let Some(measures) = &pivot.measures {
         for measure in measures {
-            validate_measure(measure)?;
+            // The measure instance is opaque; its legacy source is a raw JSON field name.
+            required(&measure.id, "measures.id")?;
         }
     }
     Ok(())
@@ -269,7 +268,6 @@ pub fn validate_definition(raw: &WireDefinition) -> Result<ValidatedDefinition, 
     }
     if let Some(filters) = &raw.definition.table.column_filters {
         for filter in filters {
-            required(&filter.id, "table.columnFilters.id")?;
             validate_wire_value(&filter.value)?;
         }
     }
@@ -294,6 +292,9 @@ pub fn validate_definition(raw: &WireDefinition) -> Result<ValidatedDefinition, 
             required(&category.source_field_id, "categories.sourceFieldId")?;
             if category.legacy_bucket.is_some() && category.transform != Transform::Native {
                 return Err(invalid("categories.legacyBucket"));
+            }
+            if let Some(sort) = &category.sort_field_id {
+                required(sort, "categories.sortFieldId")?;
             }
             if let Some(binding) = &category.fiscal_binding {
                 required(

@@ -2,14 +2,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { LinkedWidgetDialog } from "./LinkedWidgetDialog";
-import { BUILTIN_BACKEND_ID, LINKED_TABLE_ID, LINKED_CHART_ID } from "../lib/builtins";
+import type { LinkedPresentation } from "../lib/widgetData/types";
+import { BUILTIN_BACKEND_ID, LINKED_TABLE_ID, LINKED_CHART_ID, LINKED_METRIC_ID } from "../lib/builtins";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildTree, railDashboardsWithPath } from "../lib/folderTree";
 import { buildPresenceIndex, presenceOf } from "../lib/libraryPresence";
 import { logError } from "../lib/logger";
 import { clampLogName } from "../lib/logNames";
 import { resolveSymbolOverride } from "../lib/params";
-import { needsKey, normalizeProvider, worstTone, type ProbeTone } from "../lib/providerKeys";
+import { OPTIONAL_KEY_PROVIDERS, needsKey, normalizeProvider, worstTone, type ProbeTone } from "../lib/providerKeys";
 import { useBackendsStore } from "../stores/backendsStore";
 import { DOCKS_ID } from "../lib/dashboardsFile";
 import { useDashboardStore } from "../stores/dashboardStore";
@@ -26,7 +27,7 @@ import {
   type LibraryFilter,
 } from "./LibraryFilters";
 
-const isLinkedBuiltin = (widget: WidgetDef) => widget.backendId === BUILTIN_BACKEND_ID && (widget.id === LINKED_TABLE_ID || widget.id === LINKED_CHART_ID);
+const isLinkedBuiltin = (widget: WidgetDef) => widget.backendId === BUILTIN_BACKEND_ID && (widget.id === LINKED_TABLE_ID || widget.id === LINKED_CHART_ID || widget.id === LINKED_METRIC_ID);
 
 /** Custom type so a file or text drag cannot masquerade as a widget drop. */
 export const WIDGET_DRAG_TYPE = "application/x-bdobb-widget";
@@ -63,7 +64,8 @@ const TONE_MEANING: Record<ProbeTone, string> = {
 function toneOf(provider: string, probe: Record<string, ProbeTone>): ProbeTone | null {
   if (!needsKey(provider)) return null;
   const key = normalizeProvider(provider);
-  return Object.hasOwn(probe, key) ? probe[key] : "grey";
+  if (Object.hasOwn(probe, key)) return probe[key];
+  return OPTIONAL_KEY_PROVIDERS.has(key) ? null : "grey";
 }
 
 /**
@@ -152,7 +154,7 @@ export function WidgetLibrary({ onClose, target }: { onClose: () => void; target
         ?.cards ?? EMPTY_CARDS,
   );
 
-  const [linkedPresentation, setLinkedPresentation] = useState<"table" | "chart">();
+  const [linkedPresentation, setLinkedPresentation] = useState<LinkedPresentation>();
   // Every dashboard, in the order the rail draws them -- the pills below read
   // as the rail does rather than as the flat dashboardOrder array.
   const dashboards = useDashboardStore((s) => s.dashboards);
@@ -297,7 +299,7 @@ export function WidgetLibrary({ onClose, target }: { onClose: () => void; target
   // the library open over dead UI.
   async function handleAdd(widget: WidgetDef) {
     if (isLinkedBuiltin(widget)) {
-      setLinkedPresentation(widget.id === LINKED_CHART_ID ? 'chart' : 'table');
+      setLinkedPresentation(widget.id === LINKED_METRIC_ID ? 'metric' : widget.id === LINKED_CHART_ID ? 'chart' : 'table');
       return;
     }
     try {

@@ -10,6 +10,13 @@
       "sha256": "48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf",
       "bytes": 386227,
       "url": "https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-rustls-0.23.46-48e13bd8c0e9/rustls-0.23.46.crate"
+    },
+    {
+      "filename": "main-npm-source-supplement-b6183511c2c2408b4cc6.tar.gz",
+      "sha256": "9f4082f7fd0688b2647ddda3099a44ec8d182b10697d5b1043671ed21c86920e",
+      "bytes": 1385876,
+      "manifest_sha256": "b6183511c2c2408b4cc609c774295288be0d122e6cca3b775c44e5a9332184ef",
+      "url": "https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-main-npm-b6183511c2c2/main-npm-source-supplement-b6183511c2c2408b4cc6.tar.gz"
     }
   ]
 }
