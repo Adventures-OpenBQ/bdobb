@@ -30,7 +30,7 @@ it("overrides a label, then resets it, through the shared override rules", () =>
 it("never fabricates a template update: only installed versions are adoptable", () => {
   const r = run(intent("income"), { op: "statement.update_template", template_version: "2.0.0" });
   expect(r.definition).toBeUndefined();
-  expect(r.errors[0]).toMatchObject({ code: "validation", alternatives: ["income@1.0.0"] });
+  expect(r.errors[0]).toMatchObject({ code: "validation", alternatives: ["income@1.0.0", "income@1.1.0"] });
 });
 it("refuses override/reset/update before a template is applied", () => {
   for (const op of [{ op: "statement.override", labels: {} }, { op: "statement.reset" }, { op: "statement.update_template", template_version: "1.0.0" }]) {

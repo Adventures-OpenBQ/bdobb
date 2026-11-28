@@ -8,6 +8,7 @@ import type { StatementIntent, StatementTemplate } from '../../../lib/statementM
 import { statementOwnedIds } from '../../../lib/statementModel/types';
 import { displayedSections } from '../../../lib/statementModel/placement';
 import { statementTemplate } from '../../../lib/statementModel/catalog';
+import { proposeStatement } from '../../../lib/statementModel/autoBind';
 import { statementSnapshot } from '../../../lib/statementModel/persistence';
 import { compileStatement } from '../../../lib/statementModel/compile';
 import { resetStatementDraftOverrides } from '../../../lib/statementModel/overrides';
@@ -25,13 +26,20 @@ function newStatement(id: 'income'|'balance'|'cashflow'): StatementIntent {
  return {schemaVersion:2,kind:'statement',template:statementTemplate(id,'1.0.0')!,bindings:{shape:'wide',companyFieldId:'',periodKindFieldId:'',fiscal:{companyFieldId:''},mappings:[]},overrides:{labels:{},lineOrder:{},hiddenIds:[],formulas:[]},periodKind:'FY',checklists:[],resultFilters:[]};
 }
 const message = (error:unknown) => error instanceof Error ? error.message : 'Statement could not be validated.';
+/** A new Statement starts from what the columns themselves say, when they say enough (statementModel/autoBind.ts). */
+function proposedIntent(columns: readonly DatasetColumn[], periodKind: 'FY'|'FQ' = 'FY'): StatementIntent|undefined {
+ const out=proposeStatement(columns,undefined,periodKind);
+ return 'intent' in out?out.intent:undefined;
+}
 /** Draft-only authoring. The caller owns current source authority and every durable save. */
 export function StatementPanel(props: StatementPanelProps) {
  const owner=JSON.stringify(props.raw);
  return <StatementDraft key={owner} {...props}/>;
 }
 function StatementDraft({raw,columns,readonly,contextKey,onPreview,onCommit,onCompanies}:StatementPanelProps) {
- const initial=useMemo(()=>{try{return {value:raw===undefined?newStatement('income'):statementSnapshot(raw)};}catch(error){return {error:message(error)};}},[raw]);
+ // The columns seed a new draft once, when the panel opens; a later change of columns must not replace what the user is editing.
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ const initial=useMemo(()=>{try{return {value:raw===undefined?proposedIntent(columns)??newStatement('income'):statementSnapshot(raw)};}catch(error){return {error:message(error)};}},[raw]);
  const [draft,setDraft]=useState(initial.value);
  const [error,setError]=useState('');
  const [preview,setPreview]=useState<{value:DefinitionPreview;context:string;draft:StatementIntent}>();
@@ -72,6 +80,8 @@ function StatementDraft({raw,columns,readonly,contextKey,onPreview,onCommit,onCo
  };
  const update=()=>{try{const result=previewStatementUpdate(statementSnapshot(draft),JSON.parse(snapshotText) as StatementTemplate);edit(result.next);setConflicts(result.conflicts);setChanges(result.changes);const clean={...result.next} as StatementIntent&{updateConflicts?:unknown};delete clean.updateConflicts;setResolution(JSON.stringify(clean,null,2));}catch(e){setError(message(e));}};
  const loadCompanies=async(offset=0)=>{if(!onCompanies||readonly)return;cancel();const controller=new AbortController();request.current=controller;const context=authority;setPending(true);try{const page=await onCompanies(draft.bindings.companyFieldId,offset,controller.signal);if(!controller.signal.aborted&&latest.current===context)setCompanyPage({field:draft.bindings.companyFieldId,page});}catch(e){if(!controller.signal.aborted)setError(message(e));}finally{if(!controller.signal.aborted)setPending(false);}};
+ // A new Statement only: what the columns would bind, for the period kind the draft names. A saved one is the user's.
+ const proposal=raw===undefined?proposeStatement(columns,undefined,draft.periodKind):undefined;
  const displayed=displayedSections(draft.template,draft.overrides);
  const sections=(draft.overrides.sectionOrder??displayed.map(s=>s.id)).map(id=>displayed.find(s=>s.id===id)).filter(s=>s!==undefined);
  const moveLine=(id:string,from:string,to:string)=>{
@@ -92,6 +102,8 @@ function StatementDraft({raw,columns,readonly,contextKey,onPreview,onCommit,onCo
   <p className="pivot-panel-note">Missing facts are never zero. Map optional monetary lines explicitly; labels and order do not change formula bindings.</p>
   <fieldset disabled={readonly||saving||pending} className="statement-fields"><legend>Source bindings</legend>
    {raw===undefined?<label>Template<select aria-label="Template" value={draft.template.id} onChange={e=>edit(newStatement(e.target.value as 'income'|'balance'|'cashflow'))}><option value="income">Income statement</option><option value="balance">Balance sheet</option><option value="cashflow">Cash flow statement</option></select></label>:null}
+   {proposal?<p className="pivot-panel-note" aria-label="Proposal">{'reason' in proposal?`Not proposed: ${proposal.reason}`:<>{proposal.intent.bindings.mappings.length} columns are lines of this statement.{proposal.unmapped.length?` Not mapped: ${proposal.unmapped.join(', ')}.`:''} <button type="button" onClick={()=>edit(proposal.intent)}>Propose from columns</button></>}</p>:null}
+   <label>Layout<select aria-label="Layout" value={draft.layout??'lines-by-period'} onChange={e=>change(n=>{if(e.target.value==='lines-by-company')n.layout='lines-by-company';else delete n.layout;delete n.page;})}><option value="lines-by-period">Lines down, periods across</option><option value="lines-by-company">Lines down, companies across</option></select></label>
    <label>Source shape<select aria-label="Source shape" value={draft.bindings.shape} onChange={e=>change(n=>{n.bindings.shape=e.target.value as 'wide'|'long';n.bindings.mappings=[];if(n.bindings.shape==='long')n.bindings.longFields={itemFieldId:'',valueFieldId:''};else delete n.bindings.longFields;})}><option value="wide">Wide · fields become line items</option><option value="long">Long · item and value fields</option></select></label>
    <label>Fiscal period<select aria-label="Fiscal period" value={draft.periodKind} onChange={e=>change(n=>{n.periodKind=e.target.value as 'FY'|'FQ';if([n.bindings.fiscal.periodKind,n.bindings.fiscal.fiscalYearFieldId,n.bindings.fiscal.fiscalQuarterFieldId,n.bindings.fiscal.periodStartFieldId,n.bindings.fiscal.periodEndFieldId].some(v=>v!==undefined))n.bindings.fiscal.periodKind=n.periodKind;})}><option>FY</option><option>FQ</option></select></label>
    {selectField('Company',draft.bindings.companyFieldId,id=>change(n=>{n.bindings.companyFieldId=id;n.bindings.fiscal.companyFieldId=id;delete n.page;}))}

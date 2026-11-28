@@ -1,7 +1,8 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { Fragment } from "react";
+import { Fragment, useMemo, useState } from "react";
+import { repeatedLines } from "../../lib/statementModel/duplicates";
 import { formatCell } from "../../lib/format";
 import { ITEM_COLUMN, type StatementRows } from "../../lib/statementRows";
 import { useSettingsStore } from "../../stores/settingsStore";
@@ -27,6 +28,10 @@ export function StatementRenderer({
 }) {
   const maxDecimalPlaces = useSettingsStore((s) => s.settings.maxDecimalPlaces);
   const span = statement.headers.length + 1;
+  // Lines whose figures repeat an earlier line's (statementModel/duplicates.ts). Shown until the user hides them:
+  // agreeing figures are evidence that two names mean one thing, not proof.
+  const repeats = useMemo(() => repeatedLines(statement.sections), [statement.sections]);
+  const [hideRepeats, setHideRepeats] = useState(false);
   return (
     <div className="table-scroll">
       <table className="widget-table plain statement">
@@ -56,9 +61,9 @@ export function StatementRenderer({
                   </td>
                 </tr>
                 {open
-                  ? section.items.map((item) => (
+                  ? section.items.filter((item) => !(hideRepeats && repeats.has(item.field))).map((item) => (
                       <tr key={item.field}>
-                        <td className="statement-label">{item.label}</td>
+                        <td className="statement-label">{item.emphasis ? <strong>{item.label}</strong> : item.label}</td>
                         {item.values.map((value, i) => (
                           // The same call the table view makes for the same cell,
                           // so formatterFn, decimals and abbreviation all apply.
@@ -73,6 +78,17 @@ export function StatementRenderer({
             );
           })}
         </tbody>
+        {repeats.size > 0 ? (
+          <tfoot>
+            <tr>
+              <td colSpan={span}>
+                <button type="button" aria-pressed={hideRepeats} onClick={() => setHideRepeats((hidden) => !hidden)}>
+                  {hideRepeats ? `Show ${repeats.size} repeated ${repeats.size === 1 ? "line" : "lines"}` : `Hide ${repeats.size} repeated ${repeats.size === 1 ? "line" : "lines"}`}
+                </button>
+              </td>
+            </tr>
+          </tfoot>
+        ) : null}
       </table>
     </div>
   );

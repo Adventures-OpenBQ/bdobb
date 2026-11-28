@@ -7,6 +7,7 @@ import type { CellFormat } from "./format";
 import { formatFiscalLabel } from "./periods";
 import { IDENTITY_FIELDS, OTHER_SECTION, TAXONOMY, detectStatement, type Statement } from "./statementTaxonomy";
 import { read, tableColumns, type Row } from "./tableColumns";
+import { EMPHASIS, type LineEmphasis } from "./statementModel/vocabulary";
 import { uniqueHeaders } from "./transpose";
 import type { TableSpec } from "./types";
 import type { DatasetCellError } from './widgetData/types';
@@ -39,6 +40,8 @@ export type StatementItem = {
   values: unknown[];
   formats?: (CellFormat | undefined)[];
   errors?: (DatasetCellError | undefined)[];
+  /** A headline total or a subtotal (statementModel/vocabulary.ts): drawn in bold, never hidden as a repeat. */
+  emphasis?: LineEmphasis;
 };
 export type StatementSection = { id?: string; name: string; items: StatementItem[] };
 export type StatementRows = {
@@ -87,13 +90,14 @@ export function statementRows(served: Row[], spec?: TableSpec, isError?: (row: n
   // ponytail: fixed acronym list (#24); extend it when another line reads wrong.
   const label = (field: string) => declared.get(field) ?? titleCase(field.replace(/_/g, " ")).replace(/\b(Ebitda|Ebit|Eps)\b/g, (w) => w.toUpperCase());
 
+  const emphasis = EMPHASIS[statement === "cash" ? "cashflow" : statement];
   const present = new Set(items);
   const listed = new Set<string>();
   const sections: StatementSection[] = [];
   for (const [name, list] of Object.entries(TAXONOMY[statement])) {
     const own = list.filter((f) => present.has(f));
     for (const f of own) listed.add(f);
-    if (own.length > 0) sections.push({ name, items: own.map((f) => item(f)) });
+    if (own.length > 0) sections.push({ name, items: own.map((f) => ({ ...item(f), ...(emphasis[f] ? { emphasis: emphasis[f] } : {}) })) });
   }
   const other = items.filter((f) => !listed.has(f));
   if (other.length > 0) sections.push({ name: OTHER_SECTION, items: other.map((f) => item(f)) });

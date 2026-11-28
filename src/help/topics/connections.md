@@ -97,6 +97,38 @@ a starting point. For the openbq-docker stack, replace that URL with your
 Tailscale Serve address. Existing connection files, including an empty list,
 are preserved.
 
+## Libre Terminal as a backend
+
+[Libre Terminal](https://github.com/samlazs/libre-terminal) is a local research
+terminal built on the OpenBB Platform. It answers the same `widgets.json`
+contract, so on the computer it runs on it can stand in for an openbq-docker
+stack.
+
+Libre Terminal answers only its own page unless told otherwise. From its
+release 1.1, name this app's origins in `TERMINAL_EXTRA_ORIGINS` before
+starting it:
+
+- macOS and Linux: `export TERMINAL_EXTRA_ORIGINS="tauri://localhost http://tauri.localhost"`
+- Windows: `setx TERMINAL_EXTRA_ORIGINS "tauri://localhost http://tauri.localhost"`,
+  then open a new window.
+
+Then connect two backends:
+
+- `http://127.0.0.1:6900` — the OpenBB widgets, financial statements among
+  them.
+- `http://127.0.0.1:6950` — Libre Terminal's own computed views. It serves no
+  `apps.json`, so its card says apps could not be read. That is expected.
+
+Use `127.0.0.1` or `localhost` exactly. Libre Terminal refuses any other host
+name, so it is reached only from the computer it runs on. Without the setting,
+both connections are **Offline** with *Refused: this backend only answers the
+local terminal.*
+
+A widget that opens in a frame may show that refusal in place of its page: a
+frame's request carries no origin for Libre Terminal to match. Its statement
+routes take one symbol per request; a statement card naming several asks for
+each in turn — see **Statement view**.
+
 ---
 
 Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

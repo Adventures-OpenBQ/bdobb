@@ -3,7 +3,7 @@
 
 import { CalendarDate } from "@internationalized/date";
 import type { ParamOption } from "./types";
-import { fiscalPeriod } from "./periods";
+import { fiscalPeriod, fiscalYearSpan, quarterSpan } from "./periods";
 
 /**
  * The app's names for a statement widget's period choices. FQ, not Q: a statement's quarter is the
@@ -94,6 +94,65 @@ export function statementReporters(rows: Row[]): string[] | null {
   return symbols.length > 1000 || symbols.some((s) => s.length > 64) ? [] : symbols;
 }
 
+/** True when a statement card's `period` value asks for quarters. */
+export function isQuarterPeriod(period: string): boolean {
+  return KIND[period] === "quarter";
+}
+
+/** The value a statement widget's `period` param takes for annual rows (`annual`, or `FY`); undefined when it offers none. */
+export function annualPeriodValue(options: ParamOption[] | undefined): string | undefined {
+  return (options ?? []).find((o) => KIND[o.value] === "annual")?.value;
+}
+
+/**
+ * Each company's fiscal-year-end month read off its own statement rows, for a
+ * backend with no year-end lookup (OpenBB's statement routes serve none). An
+ * annual row closes on the year end, so its closing month is the answer; the
+ * newest row decides. Quarterly rows give nothing, even when they name a
+ * quarter: providers disagree on whether `fiscal_period` is the reporter's
+ * quarter or the calendar's (Apple's December quarter arrives as `Q4` from
+ * some), so reading a year end out of it would be a guess. A quarterly card
+ * asks for one annual row instead (useAnnualYearEnds).
+ *
+ * Keyed by upper-cased symbol, null where the rows could not say. A row with
+ * no symbol belongs to the card's one symbol, and to no one when the card
+ * names several.
+ */
+export function inferYearEnds(rows: Row[], period: string, cardSymbols: string[]): Record<string, number | null> {
+  const out: Record<string, number | null> = {};
+  const kind = KIND[period];
+  for (const row of rows) {
+    const symbol = typeof row.symbol === "string" && row.symbol !== "" ? row.symbol.toUpperCase()
+      : cardSymbols.length === 1 ? cardSymbols[0].toUpperCase() : undefined;
+    if (symbol === undefined || typeof out[symbol] === "number") continue;
+    out[symbol] = null;
+    const end = dateOf(row.period_ending ?? row.date);
+    if (end === null) continue;
+    if (kind === "annual") out[symbol] = reportMonth(end).month;
+  }
+  return out;
+}
+
+/**
+ * A relabelled row's fiscal period as two dates, for a Statement template's
+ * explicit fiscal binding (tableModel/fiscalContext.ts needs the report date
+ * inside them). The span is the fiscal calendar's; a 52/53-week filer closes a
+ * few days either side of the month's end, so the span stretches to hold the
+ * row's own closing date.
+ */
+function periodBounds(span: { start: CalendarDate; end: CalendarDate }, closed: CalendarDate): { period_start: string; period_end: string } {
+  const start = closed.compare(span.start) < 0 ? closed : span.start;
+  const end = closed.compare(span.end) > 0 ? closed : span.end;
+  return { period_start: start.toString(), period_end: end.toString() };
+}
+
+/** The lookup's answers, and the rows' own where the lookup had none. */
+export function knownYearEnds(lookup: Record<string, number | null>, inferred: Record<string, number | null>): Record<string, number | null> {
+  const out = { ...inferred };
+  for (const [symbol, month] of Object.entries(lookup)) if (month !== null || !Object.hasOwn(out, symbol)) out[symbol] = month;
+  return out;
+}
+
 /**
  * Statement rows with fiscal_period / fiscal_year derived from each row's
  * period end and its reporter's fiscal year end. December filers read
@@ -107,7 +166,7 @@ export function statementReporters(rows: Row[]): string[] | null {
  * names its kind; rows that name none are left unchanged and need no year end.
  */
 export function correctStatementRows(
-  rows: Row[], period: string, yearEnds: Record<string, number | null>, cardSymbols: string[], perRow = false,
+  rows: Row[], period: string, yearEnds: Record<string, number | null>, cardSymbols: string[], perRow = false, bounds = false,
 ): { rows: Row[]; asReported: boolean } {
   const kinds = rows.map((r) => (perRow ? rowKind(r) : KIND[period]));
   if (perRow && kinds.every((k) => k === undefined)) return { rows, asReported: false };
@@ -133,7 +192,16 @@ export function correctStatementRows(
     // corrected column would mix "FY2027" strings with numbers. The Statement
     // view's period header still prefixes FY, because "2026" does not start with FY.
     const year = m === 12 ? String(fy) : `FY${fy}`;
-    return { ...row, fiscal_period: kind === "annual" ? "FY" : `${m === 12 ? "Q" : "FQ"}${q}`, fiscal_year: year };
+    const labelled = { ...row, fiscal_period: kind === "annual" ? "FY" : `${m === 12 ? "Q" : "FQ"}${q}`, fiscal_year: year };
+    if (!bounds) return labelled;
+    // What a Statement template binds: who reported, which kind of period, and its two dates.
+    const symbol = symbolOf(row);
+    return {
+      ...(typeof row.symbol === "string" && row.symbol !== "" || symbol === undefined ? {} : { symbol }),
+      ...labelled,
+      period_kind: kind === "annual" ? "FY" : "FQ",
+      ...periodBounds(kind === "annual" ? fiscalYearSpan(fy, m) : quarterSpan({ fy, q }, m), end),
+    };
   });
   return { rows: out, asReported: false };
 }

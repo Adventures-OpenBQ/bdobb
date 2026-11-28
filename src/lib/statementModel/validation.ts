@@ -6,7 +6,7 @@ import { boundedPlainData } from '../tableModel/validation';
 import { astChildren, validateFormulaAst } from '../tableModel/formulaSyntax';
 import { displayedSections } from './placement';
 import type { FormulaAst, FormulaDef, ModelDiagnostic } from '../tableModel/types';
-import { statementOwnedIds, type StatementIntent, type StatementValidation } from './types';
+import { STATEMENT_LAYOUTS, statementOwnedIds, type StatementIntent, type StatementValidation } from './types';
 type Obj = Record<string, unknown>;
 const text = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0;
 const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every(text);
@@ -31,7 +31,7 @@ export function validateStatementIntent(raw: unknown): StatementValidation {
     issue('schemaVersion', 'Unsupported statement schema.', 'unsupported-schema');
     return result;
   }
-  if (raw.kind !== 'statement' || !exact(raw, ['schemaVersion', 'kind', 'template', 'bindings', 'overrides', 'periodKind', 'page', 'checklists', 'resultFilters']))
+  if (raw.kind !== 'statement' || !exact(raw, ['schemaVersion', 'kind', 'template', 'bindings', 'overrides', 'periodKind', 'page', 'layout', 'checklists', 'resultFilters']))
     issue('', 'Expected explicit statement intent.');
   const intent = raw;
   const t = intent.template;
@@ -69,7 +69,9 @@ export function validateStatementIntent(raw: unknown): StatementValidation {
         || !text(line.label)
         || typeof line.required !== 'boolean'
         || !choice(line.policy, ['single', 'flow', 'stock', 'formula'])
-        || !exact(line, ['id', 'label', 'required', 'policy', 'formula', 'format', 'unit'])
+        // 1.0.0 is pinned: it never carried emphasis, and a snapshot claiming it is not 1.0.0.
+        || !exact(line, t.version === '1.0.0' ? ['id', 'label', 'required', 'policy', 'formula', 'format', 'unit'] : ['id', 'label', 'required', 'policy', 'formula', 'format', 'unit', 'emphasis'])
+        || (line.emphasis !== undefined && !choice(line.emphasis, ['subtotal', 'total']))
         || ['format', 'unit'].some(k => line[k] !== undefined && !text(line[k]))) {
       issue(path, 'Invalid owned line.');
       return;
@@ -285,6 +287,11 @@ export function validateStatementIntent(raw: unknown): StatementValidation {
   }
   if (raw.page !== undefined)
     selection(raw.page, 'page');
+  if (raw.layout !== undefined && !choice(raw.layout, [...STATEMENT_LAYOUTS]))
+    issue('layout', 'Unknown statement layout.');
+  // One spelling of the default: a statement saved before layouts existed and one set back to it are the same data.
+  if (raw.layout === 'lines-by-period')
+    delete raw.layout;
   if (!Array.isArray(raw.checklists))
     issue('checklists', 'Expected checklists.');
   else {

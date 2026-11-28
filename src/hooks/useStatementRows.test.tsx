@@ -23,7 +23,11 @@ describe("useStatementRows", () => {
     const { result } = renderHook(() => useStatementRows(statement, backend, query, raw));
     expect(result.current).toEqual({ data: raw, asReported: false });
     await waitFor(() => expect(result.current.data).not.toBe(raw));
-    expect(result.current).toEqual({ data: [{ ...raw[0], fiscal_period: "FQ1", fiscal_year: "FY2026" }], asReported: false });
+    // Relabelled, and carrying what a Statement template binds: FY or FQ, and the fiscal quarter's two dates.
+    expect(result.current).toEqual({
+      data: [{ ...raw[0], fiscal_period: "FQ1", fiscal_year: "FY2026", period_kind: "FQ", period_start: "2025-10-01", period_end: "2025-12-31" }],
+      asReported: false,
+    });
   });
 
   it("flags rows it cannot relabel as reported", async () => {
