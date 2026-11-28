@@ -27,7 +27,13 @@ export type StatementRefusal = { reason: string };
 /** What a bound card's rows carry beyond what the provider sent. */
 const BOUND_FIELDS = ['symbol', 'period_kind', 'fiscal_year', 'period_start', 'period_end'] as const;
 
-export function proposeStatement(columns: readonly { id: string }[], rows: readonly Row[]): StatementProposal | StatementRefusal {
+/**
+ * `rows` are the card's rows when the caller holds them. The pivot drawer holds
+ * only columns: it passes none, names the period kind itself, gets every
+ * unmapped column that is not declared text back, and pages companies with
+ * its own control.
+ */
+export function proposeStatement(columns: readonly { id: string; dtype?: string }[], rows?: readonly Row[], assumedKind: 'FY' | 'FQ' = 'FY'): StatementProposal | StatementRefusal {
   const ids = columns.map((c) => c.id);
   const has = new Set(ids);
   const detected = detectStatement(has);
@@ -37,8 +43,8 @@ export function proposeStatement(columns: readonly { id: string }[], rows: reado
   if (missing.length > 0 || date === undefined) {
     return { reason: 'The rows carry no fiscal year to bind. A statement whose fiscal labels are as reported cannot take a template.' };
   }
-  const kinds = new Set(rows.map((r) => r.period_kind));
-  const periodKind = kinds.size === 1 && kinds.has('FY') ? 'FY' : kinds.size === 1 && kinds.has('FQ') ? 'FQ' : undefined;
+  const kinds = new Set(rows?.map((r) => r.period_kind));
+  const periodKind = rows === undefined ? assumedKind : kinds.size === 1 && kinds.has('FY') ? 'FY' : kinds.size === 1 && kinds.has('FQ') ? 'FQ' : undefined;
   if (periodKind === undefined) return { reason: 'A Statement takes rows of one period kind, annual or quarterly.' };
 
   const template = statementTemplate(detected === 'cash' ? 'cashflow' : detected, CURRENT_STATEMENT_TEMPLATE_VERSION)!;
@@ -49,14 +55,15 @@ export function proposeStatement(columns: readonly { id: string }[], rows: reado
 
   const mapped = new Set(mappings.map((m) => m.sourceFieldId));
   const identity = new Set<string>([...IDENTITY_FIELDS, ...BOUND_FIELDS]);
-  const unmapped = ids.filter((f) => !mapped.has(f) && !identity.has(f) && rows.some((r) => typeof r[f] === 'number'));
+  const numeric = (column: { id: string; dtype?: string }) => (rows === undefined ? column.dtype === undefined || column.dtype === 'number' : rows.some((r) => typeof r[column.id] === 'number'));
+  const unmapped = columns.filter((c) => !mapped.has(c.id) && !identity.has(c.id) && numeric(c)).map((c) => c.id);
 
   // A formula line whose inputs are not among the mapped columns would show an error in every period.
   const mappedLines = new Set(mappings.map((m) => m.lineId));
   const inputs = (line: (typeof template.lines)[number]) => [...JSON.stringify(line.formula?.ast ?? null).matchAll(/"memberKey":"([^"]+)"/g)].map((m) => m[1]);
   const hiddenIds = template.lines.filter((l) => l.policy === 'formula' && inputs(l).some((id) => !mappedLines.has(id))).map((l) => l.id);
 
-  const companies = [...new Set(rows.flatMap((r) => (typeof r.symbol === 'string' && r.symbol !== '' ? [r.symbol] : [])))];
+  const companies = [...new Set((rows ?? []).flatMap((r) => (typeof r.symbol === 'string' && r.symbol !== '' ? [r.symbol] : [])))];
   const intent: StatementIntent = {
     schemaVersion: 2, kind: 'statement', template,
     bindings: {
