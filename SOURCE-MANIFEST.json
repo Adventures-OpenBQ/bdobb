@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "3b8a5560e37d54ca41f4b54254aeac6d96a8a6de",
-  "sourceId": "6306fe4c8c7fcd3ea67c88de61935ff02b8ba9e07e3081ada61d043479931a82",
+  "baseCommit": "fc900cabe87edbcb8a5f36c7e0078aed504f8f5f",
+  "sourceId": "2fc4afa4893fbc46a1b369be6d09b965979e0e3e66febef9b2d7d4072fd02745",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -22736,7 +22736,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "ff341a49492b32768f380963f205be85a2b8185a76081db291a4d4987231e9cb"
+      "sha256": "ed9709a9cfbebfed02e06a3fcf10ed2a75b909fe002332621e4cfd7a2d4fd3af"
     },
     {
       "path": "source_bundle.py",
@@ -34656,8 +34656,8 @@
       "path": "vite.config.ts",
       "type": "file",
       "mode": 420,
-      "size": 10357,
-      "sha256": "e7f4fd5d7b69000afe599a13719df2b2a2987e97fdd5ecda64cf3e7edfe0a411"
+      "size": 10890,
+      "sha256": "f1d0973ba4873818eec07cfb230da6bed20d20a1b6409a9fbc9fa6ec2e617c0d"
     },
     {
       "path": "web/.env.example",
