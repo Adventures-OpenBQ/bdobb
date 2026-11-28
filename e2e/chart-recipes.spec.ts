@@ -33,11 +33,20 @@ async function allPlots(page: Page) {
   for (const source of ['Daily adjusted prices', 'Treasury observations', 'Guarded estimates', 'Income statement inputs']) {
     await expect(card(page, source).locator('tbody tr').first(), `${source} rows retained`).toBeAttached();
   }
-  for (const name of names) {
-    const graph = plot(page, name);
-    await expect(graph.locator('svg.main-svg').first(), `${name} drawing`).toBeAttached();
-    await expect.poll(() => graph.evaluate(element => (element as Graph)._fullData?.length ?? 0), { message: `${name} traces` }).toBeGreaterThan(0);
-  }
+  // Source table rows can precede asynchronous recipe-worker results and
+  // Plotly drawing. Give all seven real outputs one shared bounded deadline;
+  // retain both SVG/data proof and refusal/error checks, without retrying.
+  await expect.poll(async () => Promise.all(names.map(name => card(page, name).evaluateAll(elements =>
+    elements.map(element => {
+      const graph = element.querySelector('.js-plotly-plot') as Graph | null;
+      return {
+        svg: !!graph?.querySelector('svg.main-svg'),
+        traces: (graph?._fullData?.length ?? 0) > 0,
+        alerts: Array.from(element.querySelectorAll('[role="alert"]'), alert => alert.textContent?.trim()),
+      };
+    }),
+  ))), { timeout: 20000, message: 'All seven charts finish calculation and draw without errors' })
+    .toEqual(names.map(() => [{ svg: true, traces: true, alerts: [] }]));
 }
 
 test('native import draws seven charts in both themes and preserves usable missing-value hover', async ({ page }, info) => {
