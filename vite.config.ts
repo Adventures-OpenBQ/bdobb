@@ -148,6 +148,15 @@ export default defineConfig(({ mode }) => ({
    */
   define: { global: "globalThis" },
 
+  // The recipe worker imports these CommonJS helpers outside the HTML crawl.
+  // Discovering them after a chart mounts changes shared optimized chunks and
+  // makes Vite reload the whole page, interrupting browser regression checks.
+  // Include them in the initial browser-mode scan; retain default discovery
+  // and leave native/dev/test modes and production bundling unchanged.
+  optimizeDeps: mode === "browser" ? {
+    include: ["plotly.js/src/traces/treemap/partition.js", "plotly.js/src/lib/angles.js"],
+  } : undefined,
+
   plugins: [portablePivotWasm(), react(), pdfStandardFonts(), buildDefaults(mode)],
   clearScreen: false,
   /**
