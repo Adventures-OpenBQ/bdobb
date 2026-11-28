@@ -43,3 +43,39 @@ A restricted fault-injection test now explicitly names its available fallback wr
 ## Boundaries
 
 Reference code-execution opt-ins and publisher maintenance are not silently treated as successful data. Reader and registered evidence remain separate. V7 physical iPad acceptance is a later gate; neither this desktop qualification nor the source comparison substitutes for it. V11 and Databento are outside this walk's scope.
+
+## Update 2026-11-28: the backend this release is paired with
+
+The Assembly section above names backend `04004d8af0afda6d5b50d9c4b9af6e8e0391199a`. That was the backend on 20 November. It is the openbq-docker tag `v6.0.0-before-rita-transport`, and it is not the backend V6 was finally qualified against.
+
+| Item | Value |
+|---|---|
+| Backend at the 20 November qualification | `04004d8af0afda6d5b50d9c4b9af6e8e0391199a` |
+| Backend pin in `package.json` until 28 November | `a5ed6789401e41e3d6c0241668ab5fd14d9fa520`, the tag `v6.0.0-before-final` |
+| Backend the release was finally qualified against | `4d75df0c68c8010baa7ee966679e825bd1b6dcbf`, the openbq-docker `v6.0.0` tag and the tip of its `release/v6` branch |
+| Backend pin from 28 November | `4d75df0c68c8010baa7ee966679e825bd1b6dcbf`, by pull request #96, merged as `128ebb6721569b20106ac533a00cdeeee45496c4` |
+
+The release walk's readiness record of 25 November names client `1f2deea9f2995012b6c5f1075b875e3e8fe4c4dd` and backend `4d75df0c68c8`. That client is the commit pull request #96 was based on. The pull request changed only the backend pin, the vendored policy's recorded commit, the source-offer files and the CI workflow's history-scan flag. No product source changed, and the vendored policy's bytes are the same.
+
+The Rita recipe is unchanged at `5fe6bcf36a5eeeb50b301b630217dc02f96b31c6`, with patches 0001–0023 and no 0005.
+
+### Checks made on 28 November for this change
+
+- **CI on the pull request head `7d4be3ff4043`:** all six jobs passed (build, pivot, reference, public-content, scrub, e2e). The workflow does not run on pushes to release branches, so the merge commit has no run of its own.
+- **Fresh public reader lane** against a backend image whose revision label is `4d75df0c68c8`: 998 catalogue entries served, provider cache empty before the first request. Ten distinct public EIA cases were attempted: 2 returned data and 8 returned the provider's rate-limit message. Quota-limited cases are not passes. No case failed.
+- **Live Rita suite, 26 cases, client `1f2deea9f299` against backend `4d75df0c68c8`, model `Qwen/Qwen3.6-35B-A3B`:**
+  - Through a private inference route: 26 passed, 0 failed, 0 skipped.
+  - Through DeepInfra: 25 passed and 1 failed. The failed case was "writes an answer into the note on each of twelve tabs: every card saved exactly once (#326)", where no note was saved on one tab. Retested alone, that case passed. This is a composed result, not a clean 26 of 26 on DeepInfra, and the original failure stands.
+  - These runs delivered credentials with a copy of the reviewed launcher in which one acknowledgement timeout was raised. That copy has not had the independent review the original had, so the Rita results here are supporting evidence, not release qualification.
+
+### Corresponding source
+
+Source identity `396cb448ca93b1a78c4d97b82502eff77ae80cae5fc326816b010787541ed793`, archive `bdobb-v6.0.0-agpl-396cb448ca93-source.tar.gz`, 16,475,923 bytes, SHA-256 `e591b746cdf92fc30116b10ca4870096bccc1ec41690c871e64b36d1294a8fbc`. Published as release `agpl-v6.0.0-396cb448ca93`, targeting `128ebb672156`; an anonymous download matches that hash. The archive passes its own verifier and was built to identical bytes on two machines. No actual-value privacy scan was run on it; it differs from the previously published source only in the pin, source-offer and CI workflow files. The previous identity `17a90fb916a6` remains published.
+
+### Not done
+
+No installer was rebuilt from the merge commit, and no registered-key, native or device test was re-run. The readiness evidence of 25 November is retained for this change; it was read, not re-audited.
+
+### Note for whoever merges this update
+
+`SOURCE-MANIFEST.json` lists this file. Changing it changes the branch's tree, so after merging, the branch tip will no longer match its bound source identity until the source offer is re-bound and a new source release is published.
