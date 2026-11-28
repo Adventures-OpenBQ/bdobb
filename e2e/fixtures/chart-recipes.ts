@@ -114,6 +114,14 @@ export async function importExample(page: Page, manifest = example) {
   seed['backends.json'] = JSON.stringify([{ id: 'demo', name: 'Chart examples', baseUrl: origin, authLocation: 'header', validateWidgets: false }]);
   seed['imports/apps.json'] = manifest;
   await seedApp(page, seed);
+  // Discovery starts only after the bootstrap loaders finish. Importing before
+  // that point lets the pending dashboard load replace the imported dashboard.
+  await expect.poll(() => page.evaluate(async () => {
+    const path = '/src/stores/widgetRegistryStore.ts';
+    const registry = (await import(path)).useWidgetRegistryStore as typeof import('../../src/stores/widgetRegistryStore').useWidgetRegistryStore;
+    return registry.getState().widgets.filter(widget => widget.backendId === 'demo').map(widget => widget.id).sort();
+  })).toEqual(['chart_demo_curves', 'chart_demo_estimates', 'chart_demo_income', 'chart_demo_prices']);
+  await expect(page.getByRole('tab', { name: 'Main', exact: true })).toBeVisible();
   if (await page.evaluate(() => matchMedia('(hover: none)').matches)) {
     const file = await page.evaluateHandle(text => {
       const transfer = new DataTransfer();

@@ -246,16 +246,16 @@ test("the endpoint source drives a quarter's label, and follows the symbol", asy
   expect(lookups.at(-1)).toBe("?symbol=MSFT");
 });
 
-// Issue #13: the five cards of the v4 regression's narrow-viewer case. At
-// 390 px the grid keeps two columns, so Period echo is ~180 px wide and its
-// Week / As of / Range pills ran past the card's right edge, clipped.
-test("narrow viewer: every header control stays inside its card (#13)", async ({ page }) => {
+// At 390 px the grid keeps two columns. Actions stay inside each card and
+// row-zero controls remain reachable through their native horizontal scroller.
+test("narrow viewer: header actions fit and every title control can scroll into view (#13)", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.install();
   await page.clock.setFixedTime(new Date("2026-10-03T16:00:00Z"));
   const cards: SeedCard[] = [
     echoCard("c-echo", "September"),
-    { id: "c-probe", widgetId: "date_probe", backendId: "builtin", params: { expr: "T-1bd", fy_end: "12", as_of: "T" }, layout: { x: 20, y: 0, w: 14, h: 7 } },
+    // Date expression defaults to panel-only controls; opt in to its title row here.
+    { id: "c-probe", widgetId: "date_probe", backendId: "builtin", params: { expr: "T-1bd", fy_end: "12", as_of: "T" }, hideTitleParams: false, layout: { x: 20, y: 0, w: 14, h: 7 } },
     { id: "c-cal", widgetId: "calendar_table", backendId: "b1", params: { symbol: "AAPL", trade: "T-1bd" }, layout: { x: 0, y: 8, w: 20, h: 9 } },
     { id: "c-fiscal", widgetId: "fiscal_table", backendId: "b1", params: { symbol: "AAPL", asof: "FQ0", quarter: "T", span: "FQ-4/FQ0" }, layout: { x: 20, y: 8, w: 24, h: 9 } },
     { id: "c-quote", widgetId: "quote", backendId: "b1", params: { symbol: "AAPL" }, layout: { x: 0, y: 17, w: 20, h: 9 } },
@@ -265,17 +265,53 @@ test("narrow viewer: every header control stays inside its card (#13)", async ({
   await expect(trigger(echoed, "Week")).toBeVisible();
   await expect(page.locator(".widget-card")).toHaveCount(5);
 
-  const overflow: string[] = [];
+  let scrollingCards = 0;
   for (const card of await page.locator(".widget-card").all()) {
     const edge = (await card.boundingBox())!;
-    const right = edge.x + edge.width + 1;
+    const insideCard = async (control: Locator) => {
+      const box = (await control.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(edge.x - 1);
+      expect(box.x + box.width).toBeLessThanOrEqual(edge.x + edge.width + 1);
+    };
+    // Scrolled content may extend beyond its viewport, but actions and the
+    // viewport itself must never extend outside the card.
     for (const el of await card
-      .locator("header :is(button, input, select, .param-field, .react-aria-Group):visible")
+      .locator("header > button:visible, .card-controls :is(button, input, select):visible")
       .all()) {
-      const box = (await el.boundingBox())!;
-      if (box.x + box.width > right || box.x < edge.x - 1)
-        overflow.push(`${await el.evaluate((n) => n.outerHTML.slice(0, 80))}: ${box.x + box.width} > ${right}`);
+      await insideCard(el);
+    }
+    const strip = card.locator(".card-chips");
+    await expect(strip).toBeVisible();
+    await insideCard(strip);
+    const size = await strip.evaluate(el => ({ width: el.clientWidth, content: el.scrollWidth, overflow: getComputedStyle(el).overflowX }));
+    expect(size.width).toBeGreaterThan(0);
+    expect(size.overflow).toBe("auto");
+    const controls = strip.locator(":is(button:enabled, input:enabled, select:enabled, [role=spinbutton]):visible");
+    expect(await controls.count()).toBeGreaterThan(0);
+    let scrolled = false;
+    for (const control of await controls.all()) {
+      // Native focus scrolls a keyboard user's next control into the strip.
+      // Check the actual clipped intersection, not only DOM visibility.
+      await control.focus();
+      await expect(control).toBeFocused();
+      const visible = await control.evaluate(el => {
+        const parent = el.closest(".card-chips")!;
+        const viewport = parent.getBoundingClientRect();
+        const box = el.getBoundingClientRect();
+        return { width: Math.min(box.right, viewport.right) - Math.max(box.left, viewport.left), scroll: parent.scrollLeft };
+      });
+      expect(visible.width).toBeGreaterThan(0);
+      scrolled ||= visible.scroll > 0;
+    }
+    if (size.content > size.width) {
+      expect(scrolled).toBe(true);
+      scrollingCards++;
     }
   }
-  expect(overflow).toEqual([]);
+  expect(scrollingCards).toBeGreaterThan(0);
+  // A long period control also opens its real picker after scrolling.
+  await trigger(echoed, "Week").click();
+  await expect(page.getByRole("dialog", { name: "Week", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Week", exact: true })).toHaveCount(0);
 });

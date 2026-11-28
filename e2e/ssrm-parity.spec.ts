@@ -1,5 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
+import { openParameters, checkChartMeasures } from './fixtures/chart-recipes';
 import {expect,test} from '@playwright/test';
 import {dashboardSeed,seedApp,read} from './fixtures';
 
@@ -48,8 +49,9 @@ test('managed full-scope consumers, header actions and persisted linked reopen',
  await expect.poll(async()=>{const saved=await read(page,'dashboards/d1.json');return saved?JSON.parse(saved).tabs[0].cards[0].table?.widths:undefined;}).toBeTruthy();
  await root.getByRole('button',{name:'Card menu'}).click();await page.getByRole('menuitem',{name:'Create linked table'}).click();
  await root.getByRole('button',{name:'Card menu'}).click();await page.getByRole('menuitem',{name:'Create linked chart'}).click();
- await page.getByRole('combobox',{name:'Category',exact:true}).selectOption('region');
- await page.getByRole('checkbox',{name:'Revenue',exact:true}).check();
+ const parameters=await openParameters(page.locator('.widget-card').filter({has:page.locator('.linked-chart-renderer')}));
+ await parameters.getByRole('combobox',{name:'Category',exact:true}).selectOption('region');
+ await checkChartMeasures(page,parameters,['Revenue']);
  await expect(page.getByTestId('chart-plot')).toBeVisible();
  await expect.poll(()=>page.getByTestId('chart-plot').evaluate(el=>(el as unknown as {data?:{x?:unknown[]}[]}).data?.[0]?.x?.length)).toBe(204);
  const toolsProof=await page.evaluate(async()=>{
@@ -79,14 +81,19 @@ test('managed full-scope consumers, header actions and persisted linked reopen',
 test('standard LIVE refuses whole-result consumer surfaces and agent authoring',async({page})=>{
  await seedApp(page,dashboardSeed([]));
  await page.evaluate(async()=>{const p='/src/stores/widgetRegistryStore.ts';const registry=(await import(p)).useWidgetRegistryStore as typeof import('../src/stores/widgetRegistryStore').useWidgetRegistryStore;registry.setState(s=>({widgets:s.widgets.filter(w=>w.type!=='keys'&&!w.id.includes('provider_api_keys'))}));});
- await page.evaluate(async()=>{
+ // Keep the imported stores in a remote handle, then mutate synchronously. A
+ // transient async evaluation can be collected during React's state publication.
+ const stores=await page.evaluateHandle(async()=>{
   const r='/src/stores/widgetRegistryStore.ts',d='/src/stores/dashboardStore.ts',n='/src/lib/widgetsJson.ts';
-  const registry=(await import(r)).useWidgetRegistryStore as typeof import('../src/stores/widgetRegistryStore').useWidgetRegistryStore;
-  const dashboards=(await import(d)).useDashboardStore as typeof import('../src/stores/dashboardStore').useDashboardStore;
-  const normalize=(await import(n)).normalizeWidgets as typeof import('../src/lib/widgetsJson').normalizeWidgets;
+  return {registry:(await import(r)).useWidgetRegistryStore as typeof import('../src/stores/widgetRegistryStore').useWidgetRegistryStore,
+   dashboards:(await import(d)).useDashboardStore as typeof import('../src/stores/dashboardStore').useDashboardStore,
+   normalize:(await import(n)).normalizeWidgets as typeof import('../src/lib/widgetsJson').normalizeWidgets};
+ });
+ await stores.evaluate(({registry,dashboards,normalize})=>{
   registry.setState(s=>({widgets:[...s.widgets,...normalize({live:{name:'LIVE parity',type:'table_ssrm',endpoint:'/prices'}},'b1').widgets]}));
   dashboards.setState({dashboards:[{id:'d1',name:'Main',tabs:[{id:'t1',name:'Main',cards:[{id:'live',widgetId:'live',backendId:'b1',params:{},layout:{x:0,y:0,w:40,h:20}}]}]}]});
  });
+ await stores.dispose();
  await expect(page.getByText(/LIVE · paged/)).toBeVisible();await page.getByRole('button',{name:'Card menu'}).click();
  await expect(page.getByRole('menuitem',{name:/^Export/})).toHaveCount(0);await expect(page.getByRole('menuitem',{name:/Create linked/})).toHaveCount(0);
  const target=await page.evaluate(async()=>{const p='/src/lib/agent/tableModel/target.ts';return (await import(p)).resolveTableTarget('live');});expect(target).toMatchObject({kind:'refusal',status:'server-execution-pending'});

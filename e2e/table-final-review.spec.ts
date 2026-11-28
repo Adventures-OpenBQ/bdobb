@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { openParameters, checkChartMeasures } from './fixtures/chart-recipes';
 import { test, expect } from '@playwright/test';
 import { seedCards, read } from './fixtures';
 const file = '00000000-0000-0000-0000-000000000099.csv';
@@ -14,9 +15,9 @@ test('ordinary text counts reach actual worker linked chart as numeric measures'
   await root.getByRole('button', { name: 'Card menu' }).click();
   await page.getByRole('menuitem', { name: 'Create linked chart', exact: true }).click();
   const chart = page.locator('.linked-chart-renderer');
-  await chart.getByLabel('Category', { exact: true }).selectOption({ label: 'region' });
-  await chart.getByRole('checkbox', { name: 'team — Count', exact: true }).check();
-  await chart.getByRole('checkbox', { name: 'team — Unique Count', exact: true }).check();
+  const parameters = await openParameters(page.locator('.widget-card').filter({ has: chart }));
+  await parameters.getByLabel('Category', { exact: true }).selectOption({ label: 'region' });
+  await checkChartMeasures(page, parameters, ['team — Count', 'team — Unique Count']);
   await expect(chart.locator('.js-plotly-plot')).toHaveCount(1);
   await expect.poll(() => chart.locator('.js-plotly-plot').evaluate(el => (el as unknown as { data: { y: number[] }[] }).data.map(t => t.y))).toEqual([[2, 1], [2, 1]]);
 });

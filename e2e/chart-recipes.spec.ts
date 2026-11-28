@@ -30,7 +30,14 @@ async function heatmapHover(page: Page, graph: Locator, x: number, y: number) {
 }
 
 async function allPlots(page: Page) {
-  for (const name of names) await expect(plot(page, name).locator('svg.main-svg').first()).toBeAttached();
+  for (const source of ['Daily adjusted prices', 'Treasury observations', 'Guarded estimates', 'Income statement inputs']) {
+    await expect(card(page, source).locator('tbody tr').first(), `${source} rows retained`).toBeAttached();
+  }
+  for (const name of names) {
+    const graph = plot(page, name);
+    await expect(graph.locator('svg.main-svg').first(), `${name} drawing`).toBeAttached();
+    await expect.poll(() => graph.evaluate(element => (element as Graph)._fullData?.length ?? 0), { message: `${name} traces` }).toBeGreaterThan(0);
+  }
 }
 
 test('native import draws seven charts in both themes and preserves usable missing-value hover', async ({ page }, info) => {
