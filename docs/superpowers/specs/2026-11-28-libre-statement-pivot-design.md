@@ -354,3 +354,63 @@ goes across, and what is paged. Three presets:
 4. **Pre-commit hook.** `.githooks` secret-gate failed with `FileNotFoundError`
    in a fresh clone on 2026-11-27. Confirm it runs in this worktree before the
    first commit; do not bypass it.
+
+## As built (2026-11-28)
+
+Tasks 0 to 10 of the plan are committed on `claude/v10-libre-statements`, and
+Task 11's walk was run on macOS against the `libre-bdobb` container. Where the
+build differs from the sections above, this section is what the code does. Each
+departure came from reading the code or from running real rows through it; the
+commit that made it says why at more length.
+
+- **Symbol lists (A).** The list is asked whole first. Only an error or an empty
+  answer leads to one request per symbol, so a backend that takes a list stays
+  on one request. Rita's `correctStatementData` is not wired: it makes no
+  request of its own.
+- **Fiscal year end (A2).** Read from a company's own **annual** rows only. A
+  quarterly row's `fiscal_period` is not read: the existing suite pins Apple's
+  December quarter arriving as `Q4`, the calendar's, so a row cannot say which
+  convention it follows. A quarterly card asks for one annual row per symbol.
+  `FiscalSource` is not extended; statement rows never passed through
+  `fiscalChain`.
+- **Bound fields (A2).** Always on, as designed: every relabelled statement row
+  carries `symbol`, `period_kind` (`FY` or `FQ`), `period_start` and
+  `period_end`. They are ordinary columns; nothing marks them derived.
+- **Template 1.1.0 (B).** As designed. SEC lines, order, units and subtotals
+  come from openbb-sec's own statement schema, which the design had not known
+  existed. Hand authoring in the panel still starts on 1.0.0; the proposal is
+  on 1.1.0.
+- **Auto-binding (C).** Wide rows only. Long rows (openbq-yfinance) are bound in
+  tests after widening, but the card does not widen them, so the panel proposes
+  nothing for them yet. Entry is the pivot drawer's existing **Saved → Statement
+  template** panel, which opens already bound; there is no card-menu action.
+- **Layout (D).** Two layouts, not three. `periods-by-line` calculates nothing
+  in the engine, whose flow, stock and formula rules evaluate a line across its
+  row; the plain Table view of wide rows already reads that way. The intent
+  stays at schema 2 with an optional `layout`, because the engine and the
+  apps.json extension tell a Statement from a table model by that number.
+  Paging uses the panel's existing Company Page control; there is no page
+  selector on the card and no period page control in the panel. Refusing
+  companies side by side is at the binding (no fiscal year bound), not per
+  company.
+- **Repeated lines (E).** Shown until the user hides them, not hidden by
+  default, and a total or subtotal is never a repeat: Apple's total revenue
+  equals its operating revenue. Quick Statement view only, and the choice is
+  not saved with the card.
+- **Emphasis.** Bold in the quick Statement view only. The worker-drawn
+  Statement of a bound card does not carry it.
+
+Three existing expectations changed: the two agent tests that list installed
+template versions, the quick view's income section order, and the relabelled
+row in `useStatementRows.test`.
+
+Seen in the walk (Libre Terminal 1.0.0 behind the guard, `AAPL`, `WMT`):
+a single-company card labelled `FY2026 … FY2022` where it had said *Fiscal
+labels as reported*; `AAPL,WMT,NOPE` showing each company's own fiscal columns
+with the notice *No statement for NOPE*; the panel opening on template 1.1.0
+with 44 columns mapped and only `tax_rate_for_calcs` unmapped; and companies
+side by side under each fiscal year, with the engine's notice that the two
+companies' fiscal years cover different months.
+
+Not walked: an OpenBQ stack with long-form rows, quarterly cards in the app,
+and the Windows or iPad builds.
