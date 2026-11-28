@@ -94,6 +94,52 @@ export function statementReporters(rows: Row[]): string[] | null {
   return symbols.length > 1000 || symbols.some((s) => s.length > 64) ? [] : symbols;
 }
 
+/** True when a statement card's `period` value asks for quarters. */
+export function isQuarterPeriod(period: string): boolean {
+  return KIND[period] === "quarter";
+}
+
+/** The value a statement widget's `period` param takes for annual rows (`annual`, or `FY`); undefined when it offers none. */
+export function annualPeriodValue(options: ParamOption[] | undefined): string | undefined {
+  return (options ?? []).find((o) => KIND[o.value] === "annual")?.value;
+}
+
+/**
+ * Each company's fiscal-year-end month read off its own statement rows, for a
+ * backend with no year-end lookup (OpenBB's statement routes serve none). An
+ * annual row closes on the year end, so its closing month is the answer; the
+ * newest row decides. Quarterly rows give nothing, even when they name a
+ * quarter: providers disagree on whether `fiscal_period` is the reporter's
+ * quarter or the calendar's (Apple's December quarter arrives as `Q4` from
+ * some), so reading a year end out of it would be a guess. A quarterly card
+ * asks for one annual row instead (useAnnualYearEnds).
+ *
+ * Keyed by upper-cased symbol, null where the rows could not say. A row with
+ * no symbol belongs to the card's one symbol, and to no one when the card
+ * names several.
+ */
+export function inferYearEnds(rows: Row[], period: string, cardSymbols: string[]): Record<string, number | null> {
+  const out: Record<string, number | null> = {};
+  const kind = KIND[period];
+  for (const row of rows) {
+    const symbol = typeof row.symbol === "string" && row.symbol !== "" ? row.symbol.toUpperCase()
+      : cardSymbols.length === 1 ? cardSymbols[0].toUpperCase() : undefined;
+    if (symbol === undefined || typeof out[symbol] === "number") continue;
+    out[symbol] = null;
+    const end = dateOf(row.period_ending ?? row.date);
+    if (end === null) continue;
+    if (kind === "annual") out[symbol] = reportMonth(end).month;
+  }
+  return out;
+}
+
+/** The lookup's answers, and the rows' own where the lookup had none. */
+export function knownYearEnds(lookup: Record<string, number | null>, inferred: Record<string, number | null>): Record<string, number | null> {
+  const out = { ...inferred };
+  for (const [symbol, month] of Object.entries(lookup)) if (month !== null || !Object.hasOwn(out, symbol)) out[symbol] = month;
+  return out;
+}
+
 /**
  * Statement rows with fiscal_period / fiscal_year derived from each row's
  * period end and its reporter's fiscal year end. December filers read
